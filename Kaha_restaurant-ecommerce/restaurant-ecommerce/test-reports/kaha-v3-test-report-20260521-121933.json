@@ -1,0 +1,3237 @@
+{
+  "collection": {
+    "item": [
+      {
+        "id": "f87870cf-d71b-43c4-9e9f-f9edae5dac82",
+        "name": "Authentication",
+        "item": [
+          {
+            "id": "147f7092-7525-4143-adfc-d1f59c3a5bf8",
+            "name": "Login - Get Access Token",
+            "request": {
+              "url": {
+                "path": [
+                  "auth",
+                  "login"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"contactNumber\": \"{{contactNumber}}\",\n  \"password\": \"{{password}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "b8d92181-230c-4dc4-9d94-253add0c5e7a",
+                  "type": "text/javascript",
+                  "exec": [
+                    "if (pm.response.code === 201) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set(\"accessToken\", jsonData.accessToken);",
+                    "    pm.test(\"Login successful\", function() {",
+                    "        pm.expect(pm.response.code).to.equal(201);",
+                    "        pm.expect(jsonData.accessToken).to.exist;",
+                    "        pm.expect(jsonData.role).to.equal(\"admin\");",
+                    "    });",
+                    "}"
+                  ],
+                  "_lastExecutionId": "8e2b929a-33c8-4dac-ba3a-7a30b99a7adb"
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "70e6f542-f6c9-4c77-a7e0-672f26320c73",
+        "name": "Users",
+        "item": [
+          {
+            "id": "1f507b23-6bcf-4fd9-b549-c89f3f6ffe3a",
+            "name": "Get User by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "users",
+                  "{{userId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{accessToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "d074f060-f45e-4c26-818d-3b152c002039",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Get user successful\", function() {",
+                    "    pm.expect(pm.response.code).to.equal(200);",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.expect(jsonData.id).to.exist;",
+                    "    pm.expect(jsonData.fullName).to.exist;",
+                    "    pm.expect(jsonData.contactNumber).to.exist;",
+                    "    pm.expect(jsonData.kahaId).to.exist;",
+                    "    pm.expect(jsonData.role).to.exist;",
+                    "});"
+                  ],
+                  "_lastExecutionId": "7aaa7401-a0e4-4f81-a702-034b48879589"
+                }
+              }
+            ]
+          },
+          {
+            "id": "492bec28-da9e-4097-aaa0-1e4b09b4b9bd",
+            "name": "Get Current User (/me)",
+            "request": {
+              "url": {
+                "path": [
+                  "users",
+                  "me"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{accessToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "b2ad631b-4b3a-4aa9-b8be-742102542ffc",
+        "name": "Businesses",
+        "item": [
+          {
+            "id": "f2cd5e68-4deb-44ca-a679-a3be2dfa0b30",
+            "name": "Get Business Owner",
+            "request": {
+              "url": {
+                "path": [
+                  "businesses",
+                  "owner"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [
+                  {
+                    "key": "businessId",
+                    "value": "{{businessId}}"
+                  }
+                ],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{accessToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+            "name": "Get Business by ID (Test - may not exist)",
+            "request": {
+              "url": {
+                "path": [
+                  "businesses",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{accessToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Get business - handles 404 gracefully\", function() {",
+                    "    pm.expect([200, 404]).to.include(pm.response.code);",
+                    "});"
+                  ],
+                  "_lastExecutionId": "07a13850-f2c5-4a36-a811-fa2062f66072"
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "b383cb4d-1545-4356-bcf3-1286f848d02a",
+        "name": "Business Users & Roles",
+        "item": [
+          {
+            "id": "6412dfe3-71f5-4a6d-ba01-20fe1d3f66b1",
+            "name": "Get Business User Roles",
+            "request": {
+              "url": {
+                "path": [
+                  "business-users",
+                  "{{businessId}}",
+                  "{{userId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{accessToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "7690390f-be4f-4c78-a775-caea32a7fd9c",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Get business user roles successful\", function() {",
+                    "    pm.expect(pm.response.code).to.equal(200);",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.expect(jsonData.id).to.exist;",
+                    "    pm.expect(jsonData.role).to.exist;",
+                    "    pm.expect(jsonData.role.name).to.exist;",
+                    "    pm.expect(jsonData.user).to.exist;",
+                    "    pm.expect(jsonData.user.id).to.exist;",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      }
+    ],
+    "auth": {
+      "type": "bearer",
+      "bearer": [
+        {
+          "type": "string",
+          "value": "{{accessToken}}",
+          "key": "token"
+        }
+      ]
+    },
+    "event": [],
+    "variable": [
+      {
+        "type": "string",
+        "value": "https://api.kaha.com.np/main/api/v3",
+        "key": "baseUrl"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "accessToken"
+      },
+      {
+        "type": "string",
+        "value": "afc70db3-6f43-4882-92fd-4715f25ffc95",
+        "key": "userId"
+      },
+      {
+        "disabled": true,
+        "type": "string",
+        "value": "test-business-id",
+        "key": "businessId"
+      },
+      {
+        "type": "string",
+        "value": "9813870231",
+        "key": "contactNumber"
+      },
+      {
+        "type": "string",
+        "value": "ishwor19944",
+        "key": "password"
+      }
+    ],
+    "info": {
+      "_postman_id": "e3585383-4807-4da6-a52e-cdde5b80d23d",
+      "name": "Kaha Main v3 - External API Tests",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Tests for Kaha Main v3 external API integration",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "id": "kaha-local-env",
+    "name": "KAHA Local Environment",
+    "values": [
+      {
+        "type": "any",
+        "value": "https://api.kaha.com.np/main/api/v3",
+        "key": "baseUrl"
+      },
+      {
+        "type": "any",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+        "key": "accessToken"
+      }
+    ]
+  },
+  "globals": {
+    "id": "d2b06508-b905-4ae4-966f-8e51e8032a78",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 5,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 3,
+        "pending": 0,
+        "failed": 1
+      },
+      "prerequests": {
+        "total": 5,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 5,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 5,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 3,
+        "pending": 0,
+        "failed": 1
+      },
+      "testScripts": {
+        "total": 3,
+        "pending": 0,
+        "failed": 1
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 39.6,
+      "responseMin": 11,
+      "responseMax": 130,
+      "responseSd": 45.62718487919236,
+      "dnsAverage": 7.645399999999995,
+      "dnsMin": 7.645399999999995,
+      "dnsMax": 7.645399999999995,
+      "dnsSd": 0,
+      "firstByteAverage": 30.711671000000003,
+      "firstByteMin": 8.771974,
+      "firstByteMax": 94.37081799999999,
+      "firstByteSd": 32.452803421133936,
+      "started": 1779345274550,
+      "completed": 1779345274861
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 6,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "6dff74fe-c3aa-422b-8799-571d3cb3f43b",
+          "httpRequestId": "b0e13b9d-957b-4e44-be67-451eebf09caf"
+        },
+        "item": {
+          "id": "147f7092-7525-4143-adfc-d1f59c3a5bf8",
+          "name": "Login - Get Access Token",
+          "request": {
+            "url": {
+              "path": [
+                "auth",
+                "login"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contactNumber\": \"{{contactNumber}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "b8d92181-230c-4dc4-9d94-253add0c5e7a",
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"accessToken\", jsonData.accessToken);",
+                  "    pm.test(\"Login successful\", function() {",
+                  "        pm.expect(pm.response.code).to.equal(201);",
+                  "        pm.expect(jsonData.accessToken).to.exist;",
+                  "        pm.expect(jsonData.role).to.equal(\"admin\");",
+                  "    });",
+                  "}"
+                ],
+                "_lastExecutionId": "8e2b929a-33c8-4dac-ba3a-7a30b99a7adb"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              "auth",
+              "login"
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "6237069b-b405-4b50-b9f2-4242645c69f6",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "64",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"contactNumber\": \"9813870231\",\n  \"password\": \"ishwor19944\"\n}"
+          },
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "ac3d0b05-06fd-4a5e-a938-739fb0a0ed9b",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 06:34:34 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "224"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "100"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "99"
+            },
+            {
+              "key": "X-RateLimit-Reset",
+              "value": "1"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"e0-nsUPxTvfFv7ToE5LJvXc9gwZ6tc\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              97,
+              99,
+              99,
+              101,
+              115,
+              115,
+              84,
+              111,
+              107,
+              101,
+              110,
+              34,
+              58,
+              34,
+              101,
+              121,
+              74,
+              104,
+              98,
+              71,
+              99,
+              105,
+              79,
+              105,
+              74,
+              73,
+              85,
+              122,
+              73,
+              49,
+              78,
+              105,
+              73,
+              115,
+              73,
+              110,
+              82,
+              53,
+              99,
+              67,
+              73,
+              54,
+              73,
+              107,
+              112,
+              88,
+              86,
+              67,
+              74,
+              57,
+              46,
+              101,
+              121,
+              74,
+              112,
+              90,
+              67,
+              73,
+              54,
+              73,
+              109,
+              70,
+              109,
+              89,
+              122,
+              99,
+              119,
+              90,
+              71,
+              73,
+              122,
+              76,
+              84,
+              90,
+              109,
+              78,
+              68,
+              77,
+              116,
+              78,
+              68,
+              103,
+              52,
+              77,
+              105,
+              48,
+              53,
+              77,
+              109,
+              90,
+              107,
+              76,
+              84,
+              81,
+              51,
+              77,
+              84,
+              86,
+              109,
+              77,
+              106,
+              86,
+              109,
+              90,
+              109,
+              77,
+              53,
+              78,
+              83,
+              73,
+              115,
+              73,
+              109,
+              116,
+              104,
+              97,
+              71,
+              70,
+              74,
+              90,
+              67,
+              73,
+              54,
+              73,
+              108,
+              85,
+              116,
+              79,
+              69,
+              77,
+              50,
+              79,
+              84,
+              86,
+              70,
+              73,
+              105,
+              119,
+              105,
+              97,
+              87,
+              70,
+              48,
+              73,
+              106,
+              111,
+              120,
+              78,
+              122,
+              99,
+              53,
+              77,
+              122,
+              81,
+              49,
+              77,
+              106,
+              99,
+              48,
+              102,
+              81,
+              46,
+              54,
+              55,
+              77,
+              52,
+              105,
+              85,
+              116,
+              118,
+              49,
+              107,
+              68,
+              50,
+              52,
+              49,
+              86,
+              75,
+              49,
+              82,
+              115,
+              79,
+              107,
+              115,
+              72,
+              71,
+              69,
+              120,
+              87,
+              50,
+              88,
+              122,
+              87,
+              105,
+              72,
+              79,
+              84,
+              69,
+              103,
+              57,
+              98,
+              52,
+              115,
+              110,
+              103,
+              34,
+              44,
+              34,
+              114,
+              111,
+              108,
+              101,
+              34,
+              58,
+              34,
+              97,
+              100,
+              109,
+              105,
+              110,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 130,
+          "responseSize": 224
+        },
+        "id": "147f7092-7525-4143-adfc-d1f59c3a5bf8",
+        "assertions": [
+          {
+            "assertion": "Login successful",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "c9ae3f8a-1f60-42cb-867f-51a328e53fa5",
+          "length": 6,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "2b11fb50-187a-45db-bbbc-e64a02df7115"
+        },
+        "item": {
+          "id": "1f507b23-6bcf-4fd9-b549-c89f3f6ffe3a",
+          "name": "Get User by ID",
+          "request": {
+            "url": {
+              "path": [
+                "users",
+                "{{userId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{accessToken}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "d074f060-f45e-4c26-818d-3b152c002039",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Get user successful\", function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.exist;",
+                  "    pm.expect(jsonData.fullName).to.exist;",
+                  "    pm.expect(jsonData.contactNumber).to.exist;",
+                  "    pm.expect(jsonData.kahaId).to.exist;",
+                  "    pm.expect(jsonData.role).to.exist;",
+                  "});"
+                ],
+                "_lastExecutionId": "7aaa7401-a0e4-4f81-a702-034b48879589"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              "users",
+              "afc70db3-6f43-4882-92fd-4715f25ffc95"
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+              "system": true
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "228308a6-1710-4c2d-9a01-216d5defa765",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "6bb5f78c-7abb-459b-8f5e-afbc231dcf8a",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 06:34:34 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "432"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "100"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "99"
+            },
+            {
+              "key": "X-RateLimit-Reset",
+              "value": "1"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"1b0-cmPkA+vYQ6Q+38YKpPU0zYvX0Kk\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              34,
+              97,
+              102,
+              99,
+              55,
+              48,
+              100,
+              98,
+              51,
+              45,
+              54,
+              102,
+              52,
+              51,
+              45,
+              52,
+              56,
+              56,
+              50,
+              45,
+              57,
+              50,
+              102,
+              100,
+              45,
+              52,
+              55,
+              49,
+              53,
+              102,
+              50,
+              53,
+              102,
+              102,
+              99,
+              57,
+              53,
+              34,
+              44,
+              34,
+              102,
+              117,
+              108,
+              108,
+              78,
+              97,
+              109,
+              101,
+              34,
+              58,
+              34,
+              105,
+              115,
+              104,
+              119,
+              111,
+              114,
+              32,
+              103,
+              97,
+              117,
+              116,
+              97,
+              109,
+              34,
+              44,
+              34,
+              101,
+              109,
+              97,
+              105,
+              108,
+              34,
+              58,
+              34,
+              114,
+              101,
+              112,
+              108,
+              121,
+              105,
+              115,
+              104,
+              119,
+              111,
+              114,
+              64,
+              103,
+              109,
+              97,
+              105,
+              108,
+              46,
+              99,
+              111,
+              109,
+              122,
+              34,
+              44,
+              34,
+              99,
+              111,
+              110,
+              116,
+              97,
+              99,
+              116,
+              78,
+              117,
+              109,
+              98,
+              101,
+              114,
+              34,
+              58,
+              34,
+              57,
+              56,
+              49,
+              51,
+              56,
+              55,
+              48,
+              50,
+              51,
+              49,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              34,
+              58,
+              34,
+              118,
+              101,
+              114,
+              105,
+              102,
+              105,
+              101,
+              100,
+              34,
+              44,
+              34,
+              97,
+              118,
+              97,
+              116,
+              97,
+              114,
+              34,
+              58,
+              34,
+              104,
+              116,
+              116,
+              112,
+              115,
+              58,
+              47,
+              47,
+              99,
+              111,
+              109,
+              112,
+              114,
+              101,
+              115,
+              115,
+              101,
+              100,
+              118,
+              50,
+              46,
+              115,
+              51,
+              46,
+              97,
+              112,
+              45,
+              115,
+              111,
+              117,
+              116,
+              104,
+              45,
+              49,
+              46,
+              97,
+              109,
+              97,
+              122,
+              111,
+              110,
+              97,
+              119,
+              115,
+              46,
+              99,
+              111,
+              109,
+              47,
+              112,
+              117,
+              98,
+              108,
+              105,
+              99,
+              95,
+              107,
+              97,
+              104,
+              97,
+              95,
+              49,
+              55,
+              48,
+              53,
+              48,
+              50,
+              52,
+              56,
+              49,
+              55,
+              55,
+              53,
+              51,
+              95,
+              105,
+              109,
+              97,
+              103,
+              101,
+              95,
+              99,
+              114,
+              111,
+              112,
+              112,
+              101,
+              114,
+              95,
+              49,
+              55,
+              48,
+              53,
+              48,
+              50,
+              52,
+              55,
+              54,
+              55,
+              54,
+              53,
+              49,
+              46,
+              119,
+              101,
+              98,
+              112,
+              34,
+              44,
+              34,
+              107,
+              97,
+              104,
+              97,
+              73,
+              100,
+              34,
+              58,
+              34,
+              85,
+              45,
+              56,
+              67,
+              54,
+              57,
+              53,
+              69,
+              34,
+              44,
+              34,
+              114,
+              111,
+              108,
+              101,
+              34,
+              58,
+              34,
+              97,
+              100,
+              109,
+              105,
+              110,
+              34,
+              44,
+              34,
+              102,
+              105,
+              114,
+              115,
+              116,
+              78,
+              97,
+              109,
+              101,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              108,
+              97,
+              115,
+              116,
+              78,
+              97,
+              109,
+              101,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              100,
+              97,
+              116,
+              101,
+              79,
+              102,
+              66,
+              105,
+              114,
+              116,
+              104,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              103,
+              101,
+              110,
+              100,
+              101,
+              114,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              99,
+              114,
+              101,
+              97,
+              116,
+              101,
+              100,
+              65,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              51,
+              45,
+              48,
+              54,
+              45,
+              49,
+              56,
+              84,
+              48,
+              55,
+              58,
+              53,
+              56,
+              58,
+              50,
+              52,
+              46,
+              52,
+              49,
+              51,
+              90,
+              34,
+              44,
+              34,
+              104,
+              97,
+              115,
+              80,
+              97,
+              115,
+              115,
+              119,
+              111,
+              114,
+              100,
+              34,
+              58,
+              116,
+              114,
+              117,
+              101,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 11,
+          "responseSize": 432
+        },
+        "id": "1f507b23-6bcf-4fd9-b549-c89f3f6ffe3a",
+        "assertions": [
+          {
+            "assertion": "Get user successful",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "512e2248-93f6-47d9-9c95-c1c32c63c240",
+          "length": 6,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "ea30becb-6ee8-482e-b7c9-8d1e1ad82abd"
+        },
+        "item": {
+          "id": "492bec28-da9e-4097-aaa0-1e4b09b4b9bd",
+          "name": "Get Current User (/me)",
+          "request": {
+            "url": {
+              "path": [
+                "users",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{accessToken}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": []
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              "users",
+              "me"
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+              "system": true
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "349b2c1a-85b3-43c6-b994-dabf980ddeed",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "7ce1caa1-065f-4587-9d53-e125405a0be7",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 06:34:34 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "432"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "100"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "99"
+            },
+            {
+              "key": "X-RateLimit-Reset",
+              "value": "1"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"1b0-cmPkA+vYQ6Q+38YKpPU0zYvX0Kk\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              34,
+              97,
+              102,
+              99,
+              55,
+              48,
+              100,
+              98,
+              51,
+              45,
+              54,
+              102,
+              52,
+              51,
+              45,
+              52,
+              56,
+              56,
+              50,
+              45,
+              57,
+              50,
+              102,
+              100,
+              45,
+              52,
+              55,
+              49,
+              53,
+              102,
+              50,
+              53,
+              102,
+              102,
+              99,
+              57,
+              53,
+              34,
+              44,
+              34,
+              102,
+              117,
+              108,
+              108,
+              78,
+              97,
+              109,
+              101,
+              34,
+              58,
+              34,
+              105,
+              115,
+              104,
+              119,
+              111,
+              114,
+              32,
+              103,
+              97,
+              117,
+              116,
+              97,
+              109,
+              34,
+              44,
+              34,
+              101,
+              109,
+              97,
+              105,
+              108,
+              34,
+              58,
+              34,
+              114,
+              101,
+              112,
+              108,
+              121,
+              105,
+              115,
+              104,
+              119,
+              111,
+              114,
+              64,
+              103,
+              109,
+              97,
+              105,
+              108,
+              46,
+              99,
+              111,
+              109,
+              122,
+              34,
+              44,
+              34,
+              99,
+              111,
+              110,
+              116,
+              97,
+              99,
+              116,
+              78,
+              117,
+              109,
+              98,
+              101,
+              114,
+              34,
+              58,
+              34,
+              57,
+              56,
+              49,
+              51,
+              56,
+              55,
+              48,
+              50,
+              51,
+              49,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              34,
+              58,
+              34,
+              118,
+              101,
+              114,
+              105,
+              102,
+              105,
+              101,
+              100,
+              34,
+              44,
+              34,
+              97,
+              118,
+              97,
+              116,
+              97,
+              114,
+              34,
+              58,
+              34,
+              104,
+              116,
+              116,
+              112,
+              115,
+              58,
+              47,
+              47,
+              99,
+              111,
+              109,
+              112,
+              114,
+              101,
+              115,
+              115,
+              101,
+              100,
+              118,
+              50,
+              46,
+              115,
+              51,
+              46,
+              97,
+              112,
+              45,
+              115,
+              111,
+              117,
+              116,
+              104,
+              45,
+              49,
+              46,
+              97,
+              109,
+              97,
+              122,
+              111,
+              110,
+              97,
+              119,
+              115,
+              46,
+              99,
+              111,
+              109,
+              47,
+              112,
+              117,
+              98,
+              108,
+              105,
+              99,
+              95,
+              107,
+              97,
+              104,
+              97,
+              95,
+              49,
+              55,
+              48,
+              53,
+              48,
+              50,
+              52,
+              56,
+              49,
+              55,
+              55,
+              53,
+              51,
+              95,
+              105,
+              109,
+              97,
+              103,
+              101,
+              95,
+              99,
+              114,
+              111,
+              112,
+              112,
+              101,
+              114,
+              95,
+              49,
+              55,
+              48,
+              53,
+              48,
+              50,
+              52,
+              55,
+              54,
+              55,
+              54,
+              53,
+              49,
+              46,
+              119,
+              101,
+              98,
+              112,
+              34,
+              44,
+              34,
+              107,
+              97,
+              104,
+              97,
+              73,
+              100,
+              34,
+              58,
+              34,
+              85,
+              45,
+              56,
+              67,
+              54,
+              57,
+              53,
+              69,
+              34,
+              44,
+              34,
+              114,
+              111,
+              108,
+              101,
+              34,
+              58,
+              34,
+              97,
+              100,
+              109,
+              105,
+              110,
+              34,
+              44,
+              34,
+              102,
+              105,
+              114,
+              115,
+              116,
+              78,
+              97,
+              109,
+              101,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              108,
+              97,
+              115,
+              116,
+              78,
+              97,
+              109,
+              101,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              100,
+              97,
+              116,
+              101,
+              79,
+              102,
+              66,
+              105,
+              114,
+              116,
+              104,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              103,
+              101,
+              110,
+              100,
+              101,
+              114,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              99,
+              114,
+              101,
+              97,
+              116,
+              101,
+              100,
+              65,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              51,
+              45,
+              48,
+              54,
+              45,
+              49,
+              56,
+              84,
+              48,
+              55,
+              58,
+              53,
+              56,
+              58,
+              50,
+              52,
+              46,
+              52,
+              49,
+              51,
+              90,
+              34,
+              44,
+              34,
+              104,
+              97,
+              115,
+              80,
+              97,
+              115,
+              115,
+              119,
+              111,
+              114,
+              100,
+              34,
+              58,
+              116,
+              114,
+              117,
+              101,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 28,
+          "responseSize": 432
+        },
+        "id": "492bec28-da9e-4097-aaa0-1e4b09b4b9bd"
+      },
+      {
+        "cursor": {
+          "ref": "1d483dbc-77c8-4be7-b37e-8456f2125a3a",
+          "length": 6,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0,
+          "httpRequestId": "8b82c82c-37b9-44de-964a-492a420ad4b5"
+        },
+        "item": {
+          "id": "f2cd5e68-4deb-44ca-a679-a3be2dfa0b30",
+          "name": "Get Business Owner",
+          "request": {
+            "url": {
+              "path": [
+                "businesses",
+                "owner"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "businessId",
+                  "value": "{{businessId}}"
+                }
+              ],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{accessToken}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": []
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              "businesses",
+              "owner"
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [
+              {
+                "key": "businessId",
+                "value": "{{businessId}}"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+              "system": true
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "b5b5a28d-a9f1-4fe6-9407-c8bc35fc0e74",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "b65fb28b-26db-44f6-a210-86d61f98d7aa",
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 06:34:34 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "112"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "100"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "99"
+            },
+            {
+              "key": "X-RateLimit-Reset",
+              "value": "1"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"70-82MzP+QNxxidp6V5iBjG9ohfpYo\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              105,
+              110,
+              118,
+              97,
+              108,
+              105,
+              100,
+              32,
+              105,
+              110,
+              112,
+              117,
+              116,
+              32,
+              115,
+              121,
+              110,
+              116,
+              97,
+              120,
+              32,
+              102,
+              111,
+              114,
+              32,
+              116,
+              121,
+              112,
+              101,
+              32,
+              117,
+              117,
+              105,
+              100,
+              58,
+              32,
+              92,
+              34,
+              123,
+              123,
+              98,
+              117,
+              115,
+              105,
+              110,
+              101,
+              115,
+              115,
+              73,
+              100,
+              125,
+              125,
+              92,
+              34,
+              34,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              34,
+              58,
+              34,
+              81,
+              117,
+              101,
+              114,
+              121,
+              70,
+              97,
+              105,
+              108,
+              101,
+              100,
+              69,
+              114,
+              114,
+              111,
+              114,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              67,
+              111,
+              100,
+              101,
+              34,
+              58,
+              53,
+              48,
+              48,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 11,
+          "responseSize": 112
+        },
+        "id": "f2cd5e68-4deb-44ca-a679-a3be2dfa0b30"
+      },
+      {
+        "cursor": {
+          "ref": "4ed15674-dc0b-413a-9e8f-0e014f38fd3e",
+          "length": 6,
+          "cycles": 1,
+          "position": 4,
+          "iteration": 0,
+          "httpRequestId": "1f551ccc-be1a-4756-a25a-1bf9e7aa982a"
+        },
+        "item": {
+          "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+          "name": "Get Business by ID (Test - may not exist)",
+          "request": {
+            "url": {
+              "path": [
+                "businesses",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{accessToken}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Get business - handles 404 gracefully\", function() {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "_lastExecutionId": "07a13850-f2c5-4a36-a811-fa2062f66072"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              "businesses",
+              "%7B%7BbusinessId%7D%7D"
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+              "system": true
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "b594257a-9e9a-49dd-8b06-bcd5fcb47ea5",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQ1Mjc0fQ.67M4iUtv1kD241VK1RsOksHGExW2XzWiHOTEg9b4sng",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "f7907f96-7e30-442d-ade0-b26f325a4afc",
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 06:34:34 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "104"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "100"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "99"
+            },
+            {
+              "key": "X-RateLimit-Reset",
+              "value": "1"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"68-PrUjdAQHFnxxWntei3eWW5VHvu8\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              105,
+              110,
+              118,
+              97,
+              108,
+              105,
+              100,
+              32,
+              105,
+              110,
+              112,
+              117,
+              116,
+              32,
+              115,
+              121,
+              110,
+              116,
+              97,
+              120,
+              32,
+              102,
+              111,
+              114,
+              32,
+              116,
+              121,
+              112,
+              101,
+              32,
+              105,
+              110,
+              116,
+              101,
+              103,
+              101,
+              114,
+              58,
+              32,
+              92,
+              34,
+              78,
+              97,
+              78,
+              92,
+              34,
+              34,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              34,
+              58,
+              34,
+              81,
+              117,
+              101,
+              114,
+              121,
+              70,
+              97,
+              105,
+              108,
+              101,
+              100,
+              69,
+              114,
+              114,
+              111,
+              114,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              67,
+              111,
+              100,
+              101,
+              34,
+              58,
+              53,
+              48,
+              48,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 18,
+          "responseSize": 104
+        },
+        "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+        "assertions": [
+          {
+            "assertion": "Get business - handles 404 gracefully",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Get business - handles 404 gracefully",
+              "message": "expected [ 200, 404 ] to include 500",
+              "stack": "AssertionError: expected [ 200, 404 ] to include 500\n   at Object.eval sandbox-script.js:1:5)"
+            }
+          }
+        ],
+        "testScript": [
+          {
+            "error": {
+              "name": "AssertionFailure",
+              "message": "Get business - handles 404 gracefully",
+              "stack": "AssertionFailure: Get business - handles 404 gracefully\n    at postProcessContext (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:41:17)\n    at PostmanCollectionRun.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:513:39)\n    at PostmanSandbox.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js:139:13)\n    at Object.onceWrapper (node:events:631:26)\n    at PostmanSandbox.emit (node:events:509:28)\n    at context.__uvm_emit (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js:71:21)\n    at Object.dispatch (evalmachine.<anonymous>:20:13)\n    at Object.<anonymous> (evalmachine.<anonymous>:66:7860)\n    at t.exports.terminate (evalmachine.<anonymous>:66:22105)\n    at Immediate._onImmediate (evalmachine.<anonymous>:66:5993)\n    at process.processImmediate (node:internal/timers:506:21)",
+              "checksum": "4dda96203141ff0e3b58c0708f061ff8",
+              "id": "a4ddde58-8786-40a4-b97f-d89eaec69d07",
+              "timestamp": 1779345274856,
+              "stacktrace": [
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+                  "lineNumber": 41,
+                  "functionName": "postProcessContext",
+                  "typeName": "Object",
+                  "methodName": null,
+                  "columnNumber": 17,
+                  "native": false
+                },
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+                  "lineNumber": 513,
+                  "functionName": "",
+                  "typeName": "PostmanCollectionRun",
+                  "methodName": null,
+                  "columnNumber": 39,
+                  "native": false
+                },
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js",
+                  "lineNumber": 139,
+                  "functionName": "",
+                  "typeName": "PostmanSandbox",
+                  "methodName": null,
+                  "columnNumber": 13,
+                  "native": false
+                },
+                {
+                  "fileName": "node:events",
+                  "lineNumber": 631,
+                  "functionName": "Object.onceWrapper",
+                  "typeName": "Object",
+                  "methodName": "onceWrapper",
+                  "columnNumber": 26,
+                  "native": false
+                },
+                {
+                  "fileName": "node:events",
+                  "lineNumber": 509,
+                  "functionName": "PostmanSandbox.emit",
+                  "typeName": "PostmanSandbox",
+                  "methodName": "emit",
+                  "columnNumber": 28,
+                  "native": false
+                },
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js",
+                  "lineNumber": 71,
+                  "functionName": "context.__uvm_emit",
+                  "typeName": "context",
+                  "methodName": "__uvm_emit",
+                  "columnNumber": 21,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 20,
+                  "functionName": "Object.dispatch",
+                  "typeName": "Object",
+                  "methodName": "dispatch",
+                  "columnNumber": 13,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 66,
+                  "functionName": "",
+                  "typeName": "Object",
+                  "methodName": null,
+                  "columnNumber": 7860,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 66,
+                  "functionName": "t.exports.terminate",
+                  "typeName": "t",
+                  "methodName": "exports.terminate",
+                  "columnNumber": 22105,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 66,
+                  "functionName": "Immediate._onImmediate",
+                  "typeName": "Immediate",
+                  "methodName": "_onImmediate",
+                  "columnNumber": 5993,
+                  "native": false
+                },
+                {
+                  "fileName": "node:internal/timers",
+                  "lineNumber": 506,
+                  "functionName": "process.processImmediate",
+                  "typeName": "process",
+                  "methodName": "processImmediate",
+                  "columnNumber": 21,
+                  "native": false
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 1304
+    },
+    "failures": [
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Get business - handles 404 gracefully",
+          "message": "expected [ 200, 404 ] to include 500",
+          "stack": "AssertionError: expected [ 200, 404 ] to include 500\n   at Object.eval sandbox-script.js:1:5)",
+          "checksum": "dbfa0601e65d0a6fbd8567bbf7a36126",
+          "id": "ba38dffc-d66f-4e9d-b830-359b02fea3fe",
+          "timestamp": 1779345274852,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 5,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+          "name": "Get Business by ID (Test - may not exist)",
+          "request": {
+            "url": {
+              "path": [
+                "businesses",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{accessToken}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Get business - handles 404 gracefully\", function() {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "_lastExecutionId": "07a13850-f2c5-4a36-a811-fa2062f66072"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "id": "b2ad631b-4b3a-4aa9-b8be-742102542ffc",
+          "name": "Businesses",
+          "item": [
+            {
+              "id": "f2cd5e68-4deb-44ca-a679-a3be2dfa0b30",
+              "name": "Get Business Owner",
+              "request": {
+                "url": {
+                  "path": [
+                    "businesses",
+                    "owner"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "businessId",
+                      "value": "{{businessId}}"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{accessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": []
+            },
+            {
+              "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+              "name": "Get Business by ID (Test - may not exist)",
+              "request": {
+                "url": {
+                  "path": [
+                    "businesses",
+                    "{{businessId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{accessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Get business - handles 404 gracefully\", function() {",
+                      "    pm.expect([200, 404]).to.include(pm.response.code);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "07a13850-f2c5-4a36-a811-fa2062f66072"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": []
+        },
+        "cursor": {
+          "ref": "4ed15674-dc0b-413a-9e8f-0e014f38fd3e",
+          "length": 6,
+          "cycles": 1,
+          "position": 4,
+          "iteration": 0,
+          "httpRequestId": "1f551ccc-be1a-4756-a25a-1bf9e7aa982a",
+          "scriptId": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+          "execution": "07a13850-f2c5-4a36-a811-fa2062f66072"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionFailure",
+          "message": "Get business - handles 404 gracefully",
+          "stack": "AssertionFailure: Get business - handles 404 gracefully\n    at postProcessContext (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:41:17)\n    at PostmanCollectionRun.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:513:39)\n    at PostmanSandbox.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js:139:13)\n    at Object.onceWrapper (node:events:631:26)\n    at PostmanSandbox.emit (node:events:509:28)\n    at context.__uvm_emit (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js:71:21)\n    at Object.dispatch (evalmachine.<anonymous>:20:13)\n    at Object.<anonymous> (evalmachine.<anonymous>:66:7860)\n    at t.exports.terminate (evalmachine.<anonymous>:66:22105)\n    at Immediate._onImmediate (evalmachine.<anonymous>:66:5993)\n    at process.processImmediate (node:internal/timers:506:21)",
+          "checksum": "4dda96203141ff0e3b58c0708f061ff8",
+          "id": "a4ddde58-8786-40a4-b97f-d89eaec69d07",
+          "timestamp": 1779345274856,
+          "stacktrace": [
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+              "lineNumber": 41,
+              "functionName": "postProcessContext",
+              "typeName": "Object",
+              "methodName": null,
+              "columnNumber": 17,
+              "native": false
+            },
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+              "lineNumber": 513,
+              "functionName": "",
+              "typeName": "PostmanCollectionRun",
+              "methodName": null,
+              "columnNumber": 39,
+              "native": false
+            },
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js",
+              "lineNumber": 139,
+              "functionName": "",
+              "typeName": "PostmanSandbox",
+              "methodName": null,
+              "columnNumber": 13,
+              "native": false
+            },
+            {
+              "fileName": "node:events",
+              "lineNumber": 631,
+              "functionName": "Object.onceWrapper",
+              "typeName": "Object",
+              "methodName": "onceWrapper",
+              "columnNumber": 26,
+              "native": false
+            },
+            {
+              "fileName": "node:events",
+              "lineNumber": 509,
+              "functionName": "PostmanSandbox.emit",
+              "typeName": "PostmanSandbox",
+              "methodName": "emit",
+              "columnNumber": 28,
+              "native": false
+            },
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js",
+              "lineNumber": 71,
+              "functionName": "context.__uvm_emit",
+              "typeName": "context",
+              "methodName": "__uvm_emit",
+              "columnNumber": 21,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 20,
+              "functionName": "Object.dispatch",
+              "typeName": "Object",
+              "methodName": "dispatch",
+              "columnNumber": 13,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 66,
+              "functionName": "",
+              "typeName": "Object",
+              "methodName": null,
+              "columnNumber": 7860,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 66,
+              "functionName": "t.exports.terminate",
+              "typeName": "t",
+              "methodName": "exports.terminate",
+              "columnNumber": 22105,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 66,
+              "functionName": "Immediate._onImmediate",
+              "typeName": "Immediate",
+              "methodName": "_onImmediate",
+              "columnNumber": 5993,
+              "native": false
+            },
+            {
+              "fileName": "node:internal/timers",
+              "lineNumber": 506,
+              "functionName": "process.processImmediate",
+              "typeName": "process",
+              "methodName": "processImmediate",
+              "columnNumber": 21,
+              "native": false
+            }
+          ]
+        },
+        "at": "test-script:39:17",
+        "source": {
+          "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+          "name": "Get Business by ID (Test - may not exist)",
+          "request": {
+            "url": {
+              "path": [
+                "businesses",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{accessToken}}",
+                  "key": "token"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Get business - handles 404 gracefully\", function() {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "_lastExecutionId": "07a13850-f2c5-4a36-a811-fa2062f66072"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "id": "b2ad631b-4b3a-4aa9-b8be-742102542ffc",
+          "name": "Businesses",
+          "item": [
+            {
+              "id": "f2cd5e68-4deb-44ca-a679-a3be2dfa0b30",
+              "name": "Get Business Owner",
+              "request": {
+                "url": {
+                  "path": [
+                    "businesses",
+                    "owner"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "businessId",
+                      "value": "{{businessId}}"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{accessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": []
+            },
+            {
+              "id": "a9e9af1e-d6f2-4d6c-9f5c-c5613ec84931",
+              "name": "Get Business by ID (Test - may not exist)",
+              "request": {
+                "url": {
+                  "path": [
+                    "businesses",
+                    "{{businessId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{accessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "0e71338b-259b-41f3-9744-f49ed176fb4e",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Get business - handles 404 gracefully\", function() {",
+                      "    pm.expect([200, 404]).to.include(pm.response.code);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "07a13850-f2c5-4a36-a811-fa2062f66072"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": []
+        },
+        "cursor": {
+          "ref": "4ed15674-dc0b-413a-9e8f-0e014f38fd3e",
+          "length": 6,
+          "cycles": 1,
+          "position": 4,
+          "iteration": 0,
+          "httpRequestId": "1f551ccc-be1a-4756-a25a-1bf9e7aa982a",
+          "scriptId": "0e71338b-259b-41f3-9744-f49ed176fb4e"
+        }
+      }
+    ],
+    "error": null
+  }
+}

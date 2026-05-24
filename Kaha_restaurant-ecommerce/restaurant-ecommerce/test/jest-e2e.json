@@ -1,0 +1,24 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/../src/$1",
+    "^auth/(.*)$": "<rootDir>/../src/modules/auth/$1",
+    "^configuration/(.*)$": "<rootDir>/../src/configuration/$1",
+    "^database/(.*)$": "<rootDir>/../src/database/$1",
+    "^common/(.*)$": "<rootDir>/../src/common/$1",
+    "^category/(.*)$": "<rootDir>/../src/modules/category/$1",
+    "^entities/(.*)$": "<rootDir>/../src/entities/$1",
+    "^repositories/(.*)$": "<rootDir>/../src/repositories/$1",
+    "^addons/(.*)$": "<rootDir>/../src/modules/addons/$1",
+    "^menu/(.*)$": "<rootDir>/../src/modules/menu/$1",
+    "^cart/(.*)$": "<rootDir>/../src/modules/cart/$1",
+    "^order/(.*)$": "<rootDir>/../src/modules/order/$1",
+    "^serviceCommunication/(.*)$": "<rootDir>/../src/modules/service-communication/$1"
+  }
+}

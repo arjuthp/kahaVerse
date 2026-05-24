@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KAHA | Gourmet Selection Menu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-item {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom Scrollbar for side nav */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "surface-container": "#ffe9e4",
+                      "slate-gray": "#636E72",
+                      "price-gold": "#B08968",
+                      "on-secondary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "error-container": "#ffdad6",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed": "#161d1f",
+                      "on-tertiary-fixed": "#1b1c19",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "tertiary": "#5c5c58",
+                      "surface-bright": "#fff8f6",
+                      "on-primary-fixed-variant": "#8b1a00",
+                      "outline-variant": "#e3beb6",
+                      "surface-tint": "#b52703",
+                      "secondary-container": "#dae1e3",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "status-delivered": "#27AE60",
+                      "on-background": "#271814",
+                      "inverse-surface": "#3d2c28",
+                      "inverse-primary": "#ffb4a3",
+                      "on-tertiary-fixed-variant": "#474744",
+                      "tertiary-fixed-dim": "#c8c6c2",
+                      "status-shipped": "#9B51E0",
+                      "surface-container-highest": "#f9dcd6",
+                      "on-primary-container": "#fffbff",
+                      "surface-dim": "#f0d4ce",
+                      "on-surface-variant": "#5b403a",
+                      "on-surface": "#271814",
+                      "surface-container-high": "#ffe2dc",
+                      "secondary-fixed": "#dde4e6",
+                      "tertiary-container": "#757571",
+                      "primary-fixed": "#ffdad2",
+                      "on-secondary-container": "#5d6466",
+                      "status-cancelled": "#EB5757",
+                      "on-primary-fixed": "#3d0600",
+                      "primary-container": "#d53e1b",
+                      "background": "#fff8f6",
+                      "status-processing": "#2F80ED",
+                      "status-pending": "#F2994A",
+                      "tertiary-fixed": "#e4e2dd",
+                      "primary": "#b12401",
+                      "primary-fixed-dim": "#ffb4a3",
+                      "surface": "#fff8f6",
+                      "surface-container-lowest": "#ffffff",
+                      "outline": "#8f7069",
+                      "on-tertiary-container": "#fefcf7",
+                      "surface-variant": "#f9dcd6",
+                      "inverse-on-surface": "#ffede9",
+                      "surface-container-low": "#fff0ed",
+                      "secondary": "#586062"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "base": "4px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "sm": "8px",
+                      "gutter": "20px",
+                      "container-max": "1200px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Manrope"],
+                      "label-md": ["Be Vietnam Pro"],
+                      "body-md": ["Be Vietnam Pro"],
+                      "price-display": ["Manrope"],
+                      "headline-lg-mobile": ["Manrope"],
+                      "headline-lg": ["Manrope"],
+                      "title-lg": ["Be Vietnam Pro"],
+                      "body-lg": ["Be Vietnam Pro"],
+                      "display-lg": ["Manrope"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-20 max-w-container-max mx-auto bg-surface dark:bg-surface-dim shadow-sm">
+<div class="flex items-center gap-md">
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary">KAHA</span>
+<!-- Desktop Nav Links -->
+<nav class="hidden md:flex items-center gap-lg ml-xl">
+<a class="text-primary dark:text-inverse-primary font-bold border-b-2 border-primary py-xs" href="#">Menu</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary-container transition-colors duration-200" href="#">Offers</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary-container transition-colors duration-200" href="#">Reservations</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<!-- Search Bar (on_right) -->
+<div class="hidden sm:flex items-center bg-surface-container-low rounded-full px-md py-xs border border-outline-variant focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-secondary" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-48 lg:w-64" placeholder="Search menu..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<button class="relative p-sm text-on-surface hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="absolute top-1 right-1 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">2</span>
+</button>
+<button class="p-sm text-on-surface hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex pt-20 max-w-container-max mx-auto min-h-screen">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col p-md gap-sm fixed left-0 top-20 bottom-0 z-40 bg-surface-container-low dark:bg-surface-container-lowest shadow-md w-64 border-r border-outline-variant overflow-y-auto hide-scrollbar">
+<div class="mb-lg px-xs">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Gourmet Selection</h2>
+<p class="font-label-md text-label-md text-secondary">Menu Categories</p>
+</div>
+<nav class="space-y-xs">
+<a class="flex items-center gap-sm p-sm bg-primary-container text-on-primary-container rounded-lg font-bold transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="appetizer">tapas</span>
+<span class="font-label-md text-label-md">Starters</span>
+</a>
+<a class="flex items-center gap-sm p-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+<span class="font-label-md text-label-md">Main Course</span>
+</a>
+<a class="flex items-center gap-sm p-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="icecream">icecream</span>
+<span class="font-label-md text-label-md">Desserts</span>
+</a>
+<a class="flex items-center gap-sm p-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="local_bar">local_bar</span>
+<span class="font-label-md text-label-md">Beverages</span>
+</a>
+<a class="flex items-center gap-sm p-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="local_offer">local_offer</span>
+<span class="font-label-md text-label-md">Special Offers</span>
+</a>
+</nav>
+<div class="mt-auto pt-lg">
+<button class="w-full bg-primary text-on-primary font-bold py-sm rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all">
+                    View Specials
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-md lg:p-xl">
+<!-- Service Toggles -->
+<section class="mb-xl flex flex-col sm:flex-row justify-between items-center gap-md">
+<div class="inline-flex p-xs bg-surface-container-high rounded-full border border-outline-variant">
+<button class="px-lg py-xs rounded-full bg-primary text-on-primary font-bold shadow-sm transition-all text-label-md">Delivery</button>
+<button class="px-lg py-xs rounded-full text-secondary font-medium hover:bg-surface-container-highest transition-all text-label-md">Takeaway</button>
+<button class="px-lg py-xs rounded-full text-secondary font-medium hover:bg-surface-container-highest transition-all text-label-md">Dine-in</button>
+</div>
+<div class="flex items-center gap-sm text-secondary">
+<span class="material-symbols-outlined text-status-delivered" data-icon="location_on">location_on</span>
+<span class="font-label-md text-label-md">Delivering to: <strong class="text-on-surface">123 Culinary Ave, Food District</strong></span>
+</div>
+</section>
+<!-- Hero/Category Section -->
+<section class="mb-xl rounded-2xl overflow-hidden relative h-48 md:h-64 flex items-end">
+<img alt="Menu Hero" class="absolute inset-0 w-full h-full object-cover" data-alt="A wide, appetizing shot of a gourmet food layout featuring fresh salads, grilled proteins, and artisanal bread on a rustic wooden table. The lighting is warm and natural, suggesting a high-end restaurant atmosphere with a palette of deep reds, earthy greens, and bright whites. The mood is welcoming and sophisticated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlD53JT-WUQK4XlFHg2FdVw2rhwiHRjKuIJM32fOJEESWKB1BL8PuoRmgWbHvr_Mpe-o09q7HWEoj4aXwGTbwIbDuI_9yjY_nJ1I_1mXpaFLZ_qw-Dfwv1uXs0mEn90DfL1twm0yCnPXDhBpDWnfHg-omgFJ-Rkh5MbH3PT-X_vU4OCLerXu6vuMguJydgnkDOoKZUY8cXUkKxTHKJIC5l7wWUMjJSlCqZI9ilITBNcK_7k3ep6kdpgYTM4xGSZ8nwg9SnVF_UOArj"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="relative p-xl text-white">
+<h1 class="font-display-lg text-headline-lg md:text-display-lg mb-xs">Summer Starters</h1>
+<p class="font-body-lg text-body-lg opacity-90 max-w-md">Refreshing and locally sourced appetizers to begin your culinary journey.</p>
+</div>
+</section>
+<!-- Menu Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Item Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col border border-outline-variant/30">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Mediterranean Salad" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A vibrant and colorful Mediterranean quinoa salad bowl with fresh cherry tomatoes, cucumber slices, kalamata olives, and creamy feta cheese. The lighting is bright and crisp, highlighting the textures of the vegetables against a clean white ceramic bowl. The overall style is healthy, premium, and visually stimulating." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-2aqsTxXb90SLygLPnIHShSRkw7xh3OmvTEiUBaOvuMO5G_em8-HMh3h7_bapN4BPOLa4-yljcxWs7JSqaHW1o4Cwyov9UypRRzKsv2fPFASQPHBTgQh518mdJ-F_Jkxi-SnI3QPGmjAslcv8QhrHB1whV41nIGNRBDXNiWPThr0K5f6YvAuenn3Y_D_4Xe1fg4wyTNlhb4AVx1pd6q1Vl2Dwh9Nq3OJ9gZJgdBxMEO7aicJSK9mZpjOJ5nDI2zwf0YgqDHpVegjm"/>
+<div class="absolute top-md left-md">
+<span class="bg-primary/90 backdrop-blur-sm text-on-primary text-label-md px-md py-xs rounded-full shadow-lg">Signature</span>
+</div>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-headline-md text-title-lg text-on-surface">Mediterranean Quinoa Bowl</h3>
+<span class="font-price-display text-price-display text-primary">$18.50</span>
+</div>
+<p class="text-body-md text-slate-gray mb-lg line-clamp-2">Local organic quinoa with cucumber, cherry tomatoes, kalamata olives, and feta in a lemon-herb dressing.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center bg-surface-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span></button>
+<span class="px-md font-bold text-on-surface">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="add">add</span></button>
+</div>
+<button class="bg-primary text-on-primary p-md rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col border border-outline-variant/30">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Truffle Bruschetta" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Artisanal sourdough bruschetta topped with ruby red heirloom tomatoes, fresh green basil leaves, and a drizzle of balsamic reduction. The lighting is dramatic and warm, casting soft shadows on a slate serving board. The presentation is elegant, showcasing high-end culinary craftsmanship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvb4bXc5Mr_eyRYxLEeBbWxLkViU6lfAPUnZQCjeKienSxDurgU9GveOUOm3_nN0HnqAX-bJ_DHpkAXSJv6UM_ojI_X-JIwafmynEoQMm61X1V77347aXOGMsIz5em1SN8-CX5xY4K1yXU4_zeKdayoSfKeUHVgyc4ApxbIp0vSlSubeYYHSaI3gcUAQ480zYUGMBU77048kRH4o7fjnMFzBvKWMhqIgQxYTmfD4X20ioB7k6FZM0ZeqNL50o2YHGB5mOVxCgOaXBO"/>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-headline-md text-title-lg text-on-surface">Wild Truffle Bruschetta</h3>
+<span class="font-price-display text-price-display text-primary">$14.00</span>
+</div>
+<p class="text-body-md text-slate-gray mb-lg line-clamp-2">Toasted sourdough with sautéed wild mushrooms, white truffle oil, and shaved parmesan cheese.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center bg-surface-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span></button>
+<span class="px-md font-bold text-on-surface">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="add">add</span></button>
+</div>
+<button class="bg-primary text-on-primary p-md rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col border border-outline-variant/30">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Crispy Calamari" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Crispy sesame-crusted calamari rings served with a spicy yuzu mayo dipping sauce. The calamari is golden brown and perfectly textured, presented on a minimalist grey plate with a garnish of micro-greens. The lighting is sophisticated and directional, emphasizing the crunchy exterior of the seafood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgNs2S47W2pJIUjjOMIzsEla28u5j0tU8lyw2cX7V09n6yjKyXqwIMbfQexV5C-DLeUAKna4MjJOZsM7aSp0W1O5Oz7wCkNTjdccu8QMZ_GgGPlzsDsZURiNAUE_MyRLP-_DlI7NfMDaEYfV-NcCX0yYaSc3D7rWRnmdQ6mf7XKqWR6pBSpe7Cslm0xC94Uqg3T_oMoo37h4zMdVk9CV1Xx6WQEaGPMsODOUVMlnYI0ZXEA3FYM_vw3OLG-fbCEUTZZnkaVpINOZCR"/>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-headline-md text-title-lg text-on-surface">Crispy Yuzu Calamari</h3>
+<div class="flex flex-col items-end">
+<span class="font-price-display text-price-display text-primary">$16.50</span>
+<span class="text-label-md text-slate-gray line-through decoration-primary/50">$19.00</span>
+</div>
+</div>
+<p class="text-body-md text-slate-gray mb-lg line-clamp-2">Tender Pacific calamari rings in a light sesame crust, served with citrus yuzu aioli.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center bg-surface-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span></button>
+<span class="px-md font-bold text-on-surface">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="add">add</span></button>
+</div>
+<button class="bg-primary text-on-primary p-md rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col border border-outline-variant/30">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Avocado Toast" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A fresh avocado toast topped with perfectly poached eggs and a sprinkle of red chili flakes and black sesame seeds. The bright green avocado contrasts beautifully with the white ceramic plate. The lighting is airy and bright, typical of a high-end brunch setting, with a clean and minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNgkpN6HmOV02RTyQAaxAL0ViZ_hN5aRVk9etXYGYmlMK8OXYXRHQcDsx_bFyapK_fhBzsrySrhVPXPaZAvr-63MZiKnjOJR16GYc4tBffbefN2cXjb0jUXXj8xy3pdOvMi4_rIegRvMwFZ25bLZWITzlP66JENDzhxq9abuuGlg-KX_R86bZO0gE6mZieOKPDhKmgF7G-Y4gnKv3OLTJNFKFLl5nRz9duGEZMnybqHguSBnt62CatHeZKPEbCpVQ5wK5mNgeALJvp"/>
+<div class="absolute top-md left-md">
+<span class="bg-primary/90 backdrop-blur-sm text-on-primary text-label-md px-md py-xs rounded-full shadow-lg">Signature</span>
+</div>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-headline-md text-title-lg text-on-surface">Smoked Chili Avocado</h3>
+<span class="font-price-display text-price-display text-primary">$15.75</span>
+</div>
+<p class="text-body-md text-slate-gray mb-lg line-clamp-2">Smashed Hass avocado, Aleppo pepper flakes, and organic poached eggs on multi-grain bread.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center bg-surface-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span></button>
+<span class="px-md font-bold text-on-surface">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="add">add</span></button>
+</div>
+<button class="bg-primary text-on-primary p-md rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item Card 5 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col border border-outline-variant/30">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Poke Bowl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A gourmet poke bowl with fresh cubes of raw tuna, edamame beans, pickled ginger, and wakame seaweed over a bed of jasmine rice. The bowl is a deep charcoal ceramic, making the vibrant pinks and greens of the ingredients pop. The mood is fresh, vibrant, and ultra-modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxV4ZaKiNVEpoHkRkRBbsQXldnJFCskjlw6XmQAyKuifx-RFOdxxNicA1aMDRNTTt9zOH3bPe3idVHvOP6FxwOvjWfW0b_qKKlQtWWD234Q7U0Pu-24chaPQwUllX8fgE1wvH99CVdLoYMDJTT27GA0WRu9a9sqepXBA9zJoUOlKxX8gCTj0Ycy3keLZgDyS3p8PF6liGBjs-JCrbYiHmrXhdITFdsbkuraKSoOBfQcNfp4--t3z-JHcSFvHtAy5_qn3IQGgKyGybW"/>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-headline-md text-title-lg text-on-surface">Ahi Tuna Poke Bowl</h3>
+<span class="font-price-display text-price-display text-primary">$21.00</span>
+</div>
+<p class="text-body-md text-slate-gray mb-lg line-clamp-2">Sashimi-grade tuna, edamame, seaweed salad, and pickled ginger over chilled jasmine rice.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center bg-surface-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span></button>
+<span class="px-md font-bold text-on-surface">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="add">add</span></button>
+</div>
+<button class="bg-primary text-on-primary p-md rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item Card 6 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col border border-outline-variant/30">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Pork Bao" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Delicate steamed bao buns filled with glazed pork belly, pickled carrots, and fresh cilantro. The buns are fluffy and pure white, resting in a traditional bamboo steamer. The lighting is soft and diffused, highlighting the glossy glaze on the meat and the vibrant greens of the herbs." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzct1iKFjGq7Te8pkWZqGFagFWTsjsIG1-x2cOg-EhE0ncsOvlyxZ-yhkyw0aTq7GpE2x3eDM0vdaOFNzeKqiCMT4iDgyiW8wl6IVgR5aayHyTdLBtl9BdcoCaAHCPwx2IjFFQESUZWIQSkFfwIv1qAEWzHaeJlKuD9s7BU7pTO3hoXSfrKYBsFL0aPtqzhZ9P2RV4SAwve8hUb_ObnSAtgTWD6Hm8srs7KRR0JTtBIH107x7dmnNIaBcQZMRpxV2NMNLmF3MvtVCO"/>
+<div class="absolute top-md left-md">
+<span class="bg-primary/90 backdrop-blur-sm text-on-primary text-label-md px-md py-xs rounded-full shadow-lg">Signature</span>
+</div>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-headline-md text-title-lg text-on-surface">Sticky Pork Bao Buns</h3>
+<span class="font-price-display text-price-display text-primary">$15.50</span>
+</div>
+<p class="text-body-md text-slate-gray mb-lg line-clamp-2">Slow-cooked pork belly with hoisin glaze, pickled vegetables, and fresh cilantro in steamed buns.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center bg-surface-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span></button>
+<span class="px-md font-bold text-on-surface">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="add">add</span></button>
+</div>
+<button class="bg-primary text-on-primary p-md rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Footer -->
+<footer class="w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-start gap-lg bg-surface-container-highest dark:bg-surface-dim border-t border-outline-variant mt-xl">
+<div class="max-w-xs">
+<span class="font-headline-md text-headline-md font-black text-on-surface">KAHA</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm">Crafting premium culinary experiences for urban gourmets. Quality ingredients meet digital simplicity.</p>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-xl">
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-label-md text-on-surface font-bold">Company</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">About Us</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Delivery Info</a>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-label-md text-on-surface font-bold">Support</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Contact Support</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Privacy Policy</a>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-label-md text-on-surface font-bold">Legal</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Terms of Service</a>
+</div>
+</div>
+<div class="w-full md:w-auto text-center md:text-right self-end mt-lg md:mt-0">
+<p class="font-label-md text-label-md text-on-surface-variant">© 2024 KAHA Multi-Tenant Platform. All rights reserved.</p>
+</div>
+</footer>
+<!-- Mobile Navigation (BottomNavBar) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-lowest shadow-[0_-2px_10px_rgba(0,0,0,0.05)] px-md py-sm flex justify-around items-center z-50">
+<button class="flex flex-col items-center gap-xs text-primary font-bold">
+<span class="material-symbols-outlined active-nav-item" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="text-[10px] uppercase">Menu</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="text-[10px] uppercase">Saved</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="text-[10px] uppercase">Orders</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] uppercase">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for add to cart buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.add('scale-95');
+                setTimeout(() => this.classList.remove('scale-95'), 100);
+            });
+        });
+
+        // Simple service toggle logic
+        const toggles = document.querySelectorAll('.inline-flex button');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggles.forEach(t => {
+                    t.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm', 'font-bold');
+                    t.classList.add('text-secondary', 'font-medium');
+                });
+                toggle.classList.add('bg-primary', 'text-on-primary', 'shadow-sm', 'font-bold');
+                toggle.classList.remove('text-secondary', 'font-medium');
+            });
+        });
+    </script>
+</body></html>

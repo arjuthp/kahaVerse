@@ -1,0 +1,454 @@
+// Restaurant E-Commerce Complete Database Schema (DBML)
+// Database Markup Language format for ER diagram visualization
+// Includes both AUTH MODULE and RESTAURANT ECOMMERCE MODULE
+
+// ============================================================
+// DATABASE MODULES INCLUDED
+// ============================================================
+// 1. AUTH MODULE - User & Business Management
+// 2. RESTAURANT ECOMMERCE MODULE - Menu, Cart, Order Management
+// 3. SERVICE COMMUNICATION - Event-driven architecture
+// ============================================================
+
+// Note: All tables have base columns (id, createdAt, updatedAt, deletedAt)
+// id: UUID (Primary Key)
+// createdAt: TIMESTAMP (auto-generated)
+// updatedAt: TIMESTAMP (auto-updated)
+// deletedAt: TIMESTAMP (nullable) - for soft deletes
+
+// ==============================================================
+// AUTH MODULE TABLES
+// ==============================================================
+
+Table "user" {
+  id UUID [primary key]
+  email VARCHAR [unique, not null]
+  password VARCHAR [not null]
+  firstName VARCHAR [not null]
+  lastName VARCHAR [not null]
+  phone VARCHAR [null]
+  avatar VARCHAR [null]
+  role VARCHAR [not null, default: "CUSTOMER"]
+  isActive BOOLEAN [default: true]
+  lastLogin TIMESTAMP [null]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Indexes {
+    email [unique]
+    role
+  }
+
+  Note: "User accounts - CUSTOMER, STAFF, ADMIN roles. Referenced by cart, order, ratings, and order status"
+}
+
+Table "business" {
+  id UUID [primary key]
+  name VARCHAR [unique, not null]
+  email VARCHAR [not null]
+  phone VARCHAR [not null]
+  address TEXT [not null]
+  city VARCHAR [not null]
+  state VARCHAR [not null]
+  zipCode VARCHAR [not null]
+  country VARCHAR [not null]
+  logo VARCHAR [null]
+  description TEXT [null]
+  isActive BOOLEAN [default: true]
+  subscriptionType VARCHAR [default: "BASIC"]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Indexes {
+    name [unique]
+    city
+  }
+
+  Note: "Business/Restaurant entities. Each business can have multiple menus, categories, and orders"
+}
+
+Table business_user {
+  business_id UUID [not null]
+  user_id UUID [not null]
+  role VARCHAR [not null, default: "STAFF"]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+
+  Indexes {
+    (business_id, user_id) [pk]
+  }
+
+  Note: "Junction table for many-to-many relationship between business and users. Defines staff roles per business"
+}
+
+Ref: business_user.business_id > business.id
+Ref: business_user.user_id > user.id
+
+// ==============================================================
+// RESTAURANT ECOMMERCE MODULE TABLES
+// ==============================================================
+
+Table category {
+  id UUID [primary key]
+  name VARCHAR [unique, not null]
+  description VARCHAR(1024) [null]
+  icon VARCHAR [null]
+  isActive BOOLEAN [default: true]
+  position INTEGER [null]
+  businessId UUID [not null]
+  parent_id UUID [null, ref: > category.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Indexes {
+    name [unique]
+    businessId
+  }
+
+  Note: "Self-referencing table for nested categories (parent-child hierarchy). Example: Pizza > Vegetarian Pizza. businessId references Business"
+}
+
+Ref: category.businessId > business.id
+
+Table add_on_entity {
+  id UUID [primary key]
+  name VARCHAR [not null]
+  price DECIMAL(12,2) [not null]
+  description TEXT [null]
+  coverImg VARCHAR [null]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Extra items/toppings that can be added to menu items. Example: Extra Cheese, Bacon, etc."
+}
+
+Table menu_entity {
+  id UUID [primary key]
+  name VARCHAR [not null]
+  description TEXT [null]
+  images VARCHAR[] [null]
+  details JSONB [null]
+  isBarItem BOOLEAN [default: false]
+  isAvailable BOOLEAN [default: true]
+  services VARCHAR[] [not null, default: "DINE_IN"]
+  price DECIMAL(12,2) [not null]
+  discountedPrice DECIMAL(12,2) [null]
+  businessId UUID [not null]
+  isSignature BOOLEAN [default: false]
+  allowAddOns BOOLEAN [default: false]
+  category_id UUID [not null, ref: > category.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Indexes {
+    businessId
+  }
+
+  Note: "Main menu items/products. Contains pricing, availability, services info, and category association. businessId references Business"
+}
+
+Ref: menu_entity.businessId > business.id
+
+Table menu_add_on_junction {
+  menu_id UUID [not null, ref: > menu_entity.id]
+  add_on_id UUID [not null, ref: > add_on_entity.id]
+
+  Indexes {
+    (menu_id, add_on_id) [pk]
+  }
+
+  Note: "Junction table for many-to-many relationship between menu items and add-ons"
+}
+
+Table menu_rating_entity {
+  id UUID [primary key]
+  rating FLOAT [not null]
+  comments TEXT [not null]
+  ratedBy UUID [not null, ref: > user.id]
+  businessId UUID [not null]
+  menu_id UUID [not null, ref: > menu_entity.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Customer ratings and reviews for menu items. ratedBy references User, businessId references Business"
+}
+
+Ref: menu_rating_entity.businessId > business.id
+
+Table cart_entity {
+  id UUID [primary key]
+  userId UUID [not null, ref: > user.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Shopping cart for each user. userId references User"
+}
+
+Table cart_item_entity {
+  id UUID [primary key]
+  quantity INTEGER [not null]
+  cart_id UUID [not null, ref: > cart_entity.id]
+  menu_id UUID [not null, ref: > menu_entity.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Individual items added to cart. CASCADE DELETE when cart is deleted"
+}
+
+Table cart_item_add_ons_entity {
+  id UUID [primary key]
+  quantity INTEGER [null]
+  cart_item_id UUID [not null, ref: > cart_item_entity.id]
+  menu_add_on_id UUID [not null, ref: > add_on_entity.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Add-ons selected for specific cart items"
+}
+
+Table order_entity {
+  id UUID [primary key]
+  userId UUID [not null, ref: > user.id]
+  businessId UUID [not null]
+  totalAmount FLOAT [default: 0]
+  remarks TEXT [null]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Completed orders from customers. userId references User, businessId references Business. Triggers SERVICE-COMMUNICATION events"
+}
+
+Ref: order_entity.businessId > business.id
+
+Table order_item_entity {
+  id UUID [primary key]
+  quantity INTEGER [not null]
+  price DECIMAL(12,2) [not null]
+  order_id UUID [not null, ref: > order_entity.id]
+  menu_id UUID [not null, ref: > menu_entity.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Individual items in an order"
+}
+
+Table order_item_addon_entity {
+  id UUID [primary key]
+  quantity INTEGER [not null]
+  price DECIMAL(12,2) [not null]
+  order_item_id UUID [not null, ref: > order_item_entity.id]
+  addon_id UUID [not null, ref: > add_on_entity.id]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Add-ons purchased with order items. Price captured at purchase time"
+}
+
+Table order_status_entity {
+  id UUID [primary key]
+  order_id UUID [not null, ref: > order_entity.id]
+  status VARCHAR [not null, default: "PENDING"]
+  updatedBy UUID [not null, ref: > user.id]
+  remarks TEXT [null]
+  createdAt TIMESTAMP [default: `now()`]
+  updatedAt TIMESTAMP [default: `now()`]
+  deletedAt TIMESTAMP [null]
+
+  Note: "Order status tracking. updatedBy references User (staff member). Statuses: PENDING, CONFIRMED, PREPARING, READY, DELIVERED, CANCELLED. Triggers SERVICE-COMMUNICATION notifications"
+}
+
+// ==============================================================
+// COMPLETE RELATIONSHIP SUMMARY
+// ==============================================================
+
+// AUTH MODULE CORE
+// user (many roles: CUSTOMER, STAFF, ADMIN)
+//   ├─> business_user (M:N with business)
+//   └─> [references from ecommerce module]
+//
+// business (each restaurant)
+//   ├─> business_user (M:N with user for staff)
+//   └─> [parent for all menu, categories, orders]
+
+// ECOMMERCE MODULE - CATEGORY HIERARCHY
+// category (self-referencing) -> category.parent_id
+//   ├─> parent (N:1 with category)
+//   ├─> childrens (1:N with category)
+//   └─> menu_entity (1:N)
+
+// ECOMMERCE MODULE - MENU MANAGEMENT
+// menu_entity (products per business)
+//   ├─> category_id (N:1)
+//   ├─> businessId → business (N:1)
+//   ├─> menu_add_on_junction (M:N with add_on_entity)
+//   └─> menu_rating_entity (1:N)
+
+// ECOMMERCE MODULE - ADD-ONS (Reusable)
+// add_on_entity
+//   ├─> menu_add_on_junction (M:N with menu_entity)
+//   ├─> cart_item_add_ons_entity (1:N)
+//   └─> order_item_addon_entity (1:N)
+
+// ECOMMERCE MODULE - CART FLOW (Shopping)
+// user (customer)
+//   └─> cart_entity (1:1 per user)
+//       └─> cart_item_entity (1:N) [CASCADE DELETE]
+//           ├─> menu_id (N:1 with menu_entity)
+//           └─> cart_item_add_ons_entity (1:N)
+
+// ECOMMERCE MODULE - ORDER FLOW (After Purchase)
+// user (customer) + business
+//   └─> order_entity (1:N per user, N:1 per business)
+//       ├─> order_item_entity (1:N)
+//       │   ├─> menu_id (N:1 with menu_entity)
+//       │   └─> order_item_addon_entity (1:N)
+//       │       └─> addon_id (N:1 with add_on_entity)
+//       └─> order_status_entity (1:N)
+//           └─> updatedBy → user (staff) (N:1)
+
+// ==============================================================
+// USER INTERACTIONS FLOW
+// ==============================================================
+
+// 1. CUSTOMER JOURNEY
+//    User (CUSTOMER role)
+//    ├─ Browse Categories & Menu Items (from Business)
+//    ├─ Rate Menu Items (menu_rating_entity)
+//    ├─ Add items to Cart (cart_item_entity + cart_item_add_ons_entity)
+//    └─ Checkout → Order Created (order_entity + order_status_entity)
+
+// 2. STAFF OPERATIONS  
+//    User (STAFF role) linked to Business (business_user)
+//    ├─ Manage Categories
+//    ├─ Manage Menu Items
+//    ├─ Update Order Status (order_status_entity.updatedBy)
+//    └─ Manage Add-ons
+
+// 3. MULTI-TENANCY
+//    Each Business has:
+//    ├─ Independent Categories
+//    ├─ Independent Menu Items
+//    ├─ Independent Orders
+//    ├─ Independent Ratings
+//    └─ Multiple Staff Members (via business_user)
+
+// ==============================================================
+// INTERNAL RELATIONSHIP SUMMARY (PREVIOUS)
+// ==============================================================
+
+// 1. CATEGORY MANAGEMENT
+// category (self-referencing) -> category.parent_id
+//   └─> menu_entity (1:N)
+
+// 2. MENU MANAGEMENT
+// menu_entity
+//   ├─> category_id (N:1 with category)
+//   ├─> menu_add_on_junction (M:N with add_on_entity)
+//   └─> menu_rating_entity (1:N)
+
+// 3. ADD-ONS
+// add_on_entity
+//   └─> menu_add_on_junction (M:N with menu_entity)
+//   └─> cart_item_add_ons_entity (1:N)
+//   └─> order_item_addon_entity (1:N)
+
+// 4. CART FLOW (User Shopping)
+// cart_entity (1 cart per user)
+//   └─> cart_item_entity (1:N) [CASCADE DELETE]
+//       └─> cart_item_add_ons_entity (1:N)
+
+// 5. ORDER FLOW (Completed Purchase)
+// order_entity (completed orders)
+//   ├─> order_item_entity (1:N) [items purchased]
+//   │   └─> order_item_addon_entity (1:N) [add-ons with items]
+//   └─> order_status_entity (1:N) [status tracking]
+
+// ==============================================================
+// EXTERNAL MODULE RELATIONSHIPS (Integrated Above)
+// ==============================================================
+
+// USER TABLE REFERENCES:
+// ├─ user.id → cart_entity.userId (1:N) - User has one shopping cart
+// ├─ user.id → order_entity.userId (1:N) - User has multiple orders
+// ├─ user.id → menu_rating_entity.ratedBy (N:1) - User rates items
+// ├─ user.id → order_status_entity.updatedBy (N:1) - Staff updates order status
+// └─ user.id → business_user.user_id (M:N) - Staff assigned to business
+
+// BUSINESS TABLE REFERENCES:
+// ├─ business.id → category.businessId (N:1) - Business has categories
+// ├─ business.id → menu_entity.businessId (N:1) - Business has menu items
+// ├─ business.id → menu_rating_entity.businessId (N:1) - Business has ratings
+// ├─ business.id → order_entity.businessId (N:1) - Business receives orders
+// └─ business.id → business_user.business_id (M:N) - Business has staff
+
+// SERVICE-COMMUNICATION TRIGGERS:
+// ├─ Cart Events: When cart items converted to order
+// │  └─ Triggers: ORDER_CREATED event
+// │
+// ├─ Order Events: When order status changes
+// │  ├─ Triggers: ORDER_CONFIRMED event
+// │  ├─ Triggers: ORDER_PREPARING event
+// │  ├─ Triggers: ORDER_READY event (notify customer, delivery service)
+// │  ├─ Triggers: ORDER_DELIVERED event
+// │  └─ Triggers: ORDER_CANCELLED event
+// │
+// └─ Menu Events: When menu items updated/deleted
+//    ├─ Triggers: MENU_UPDATED (notify frontend caches)
+//    └─ Triggers: MENU_UNAVAILABLE (notify active carts)
+
+// ==============================================================
+// NOTES ON DESIGN DECISIONS
+// ==============================================================
+
+// 1. BASE COLUMNS (All tables inherit):
+//    - id: UUID for distributed systems
+//    - createdAt: Record creation timestamp
+//    - updatedAt: Last modification timestamp
+//    - deletedAt: Soft delete support (for audit trails)
+
+// 2. BUSINESS ID:
+//    - Used in menu_entity, category, and menu_rating_entity
+//    - Supports multi-tenancy (multiple restaurants)
+
+// 3. CATEGORY HIERARCHY:
+//    - Self-referencing parent_id allows nested categories
+//    - Example: Food > Pizza > Vegetarian Pizza
+
+// 4. ADD-ONS DESIGN:
+//    - Reusable across multiple menu items
+//    - Can be added at cart stage or order confirmation
+//    - Price captured at order time (order_item_addon_entity.price)
+
+// 5. CART vs ORDER:
+//    - Cart: Temporary, user can modify
+//    - Order: Permanent record with status tracking
+
+// 6. ORDER STATUS TRACKING:
+//    - Separate table allows multiple status updates
+//    - Tracks who updated and when
+//    - PENDING -> CONFIRMED -> PREPARING -> READY -> DELIVERED
+
+// 7. SERVICE TYPES:
+//    - menu_entity.services: DINE_IN, TAKEAWAY, DELIVERY
+//    - Stored as array for flexibility
+
+// 8. PRICING:
+//    - All prices: DECIMAL(12,2) for financial accuracy
+//    - Menu items can have regular and discounted price
+//    - Order items capture price at purchase time
+
+// 9. CASCADE DELETE:
+//    - cart_item_entity has CASCADE DELETE on cart_id
+//    - Ensures cart cleanup

@@ -1,0 +1,368 @@
+// Restaurant E-Commerce Database Schema
+// Complete DBML Diagram for all 5 databases
+// Use https://dbdiagram.io to visualize
+
+// ============================================
+// DATABASE 1: AUTH_DB (Kaha Main v3)
+// ============================================
+
+Table users {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  email varchar(255) [unique, not null]
+  password varchar(255) [not null]
+  first_name varchar(100)
+  last_name varchar(100)
+  full_name varchar(200)
+  contact_number varchar(20)
+  avatar text
+  role varchar(50) [default: 'CUSTOMER', note: 'CUSTOMER, STAFF, ADMIN']
+  is_active boolean [default: true]
+  is_verified boolean [default: false]
+  last_login timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    email
+    role
+    is_active
+  }
+}
+
+Table business {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar(255) [not null]
+  email varchar(255)
+  phone varchar(20)
+  address text
+  city varchar(100)
+  state varchar(100)
+  zip_code varchar(20)
+  country varchar(100)
+  latitude decimal(10,8)
+  longitude decimal(11,8)
+  avatar text
+  cover_image text
+  description text
+  category_id uuid
+  is_active boolean [default: true]
+  subscription_type varchar(50) [note: 'FREE, BASIC, PREMIUM']
+  subscription_expires_at timestamp
+  opening_time time
+  closing_time time
+  working_days jsonb [note: '{"monday": true, "tuesday": true, ...}']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    name
+    city
+    is_active
+    category_id
+  }
+}
+
+Table business_user {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  business_id uuid [not null, ref: > business.id]
+  user_id uuid [not null, ref: > users.id]
+  role varchar(50) [not null, note: 'STAFF, MANAGER, ADMIN']
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (business_id, user_id) [unique]
+    business_id
+    user_id
+    role
+  }
+}
+
+Table business_category {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar(100) [unique, not null]
+  description text
+  icon text
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Ref: business.category_id > business_category.id
+
+
+// ============================================
+// DATABASE 2: MENU_DB
+// ============================================
+
+Table menu_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar(255) [not null]
+  description text
+  images text[] [note: 'Array of image URLs']
+  details jsonb [note: '{"spice_level": "medium", "calories": "500"}']
+  is_bar_item boolean [default: false]
+  is_available boolean [default: true]
+  services varchar(50)[] [default: `ARRAY['DINE_IN']`, note: 'DINE_IN, TAKEAWAY, DELIVERY']
+  price numeric(12,2) [not null]
+  discounted_price numeric(12,2)
+  business_id uuid [not null, note: 'FK to AUTH_DB.business.id']
+  is_signature boolean [default: false]
+  allow_add_ons boolean [default: false]
+  category_id uuid
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    business_id
+    category_id
+    is_available
+    price
+  }
+}
+
+Table add_on_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar(255) [not null]
+  description text
+  price numeric(12,2) [not null]
+  cover_img text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    name
+  }
+}
+
+Table menu_add_on_junction {
+  menu_id uuid [not null, ref: > menu_entity.id]
+  add_on_id uuid [not null, ref: > add_on_entity.id]
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    (menu_id, add_on_id) [pk]
+    menu_id
+    add_on_id
+  }
+}
+
+Table menu_rating_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  rating float [not null, note: 'CHECK: rating >= 0 AND rating <= 5']
+  comments text
+  rated_by uuid [not null, note: 'FK to AUTH_DB.users.id']
+  business_id uuid [not null, note: 'FK to AUTH_DB.business.id']
+  menu_id uuid [not null, ref: > menu_entity.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    menu_id
+    rated_by
+    business_id
+    rating
+  }
+}
+
+
+// ============================================
+// DATABASE 3: CATEGORY_DB
+// ============================================
+
+Table category_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar(255) [unique, not null]
+  description varchar(1024)
+  icon text
+  is_active boolean [default: true]
+  position integer [note: 'For ordering categories']
+  business_id uuid [not null, note: 'FK to AUTH_DB.business.id']
+  parent_id uuid [ref: > category_entity.id, note: 'Self-reference for hierarchy']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    name
+    business_id
+    parent_id
+    is_active
+    position
+  }
+}
+
+// Link menu to category (cross-database logical reference)
+Ref: menu_entity.category_id > category_entity.id [note: 'Logical FK across databases']
+
+
+// ============================================
+// DATABASE 4: CART_DB
+// ============================================
+
+Table cart_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  user_id uuid [not null, note: 'FK to AUTH_DB.users.id']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    user_id
+    (user_id) [unique, note: 'One cart per user']
+  }
+}
+
+Table cart_item_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  quantity integer [not null, note: 'CHECK: quantity > 0']
+  cart_id uuid [not null, ref: > cart_entity.id]
+  menu_id uuid [not null, note: 'FK to MENU_DB.menu_entity.id']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    cart_id
+    menu_id
+  }
+}
+
+Table cart_item_add_ons_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  quantity integer [not null, note: 'CHECK: quantity > 0']
+  cart_item_id uuid [not null, ref: > cart_item_entity.id]
+  add_on_id uuid [not null, note: 'FK to MENU_DB.add_on_entity.id']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    cart_item_id
+    add_on_id
+  }
+}
+
+
+// ============================================
+// DATABASE 5: ORDER_DB
+// ============================================
+
+Table order_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  user_id uuid [not null, note: 'FK to AUTH_DB.users.id']
+  business_id uuid [not null, note: 'FK to AUTH_DB.business.id']
+  total_amount numeric(12,2) [default: 0]
+  remarks text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    user_id
+    business_id
+    created_at
+    total_amount
+  }
+}
+
+Table order_item_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  quantity integer [not null, note: 'CHECK: quantity > 0']
+  price numeric(12,2) [not null, note: 'Snapshot of price at order time']
+  order_id uuid [not null, ref: > order_entity.id]
+  menu_id uuid [not null, note: 'FK to MENU_DB.menu_entity.id']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    order_id
+    menu_id
+  }
+}
+
+Table order_item_addon_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  quantity integer [not null, note: 'CHECK: quantity > 0']
+  price numeric(12,2) [not null, note: 'Snapshot of addon price at order time']
+  order_item_id uuid [not null, ref: > order_item_entity.id]
+  add_on_id uuid [not null, note: 'FK to MENU_DB.add_on_entity.id']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    order_item_id
+    add_on_id
+  }
+}
+
+Table order_status_entity {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  order_id uuid [not null, ref: > order_entity.id]
+  status varchar(50) [not null, note: 'PENDING, CONFIRMED, PREPARING, READY, DELIVERED, CANCELLED']
+  updated_by uuid [not null, note: 'FK to AUTH_DB.users.id (staff who updated)']
+  remarks text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+  
+  indexes {
+    order_id
+    status
+    updated_by
+    created_at
+  }
+}
+
+// ============================================
+// NOTES
+// ============================================
+
+Note: '''
+# Restaurant E-Commerce Database Design
+
+## Architecture
+- 5 separate databases (microservices pattern)
+- Logical foreign keys across databases (not enforced by DB)
+- Multi-tenancy via business_id
+- Soft deletes with deleted_at timestamps
+
+## Databases
+1. AUTH_DB - User authentication & business management (Kaha Main v3)
+2. MENU_DB - Menu items, add-ons, ratings
+3. CATEGORY_DB - Menu categories (hierarchical)
+4. CART_DB - Shopping carts
+5. ORDER_DB - Orders and order history
+
+## Cross-Database References
+- user_id → AUTH_DB.users.id
+- business_id → AUTH_DB.business.id
+- menu_id → MENU_DB.menu_entity.id
+- add_on_id → MENU_DB.add_on_entity.id
+- category_id → CATEGORY_DB.category_entity.id
+
+## Key Features
+- Price snapshots in orders (prevents historical data corruption)
+- Hierarchical categories (self-referencing)
+- Order status history tracking
+- Multi-service support (DINE_IN, TAKEAWAY, DELIVERY)
+- Menu ratings and reviews
+- Add-ons/toppings management
+
+## Total Tables: 16
+- AUTH_DB: 4 tables
+- MENU_DB: 4 tables
+- CATEGORY_DB: 1 table
+- CART_DB: 3 tables
+- ORDER_DB: 4 tables
+
+Visit https://dbdiagram.io to visualize this schema
+'''

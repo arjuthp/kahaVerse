@@ -1,0 +1,73 @@
+/* ========== OrderDetailPage — Savor Modern ========== */
+.order-detail-page {
+  padding-top: calc(var(--navbar-height) + var(--space-xl));
+  padding-bottom: var(--space-xl);
+  min-height: 100vh;
+}
+.order-detail-grid { display:grid; grid-template-columns:1fr; gap:var(--space-xl); align-items:start; }
+@media(min-width:1024px){ .order-detail-grid{ grid-template-columns:1fr 340px; } }
+
+/* Back link */
+.order-detail-back {
+  display:inline-flex; align-items:center; gap:var(--space-sm); margin-bottom:var(--space-xl);
+  font-family:'Be Vietnam Pro',sans-serif; font-size:14px; font-weight:600;
+  color:var(--on-surface-variant); cursor:pointer; background:none; border:none;
+  text-decoration:none; transition:color var(--transition-fast);
+}
+.order-detail-back:hover { color:var(--primary); }
+
+/* Header card */
+.order-detail-header-card {
+  background:var(--surface-lowest); border-radius:var(--radius-lg); padding:var(--space-lg);
+  box-shadow:var(--shadow-sm); border:1px solid rgba(227,190,182,0.3); margin-bottom:var(--space-lg);
+}
+.order-detail-num { font-family:'Manrope',sans-serif; font-size:22px; font-weight:700; color:var(--on-surface); margin-bottom:var(--space-xs); }
+.order-detail-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-md); }
+.order-detail-date { font-size:13px; color:var(--slate-gray); }
+
+/* Status timeline */
+.order-status-timeline { margin-bottom:var(--space-lg); }
+.order-status-timeline h3 { font-family:'Manrope',sans-serif; font-size:18px; font-weight:600; color:var(--on-surface); margin-bottom:var(--space-md); }
+.order-timeline-list { display:flex; flex-direction:column; gap:0; }
+.order-timeline-item { display:flex; gap:var(--space-md); position:relative; }
+.order-timeline-item:not(:last-child)::before { content:''; position:absolute; left:15px; top:32px; bottom:0; width:2px; background:var(--outline-variant); }
+.order-timeline-dot {
+  width:32px; height:32px; border-radius:var(--radius-full); flex-shrink:0; z-index:1;
+  display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;
+  background:var(--surface-container); color:var(--on-surface-variant); border:2px solid var(--outline-variant);
+}
+.order-timeline-dot--active { background:var(--primary); color:var(--on-primary); border-color:var(--primary); }
+.order-timeline-content { padding-bottom:var(--space-lg); flex:1; }
+.order-timeline-status { font-family:'Be Vietnam Pro',sans-serif; font-size:14px; font-weight:700; color:var(--on-surface); margin-bottom:2px; }
+.order-timeline-time { font-size:12px; color:var(--slate-gray); }
+.order-timeline-remark { font-size:13px; color:var(--on-surface-variant); margin-top:2px; max-width:none; margin-bottom:0; }
+
+/* Items card */
+.order-detail-items-card {
+  background:var(--surface-lowest); border-radius:var(--radius-lg); padding:var(--space-lg);
+  box-shadow:var(--shadow-sm); border:1px solid rgba(227,190,182,0.3);
+}
+.order-detail-items-card h3 { font-family:'Manrope',sans-serif; font-size:18px; font-weight:600; color:var(--on-surface); margin-bottom:var(--space-lg); }
+.order-detail-item { display:flex; justify-content:space-between; align-items:flex-start; padding:var(--space-md) 0; border-bottom:1px solid rgba(227,190,182,0.2); gap:var(--space-md); }
+.order-detail-item:last-child { border-bottom:none; }
+.order-detail-item-left { display:flex; align-items:flex-start; gap:var(--space-md); }
+.order-detail-item-qty { width:28px; height:28px; background:var(--primary); color:var(--on-primary); border-radius:var(--radius-full); display:flex; align-items:center; justify-content:center; font-family:'Manrope',sans-serif; font-size:12px; font-weight:700; flex-shrink:0; }
+.order-detail-item-name { font-family:'Be Vietnam Pro',sans-serif; font-size:15px; font-weight:600; color:var(--on-surface); margin:0; }
+.order-detail-item-variant { font-size:12px; color:var(--slate-gray); }
+.order-detail-item-addons { font-size:12px; color:var(--on-surface-variant); }
+.order-detail-item-price { font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; color:var(--on-surface); flex-shrink:0; }
+
+/* Summary sidebar */
+.order-detail-summary {
+  background:var(--surface-highest); border-radius:var(--radius-lg);
+  overflow:hidden; box-shadow:var(--shadow); border:1px solid rgba(227,190,182,0.2);
+  position:sticky; top:calc(var(--navbar-height) + var(--space-md));
+}
+.order-detail-summary-head { padding:var(--space-lg); background:var(--primary-container); }
+.order-detail-summary-head h3 { font-family:'Manrope',sans-serif; font-size:18px; font-weight:600; color:var(--on-primary-container); margin:0; }
+.order-detail-summary-body { padding:var(--space-lg); display:flex; flex-direction:column; gap:var(--space-sm); }
+.order-detail-summary-row { display:flex; justify-content:space-between; font-size:14px; color:var(--on-surface-variant); }
+.order-detail-summary-row span:last-child { font-weight:600; color:var(--on-surface); }
+.order-detail-summary-total { display:flex; justify-content:space-between; align-items:center; padding:var(--space-lg); background:var(--surface-high); border-top:1px solid var(--outline-variant); }
+.order-detail-summary-total-label { font-family:'Manrope',sans-serif; font-size:18px; font-weight:600; color:var(--on-surface); }
+.order-detail-summary-total-value { font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; color:var(--primary); }

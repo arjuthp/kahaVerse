@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KAHA | Gourmet Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "surface-container": "#ffe9e4",
+                    "slate-gray": "#636E72",
+                    "price-gold": "#B08968",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-tertiary-fixed": "#1b1c19",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "tertiary": "#5c5c58",
+                    "surface-bright": "#fff8f6",
+                    "on-primary-fixed-variant": "#8b1a00",
+                    "outline-variant": "#e3beb6",
+                    "surface-tint": "#b52703",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "status-delivered": "#27AE60",
+                    "on-background": "#271814",
+                    "inverse-surface": "#3d2c28",
+                    "inverse-primary": "#ffb4a3",
+                    "on-tertiary-fixed-variant": "#474744",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "status-shipped": "#9B51E0",
+                    "surface-container-highest": "#f9dcd6",
+                    "on-primary-container": "#fffbff",
+                    "surface-dim": "#f0d4ce",
+                    "on-surface-variant": "#5b403a",
+                    "on-surface": "#271814",
+                    "surface-container-high": "#ffe2dc",
+                    "secondary-fixed": "#dde4e6",
+                    "tertiary-container": "#757571",
+                    "primary-fixed": "#ffdad2",
+                    "on-secondary-container": "#5d6466",
+                    "status-cancelled": "#EB5757",
+                    "on-primary-fixed": "#3d0600",
+                    "primary-container": "#d53e1b",
+                    "background": "#fff8f6",
+                    "status-processing": "#2F80ED",
+                    "status-pending": "#F2994A",
+                    "tertiary-fixed": "#e4e2dd",
+                    "primary": "#b12401",
+                    "primary-fixed-dim": "#ffb4a3",
+                    "surface": "#fff8f6",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#8f7069",
+                    "on-tertiary-container": "#fefcf7",
+                    "surface-variant": "#f9dcd6",
+                    "inverse-on-surface": "#ffede9",
+                    "surface-container-low": "#fff0ed",
+                    "secondary": "#586062"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "base": "4px",
+                    "xl": "32px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "gutter": "20px",
+                    "container-max": "1200px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Manrope"],
+                    "label-md": ["Be Vietnam Pro"],
+                    "body-md": ["Be Vietnam Pro"],
+                    "price-display": ["Manrope"],
+                    "headline-lg": ["Manrope"],
+                    "title-lg": ["Be Vietnam Pro"],
+                    "body-lg": ["Be Vietnam Pro"],
+                    "display-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-20 max-w-container-max mx-auto bg-surface shadow-sm">
+<div class="flex items-center gap-md">
+<span class="font-headline-lg text-headline-lg font-black text-primary">KAHA</span>
+<div class="hidden md:flex ml-xl gap-lg">
+<a class="text-secondary font-medium hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-primary font-bold border-b-2 border-primary" href="#">Inventory</a>
+<a class="text-secondary font-medium hover:text-primary transition-colors duration-200" href="#">Analytics</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-10 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-full text-body-md focus:ring-2 focus:ring-primary focus:outline-none w-64" placeholder="Search menu items..." type="text"/>
+</div>
+<button class="p-base hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">shopping_cart</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Sidebar Navigation -->
+<aside class="hidden md:flex flex-col p-md gap-sm fixed left-0 top-20 bottom-0 z-40 bg-surface-container-low w-64 shadow-md overflow-y-auto">
+<div class="px-md py-lg mb-md">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Gourmet Selection</h2>
+<p class="font-label-md text-label-md text-on-surface-variant">Menu Categories</p>
+</div>
+<nav class="flex flex-col gap-xs flex-1">
+<a class="flex items-center gap-md px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-bold group transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">restaurant</span>
+<span class="font-label-md text-label-md">Menu Management</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg group transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-label-md text-label-md">Categories</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg group transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">extension</span>
+<span class="font-label-md text-label-md">Addons</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg group transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-label-md text-label-md">Orders</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container rounded-lg group transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">local_offer</span>
+<span class="font-label-md text-label-md">Special Offers</span>
+</a>
+</nav>
+<div class="mt-auto pt-lg">
+<button class="w-full bg-primary text-on-primary font-bold py-md rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all" onclick="toggleModal('itemModal')">
+                View Specials
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-24 px-md md:px-xl pb-xl min-h-screen">
+<div class="max-w-container-max mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md mb-xl">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Menu Management</h1>
+<p class="text-on-surface-variant font-body-md mt-xs">Curate your restaurant's digital tabletop and sensory experience.</p>
+</div>
+<button class="flex items-center justify-center gap-sm bg-primary text-on-primary px-lg py-md rounded-xl font-bold shadow-lg hover:shadow-xl transition-all" onclick="toggleModal('itemModal')">
+<span class="material-symbols-outlined">add</span>
+                    Create New Item
+                </button>
+</div>
+<!-- Dashboard Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-md mb-xl">
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">restaurant_menu</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md">Total Items</p>
+<p class="font-headline-md text-headline-md text-on-surface">42</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md">Active Now</p>
+<p class="font-headline-md text-headline-md text-on-surface">38</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">star</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md">Signatures</p>
+<p class="font-headline-md text-headline-md text-on-surface">12</p>
+</div>
+</div>
+</div>
+<!-- Bento Menu Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
+<!-- Menu Item Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+<div class="aspect-[4/3] w-full relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A gourmet photography shot of a vibrant avocado toast bowl with poached eggs and microgreens. The lighting is high-key and natural, emphasizing the fresh textures and organic colors. It is presented on a minimalist ceramic plate against a clean, off-white digital tabletop background, embodying a premium and appetizing aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9Hod0PdWverVsd3MqjZRWXUqVBJGDaavKW9BFeYbllpO7ReG8a2hgNEcRWmge1SBth_rOcSNg0-0JM6lvIdBYuy-Np-vKxy_cap8zqxDzOMVp88DdguD1kVsL0aCZZ6m3I31oY9gfscGISCkc39R0z77rqDbUoZnFQ5XK8bvfuUuxI7e3yQcCYGaeFkzS0c1RK7izumEp1VbvbgmsHG7her0Ad4Fw0Pwo-D4mmOxq6eTh7WtdynregzN1Xo4kUBjfSZ40xEV3j8yL"/>
+<div class="absolute top-md right-md">
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-sm py-xs rounded-full text-primary font-bold font-label-md shadow-sm">Main Course</span>
+</div>
+</div>
+<div class="p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">Truffle Avocado Bowl</h3>
+<span class="font-price-display text-price-display text-primary">$18.50</span>
+</div>
+<p class="text-slate-gray font-body-md line-clamp-2 mb-md">Artisanal sourdough, smashed avocado, black truffle oil, and organic poached egg.</p>
+<div class="mt-auto space-y-md">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-md">Available</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-md">Signature Dish</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-status-delivered"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Menu Item Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+<div class="aspect-[4/3] w-full relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A close-up shot of a decadent dark chocolate lava cake with a molten center, dusted with powdered sugar and served with a single raspberry. The scene is illuminated by soft, moody lighting that highlights the rich texture of the chocolate against a dark, refined plate. The aesthetic is sophisticated and indulgent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs4rRvdhyOrNhhz8pG8L76JcW4U862d_PsXelKm0Uxt4FUcxHnR5y4iPewETczjJLpZdXTeiXXDUCC0Lk8GGHYuL0rQUeb2CyAwyoe5TwSm9Vt8_xPGg7gwuvSNYCt6QmzjhuWIff-UNS3bDgs7acLEMV50U3keQK4q7hkt_Q905Nvgagix95QbrTd-T_oI6i7uivrsnYXdzQMheRCCkzYc7d6DgnOudaNTboNAHhb3YLOYWJyvRu7Vul8KB9efbKKlDJ71O7YpCx1"/>
+<div class="absolute top-md right-md">
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-sm py-xs rounded-full text-primary font-bold font-label-md shadow-sm">Desserts</span>
+</div>
+</div>
+<div class="p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">Molten Lava Bliss</h3>
+<span class="font-price-display text-price-display text-primary">$12.00</span>
+</div>
+<p class="text-slate-gray font-body-md line-clamp-2 mb-md">70% Peruvian dark chocolate with a warm heart and vanilla bean reduction.</p>
+<div class="mt-auto space-y-md">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-md">Available</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-md">Signature Dish</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-status-delivered"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Menu Item Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+<div class="aspect-[4/3] w-full relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A refreshing craft cocktail with grapefruit, rosemary, and ice crystals in a crystal-etched glass. The setting is an elegant, brightly lit bar with soft bokeh highlights. The color palette features soft pinks and greens, creating a clean and sophisticated urban vibe that is highly sensory." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK270IMp-2MeTj0lECxMzsRF9ijrBjkMAKU2e9n1M07aeJIMJwAXKbfSXe7Ic8ARY8DKv4bhe3vF7NTkBlO7g2yuWB3Qe2UO3ZGl7rzVb88JhTaDj-OPL_AFd6XN7mu1cWcSuzUH51AdVlABlSvJervfl_1IeKXUKoFFuBnTSjv5QcGt2zSpfzsRZEMPGTSlu7N3PYEygUDdz4ktmzs07Q10Q1gv4nrfYRszJDbuKDQog1cD4vx0dKniVYFNUnuT18ccQ5xsX4BDPM"/>
+<div class="absolute top-md right-md">
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-sm py-xs rounded-full text-primary font-bold font-label-md shadow-sm">Beverages</span>
+</div>
+</div>
+<div class="p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">Rosemary Paloma</h3>
+<div class="flex flex-col items-end">
+<span class="font-price-display text-price-display text-primary">$14.00</span>
+<span class="text-slate-gray text-[12px] line-through">$16.00</span>
+</div>
+</div>
+<p class="text-slate-gray font-body-md line-clamp-2 mb-md">Freshly squeezed grapefruit, premium tequila, and charred rosemary sprig.</p>
+<div class="mt-auto space-y-md">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-md">Available</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-md">Signature Dish</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-status-delivered"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Add New Item Skeleton Card -->
+<button class="border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-xl group hover:border-primary hover:bg-primary/5 transition-all" onclick="toggleModal('itemModal')">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-md">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface-variant group-hover:text-primary">New Item</span>
+<p class="text-center text-on-surface-variant font-label-md mt-sm px-md">Expand your menu with fresh gourmet choices.</p>
+</button>
+</div>
+</div>
+</main>
+<!-- Modal Form: Create New Item -->
+<div class="fixed inset-0 z-[100] hidden overflow-y-auto overflow-x-hidden flex items-center justify-center p-md" id="itemModal">
+<div class="fixed inset-0 bg-on-background/40 backdrop-blur-sm" onclick="toggleModal('itemModal')"></div>
+<div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-300">
+<div class="flex items-center justify-between p-lg bg-surface-container-low border-b border-outline-variant">
+<h2 class="font-headline-md text-headline-md text-on-surface">Create New Menu Item</h2>
+<button class="p-sm hover:bg-surface-container-high rounded-full transition-colors" onclick="toggleModal('itemModal')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<form class="p-lg grid grid-cols-1 md:grid-cols-2 gap-xl">
+<!-- Left Column: Media & Core Info -->
+<div class="space-y-lg">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Item Photography</label>
+<div class="aspect-video w-full rounded-xl border-2 border-dashed border-outline-variant bg-surface-container flex flex-col items-center justify-center p-lg text-center cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-sm">add_a_photo</span>
+<p class="text-on-surface font-label-md">Click to upload or drag and drop</p>
+<p class="text-slate-gray text-[12px] mt-xs">High-res PNG, JPG (4:3 ratio recommended)</p>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Item Name</label>
+<input class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:outline-none" placeholder="e.g. Artisanal Truffle Pasta" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Category</label>
+<select class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:outline-none">
+<option>Main Course</option>
+<option>Starters</option>
+<option>Desserts</option>
+<option>Beverages</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Base Price ($)</label>
+<input class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:outline-none" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</div>
+</div>
+<!-- Right Column: Details & Configuration -->
+<div class="space-y-lg">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Description</label>
+<textarea class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Describe the flavors, ingredients, and presentation..." rows="3"></textarea>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Variants (Sizes/Styles)</label>
+<div class="space-y-sm">
+<div class="flex items-center gap-sm">
+<input class="flex-1 px-md py-xs bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md" placeholder="Regular" type="text"/>
+<input class="w-24 px-md py-xs bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md" placeholder="+0.00" type="number"/>
+<button class="text-error" type="button"><span class="material-symbols-outlined">delete</span></button>
+</div>
+<button class="text-primary font-label-md flex items-center gap-xs mt-sm" type="button">
+<span class="material-symbols-outlined text-sm">add</span> Add Variant
+                            </button>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Addon Groups</label>
+<div class="p-md bg-surface-container-low rounded-xl border border-outline-variant space-y-sm">
+<label class="flex items-center gap-sm cursor-pointer">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-body-md">Extra Toppings (Gourmet Cheese, Truffle)</span>
+</label>
+<label class="flex items-center gap-sm cursor-pointer">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-body-md">Side Accompaniments</span>
+</label>
+</div>
+</div>
+<div class="flex items-center gap-lg pt-md">
+<label class="flex items-center gap-sm cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-5 bg-secondary-container rounded-full peer peer-checked:bg-status-delivered relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
+<span class="font-label-md text-on-surface">Mark as Signature</span>
+</label>
+</div>
+</div>
+</form>
+<div class="p-lg bg-surface-container-low border-t border-outline-variant flex justify-end gap-md">
+<button class="px-lg py-md text-on-surface-variant font-bold hover:bg-surface-container-high rounded-xl transition-colors" onclick="toggleModal('itemModal')">Cancel</button>
+<button class="px-xl py-md bg-primary text-on-primary font-bold rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all">Save Menu Item</button>
+</div>
+</div>
+</div>
+<!-- Footer Anchor -->
+<footer class="md:ml-64 bg-surface-container-highest border-t border-outline-variant w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-start gap-lg">
+<div>
+<span class="font-headline-md text-headline-md font-black text-on-surface">KAHA</span>
+<p class="text-on-surface-variant font-label-md mt-sm">© 2024 KAHA Multi-Tenant Platform. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap gap-xl">
+<div class="flex flex-col gap-sm">
+<h4 class="font-bold text-on-surface font-label-md">Support</h4>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-md" href="#">Contact Support</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-md" href="#">Help Center</a>
+</div>
+<div class="flex flex-col gap-sm">
+<h4 class="font-bold text-on-surface font-label-md">Legal</h4>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-md" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-md" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+<script>
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = 'auto';
+            }
+        }
+        
+        // Mock interaction for toggles
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const parentCard = this.closest('.group');
+                if(parentCard) {
+                    parentCard.style.opacity = this.checked ? '1' : '0.8';
+                }
+            });
+        });
+    </script>
+</body></html>

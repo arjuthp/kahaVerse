@@ -1,0 +1,2923 @@
+{
+  "collection": {
+    "item": [
+      {
+        "id": "3b813153-7b51-41a2-b042-bc092143855a",
+        "name": "Health Check",
+        "request": {
+          "url": {
+            "path": [
+              ""
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "f4442733-579d-4e7c-948a-13e900f0c2b4",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test(\"Health check passed\", function () {",
+                "  pm.response.to.have.status(200);",
+                "});"
+              ],
+              "_lastExecutionId": "4e814a06-02e3-4d77-9554-20d56cb47d82"
+            }
+          }
+        ]
+      },
+      {
+        "id": "31a2dc34-2ace-4c83-8a32-289ceb3bb0c4",
+        "name": "Categories",
+        "item": [
+          {
+            "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+            "name": "Get All Categories",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "business",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response is array\", function () {",
+                    "  pm.expect(pm.response.json()).to.be.an('array');",
+                    "});",
+                    "",
+                    "if (pm.response.json().length > 0) {",
+                    "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                    "}"
+                  ],
+                  "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+                }
+              }
+            ]
+          },
+          {
+            "id": "74cf7fad-e875-4ad9-a25e-b804da1ffd88",
+            "name": "Create Category",
+            "request": {
+              "url": {
+                "path": [
+                  "categories"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Test Category {{$timestamp}}\",\n  \"description\": \"Category for testing\",\n  \"image\": \"https://example.com/image.jpg\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "94c515e9-5f40-4c83-8a06-63a1cb9e96b2",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('categoryId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "403ca8a0-dc99-4961-82cd-94aba68c94a7",
+            "name": "Get Category by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "9e52e2c2-6626-47de-bf31-01406b1126d1",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "d4bd5afd-541e-4c81-9ead-c983187f3f2e",
+            "name": "Update Category",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Updated Category {{$timestamp}}\",\n  \"description\": \"Updated description\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "9b2e0e93-fcc2-48e7-87dd-8198b3f40ee7",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "a85ff022-fd34-440a-ad12-db1de7846a88",
+        "name": "Menu",
+        "item": [
+          {
+            "id": "c41ce23f-106e-493f-b0d9-f0168752b316",
+            "name": "Get All Menu Items",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "9edc227c-bb3f-4367-9aad-dc0f92e821df",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "if (pm.response.json().items && pm.response.json().items.length > 0) {",
+                    "  pm.environment.set('menuId', pm.response.json().items[0].id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "b69e7ff6-46ea-4aec-847b-11f296e062e0",
+            "name": "Create Menu Item",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Test Menu Item {{$timestamp}}\",\n  \"description\": \"Test menu item description\",\n  \"price\": 150,\n  \"categoryId\": \"{{categoryId}}\",\n  \"image\": \"https://example.com/menu.jpg\",\n  \"available\": true\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "2b9b3a46-1241-4631-9f3f-909b4b86cee9",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('menuId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "ce9a5503-076c-4e5f-9ef8-6196605bd3cb",
+            "name": "Get Menu Item by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "5fbb3e1b-1b31-4d12-999e-6eeb6a8bf6e4",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "d0f97c2a-728a-4e12-8207-f4b4fb8fb14d",
+            "name": "Update Menu Item",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Updated Menu Item {{$timestamp}}\",\n  \"price\": 200,\n  \"available\": true\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "0aa29402-e398-4de6-a1e0-2af93d15b63e",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "30a8c4bf-cd30-4ecb-95ae-516224813dec",
+            "name": "Toggle Signature Menu",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "toggle-signature",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"isSignature\": true\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "dafb3266-8984-4a49-8d4d-4e29ad6e51be",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "f7e2bfe0-ba82-4695-8c92-033cc2a244d4",
+        "name": "Addons",
+        "item": [
+          {
+            "id": "5b160801-381b-4564-a28c-531b6c7a74be",
+            "name": "Get All Addons",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "8254656f-06d1-42cb-a3fa-3d2c8e45f037",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "if (pm.response.json().length > 0) {",
+                    "  pm.environment.set('addonId', pm.response.json()[0].id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "46e82008-2316-4d06-8efa-548bec6d877c",
+            "name": "Create Addon",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Test Addon {{$timestamp}}\",\n  \"price\": 50\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "7b0e428b-558a-4964-9a30-8da584ba4eef",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('addonId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "f356a3a7-0326-4574-82c1-99c929f17718",
+            "name": "Get Addon by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "42250e95-259d-48a1-9e73-8ea4aed4f773",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "714b4344-1405-458e-a5cc-17d137847e95",
+            "name": "Update Addon",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Updated Addon {{$timestamp}}\",\n  \"price\": 75\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "7c9de666-698d-4b61-ad00-ba2f7acc3e24",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "39105fef-10b8-484c-9a46-96ccc825ef4c",
+        "name": "Cart",
+        "item": [
+          {
+            "id": "40d1f62c-3270-4a03-85b0-0aae6aaec051",
+            "name": "Create Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "cart"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "2f80f3fe-1d7a-4f3f-b4bc-e2124daabc6a",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('cartId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "6cae69f0-c0ee-4aae-a216-a59a43aae814",
+            "name": "Add Item to Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuItemId\": \"{{menuId}}\",\n  \"quantity\": 2,\n  \"price\": 300\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "2ec88d02-774b-466c-97db-ec4d9c82e459",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('cartItemId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "747d88f1-ea4c-4df1-b9e1-8a5d7f1d6cbe",
+            "name": "Get Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "cart"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "d1146896-d11f-4e84-97ea-232f49d65abc",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "3a7531e3-b123-4cc7-bc5c-589c17b72422",
+            "name": "Update Cart Item",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartItemId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"quantity\": 3,\n  \"price\": 450\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "75cbaba0-69af-4a93-8407-7be0bdec74c6",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "63266f5a-b1cc-4d09-957d-2120ef7a84c4",
+        "name": "Orders",
+        "item": [
+          {
+            "id": "3c99a4d8-749a-4b39-8c81-7f8580ead447",
+            "name": "Create Order",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"businessId\": \"{{businessId}}\",\n  \"items\": [\n    {\n      \"menuItemId\": \"{{menuId}}\",\n      \"quantity\": 2,\n      \"price\": 300\n    }\n  ],\n  \"totalAmount\": 300,\n  \"deliveryAddress\": \"Test Address\",\n  \"phoneNumber\": \"9813870231\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "3a8c641f-6846-4d05-9dd5-049ca4e15a8e",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('orderId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "457bba77-9763-45ab-831a-36e36e7d9519",
+            "name": "Create Order from Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "from-cart"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"deliveryAddress\": \"Test Delivery Address\",\n  \"phoneNumber\": \"9813870231\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "e3ff32b6-6fe4-44e2-a1d4-b81f1cffa4f9",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201 or 200\", function () {",
+                    "  pm.response.to.have.status.oneOf([200, 201]);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "eef29107-1be9-40d9-b9a1-e8d79144576f",
+            "name": "Get User Orders",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "user"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "f08d38fd-f08e-4daa-b9d1-d20863ae0b7f",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "f35a20e0-aedf-4dd7-b2a4-500824f4a78b",
+            "name": "Get Order by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "2392476c-646a-4c1d-b4ab-2017a9e7a1ec",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "1ff493b4-a6ee-486f-9a21-46c0426d5e8f",
+            "name": "Get Business Orders",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "business-man-vs",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "bb155102-960c-48f8-b48e-31d9f499393a",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "4532c2f9-e797-4f07-9bfb-0d517e9ff7b8",
+            "name": "Change Order Status",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}",
+                  "change-status"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"confirmed\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "20d79b36-f636-4fc0-8154-a62c72a7d3e1",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "e5bc6248-319d-4812-b60e-e15834f66f27",
+        "name": "Menu Ratings",
+        "item": [
+          {
+            "id": "612b2d78-18c9-41f3-8364-e82e901e645c",
+            "name": "Create Menu Rating",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"rating\": 5,\n  \"comment\": \"Great menu item!\",\n  \"isVisible\": true\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "770b749c-ad43-4982-9d16-090a77edd70b",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "  pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has id\", function () {",
+                    "  pm.expect(pm.response.json().id).to.be.a('string');",
+                    "  pm.environment.set('ratingId', pm.response.json().id);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "a8c4a8ec-4c13-4bde-a8aa-e9a855509a70",
+            "name": "Get Business Menu Ratings",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "business",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "51b1674f-58cc-4b33-84b0-4385e1f5b008",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "f4b78166-49dd-4136-9c33-f8dccf8c87a9",
+            "name": "Get Menu Ratings",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "menu:{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "dc2b1878-7ed2-4aff-a87d-b79d8d51dbed",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "51ceaee9-ad86-49e2-a476-adb054790abe",
+            "name": "Get Rating by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "{{ratingId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "7a9e2bef-e2fc-468a-89b8-fdb9de77523b",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "68fac481-57c7-4ebd-ba86-3b88b38646f3",
+            "name": "Update Menu Rating",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"id\": \"{{ratingId}}\",\n  \"rating\": 4,\n  \"comment\": \"Good menu item\",\n  \"isVisible\": true\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "0153d779-063f-403f-acc7-29ec0ad3ec11",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "  pm.response.to.have.status(200);",
+                    "});"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "string",
+        "value": "https://api.kaha.com.np/main/api/v3",
+        "key": "baseUrl"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "authToken"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "businessId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "categoryId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "menuId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "addonId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "cartId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "cartItemId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "orderId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "ratingId"
+      }
+    ],
+    "info": {
+      "_postman_id": "9af03e36-a815-4a58-84bf-9e0f6e3789b4",
+      "name": "KAHA Restaurant E-Commerce API",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Complete API test collection for KAHA Restaurant E-Commerce microservice with Kaha Main v3 integration",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "_": {
+      "postman_variable_scope": "environment",
+      "postman_exported_at": "2026-05-21T12:00:00.000Z",
+      "postman_exported_using": "Postman/11.0.0"
+    },
+    "id": "kaha-prod-env",
+    "name": "KAHA Production Environment",
+    "values": [
+      {
+        "type": "any",
+        "value": "https://api.kaha.com.np/main/api/v3",
+        "key": "baseUrl"
+      },
+      {
+        "type": "any",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmYzcwZGIzLTZmNDMtNDg4Mi05MmZkLTQ3MTVmMjVmZmM5NSIsImthaGFJZCI6IlUtOEM2OTVFIiwiaWF0IjoxNzc5MzQyMTM1fQ.6PCo6A6L-CL5rjGIuoC8sWOPUBh59MxxlhvVqG-kwMo",
+        "key": "authToken"
+      },
+      {
+        "type": "any",
+        "value": "B-TESTBUS001",
+        "key": "businessId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "userId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "categoryId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "menuId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "addonId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "cartId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "cartItemId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "orderId"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "ratingId"
+      }
+    ]
+  },
+  "globals": {
+    "id": "3088b90a-5230-4e14-be55-bd7efec7c3fd",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 1
+      },
+      "prerequests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 3,
+        "pending": 0,
+        "failed": 2
+      },
+      "testScripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 1
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 26,
+      "responseMin": 8,
+      "responseMax": 44,
+      "responseSd": 18,
+      "dnsAverage": 7.1074669999999855,
+      "dnsMin": 7.1074669999999855,
+      "dnsMax": 7.1074669999999855,
+      "dnsSd": 0,
+      "firstByteAverage": 8.5187095,
+      "firstByteMin": 6.07511199999999,
+      "firstByteMax": 10.96230700000001,
+      "firstByteSd": 2.44359750000001,
+      "started": 1779342931147,
+      "completed": 1779342931261
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 29,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "e46b723f-8a14-4cfe-983d-b271822939dd",
+          "httpRequestId": "65a1540e-c39e-41ec-ab96-150ac3fe955a"
+        },
+        "item": {
+          "id": "3b813153-7b51-41a2-b042-bc092143855a",
+          "name": "Health Check",
+          "request": {
+            "url": {
+              "path": [
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f4442733-579d-4e7c-948a-13e900f0c2b4",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Health check passed\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "_lastExecutionId": "4e814a06-02e3-4d77-9554-20d56cb47d82"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              ""
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "fb1c8452-6bae-41cb-b28a-95185fbea7eb",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "5bc63d1f-ee27-4d14-8f92-d60b825b00a3",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 05:55:31 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "text/html; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "4"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "100"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "99"
+            },
+            {
+              "key": "X-RateLimit-Reset",
+              "value": "1"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"4-6FuITHvNBEi2WTO2LWz6+jc/c48\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              109,
+              97,
+              110,
+              33
+            ]
+          },
+          "cookie": [],
+          "responseTime": 44,
+          "responseSize": 4
+        },
+        "id": "3b813153-7b51-41a2-b042-bc092143855a",
+        "assertions": [
+          {
+            "assertion": "Health check passed",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "d5a14ff6-751e-4fb8-a770-6f0252d153af",
+          "length": 29,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "ab423748-7eb7-4b20-9983-fc83ef751f7c"
+        },
+        "item": {
+          "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+          "name": "Get All Categories",
+          "request": {
+            "url": {
+              "path": [
+                "categories",
+                "business",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "",
+                  "if (pm.response.json().length > 0) {",
+                  "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                  "}"
+                ],
+                "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "main",
+              "api",
+              "v3",
+              "categories",
+              "business",
+              "B-TESTBUS001"
+            ],
+            "host": [
+              "api",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "190bea54-f814-42a3-8aff-0b352398598f",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "api.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "1eac16e8-e1a2-43b7-93fe-e6a57e66b909",
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.18.0 (Ubuntu)"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 05:55:31 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "107"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"6b-V9csHcQaHO9RsKX9iNpq+YQ3cKg\""
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              67,
+              97,
+              110,
+              110,
+              111,
+              116,
+              32,
+              71,
+              69,
+              84,
+              32,
+              47,
+              109,
+              97,
+              105,
+              110,
+              47,
+              97,
+              112,
+              105,
+              47,
+              118,
+              51,
+              47,
+              99,
+              97,
+              116,
+              101,
+              103,
+              111,
+              114,
+              105,
+              101,
+              115,
+              47,
+              98,
+              117,
+              115,
+              105,
+              110,
+              101,
+              115,
+              115,
+              47,
+              66,
+              45,
+              84,
+              69,
+              83,
+              84,
+              66,
+              85,
+              83,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              34,
+              58,
+              34,
+              78,
+              111,
+              116,
+              32,
+              70,
+              111,
+              117,
+              110,
+              100,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              67,
+              111,
+              100,
+              101,
+              34,
+              58,
+              52,
+              48,
+              52,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 8,
+          "responseSize": 107
+        },
+        "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+        "assertions": [
+          {
+            "assertion": "Status code is 200",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Status code is 200",
+              "message": "expected response to have status code 200 but got 404",
+              "stack": "AssertionError: expected response to have status code 200 but got 404\n   at Object.eval sandbox-script.js:1:2)"
+            }
+          },
+          {
+            "assertion": "Response is array",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 1,
+              "test": "Response is array",
+              "message": "expected { …(3) } to be an array",
+              "stack": "AssertionError: expected { …(3) } to be an array\n   at Object.eval sandbox-script.js:2:2)"
+            }
+          }
+        ],
+        "testScript": [
+          {
+            "error": {
+              "name": "AssertionFailure",
+              "message": "Status code is 200, Response is array",
+              "stack": "AssertionFailure: Status code is 200, Response is array\n    at postProcessContext (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:41:17)\n    at PostmanCollectionRun.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:513:39)\n    at PostmanSandbox.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js:139:13)\n    at Object.onceWrapper (node:events:631:26)\n    at PostmanSandbox.emit (node:events:509:28)\n    at context.__uvm_emit (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js:71:21)\n    at Object.dispatch (evalmachine.<anonymous>:20:13)\n    at Object.<anonymous> (evalmachine.<anonymous>:66:7860)\n    at t.exports.terminate (evalmachine.<anonymous>:66:22105)\n    at Immediate._onImmediate (evalmachine.<anonymous>:66:5993)\n    at process.processImmediate (node:internal/timers:506:21)",
+              "checksum": "5cd7cc90462c31fa128fa328d093fab7",
+              "id": "beb41e3e-f0e2-4c3e-8ea9-691f01823369",
+              "timestamp": 1779342931255,
+              "stacktrace": [
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+                  "lineNumber": 41,
+                  "functionName": "postProcessContext",
+                  "typeName": "Object",
+                  "methodName": null,
+                  "columnNumber": 17,
+                  "native": false
+                },
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+                  "lineNumber": 513,
+                  "functionName": "",
+                  "typeName": "PostmanCollectionRun",
+                  "methodName": null,
+                  "columnNumber": 39,
+                  "native": false
+                },
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js",
+                  "lineNumber": 139,
+                  "functionName": "",
+                  "typeName": "PostmanSandbox",
+                  "methodName": null,
+                  "columnNumber": 13,
+                  "native": false
+                },
+                {
+                  "fileName": "node:events",
+                  "lineNumber": 631,
+                  "functionName": "Object.onceWrapper",
+                  "typeName": "Object",
+                  "methodName": "onceWrapper",
+                  "columnNumber": 26,
+                  "native": false
+                },
+                {
+                  "fileName": "node:events",
+                  "lineNumber": 509,
+                  "functionName": "PostmanSandbox.emit",
+                  "typeName": "PostmanSandbox",
+                  "methodName": "emit",
+                  "columnNumber": 28,
+                  "native": false
+                },
+                {
+                  "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js",
+                  "lineNumber": 71,
+                  "functionName": "context.__uvm_emit",
+                  "typeName": "context",
+                  "methodName": "__uvm_emit",
+                  "columnNumber": 21,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 20,
+                  "functionName": "Object.dispatch",
+                  "typeName": "Object",
+                  "methodName": "dispatch",
+                  "columnNumber": 13,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 66,
+                  "functionName": "",
+                  "typeName": "Object",
+                  "methodName": null,
+                  "columnNumber": 7860,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 66,
+                  "functionName": "t.exports.terminate",
+                  "typeName": "t",
+                  "methodName": "exports.terminate",
+                  "columnNumber": 22105,
+                  "native": false
+                },
+                {
+                  "fileName": "evalmachine.<anonymous>",
+                  "lineNumber": 66,
+                  "functionName": "Immediate._onImmediate",
+                  "typeName": "Immediate",
+                  "methodName": "_onImmediate",
+                  "columnNumber": 5993,
+                  "native": false
+                },
+                {
+                  "fileName": "node:internal/timers",
+                  "lineNumber": 506,
+                  "functionName": "process.processImmediate",
+                  "typeName": "process",
+                  "methodName": "processImmediate",
+                  "columnNumber": 21,
+                  "native": false
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 111
+    },
+    "failures": [
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Status code is 200",
+          "message": "expected response to have status code 200 but got 404",
+          "stack": "AssertionError: expected response to have status code 200 but got 404\n   at Object.eval sandbox-script.js:1:2)",
+          "checksum": "e3bd6eda1cb0422bfce43f4050ef2d89",
+          "id": "93df1cc9-220e-4ba2-98fd-6d7cb659e921",
+          "timestamp": 1779342931251,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+          "name": "Get All Categories",
+          "request": {
+            "url": {
+              "path": [
+                "categories",
+                "business",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "",
+                  "if (pm.response.json().length > 0) {",
+                  "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                  "}"
+                ],
+                "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "id": "31a2dc34-2ace-4c83-8a32-289ceb3bb0c4",
+          "name": "Categories",
+          "item": [
+            {
+              "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+              "name": "Get All Categories",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "business",
+                    "{{businessId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Response is array\", function () {",
+                      "  pm.expect(pm.response.json()).to.be.an('array');",
+                      "});",
+                      "",
+                      "if (pm.response.json().length > 0) {",
+                      "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "74cf7fad-e875-4ad9-a25e-b804da1ffd88",
+              "name": "Create Category",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Category {{$timestamp}}\",\n  \"description\": \"Category for testing\",\n  \"image\": \"https://example.com/image.jpg\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "94c515e9-5f40-4c83-8a06-63a1cb9e96b2",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test(\"Response has id\", function () {",
+                      "  pm.expect(pm.response.json().id).to.be.a('string');",
+                      "  pm.environment.set('categoryId', pm.response.json().id);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "403ca8a0-dc99-4961-82cd-94aba68c94a7",
+              "name": "Get Category by ID",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "{{categoryId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "9e52e2c2-6626-47de-bf31-01406b1126d1",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "d4bd5afd-541e-4c81-9ead-c983187f3f2e",
+              "name": "Update Category",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "{{categoryId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Category {{$timestamp}}\",\n  \"description\": \"Updated description\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "9b2e0e93-fcc2-48e7-87dd-8198b3f40ee7",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "event": []
+        },
+        "cursor": {
+          "ref": "d5a14ff6-751e-4fb8-a770-6f0252d153af",
+          "length": 29,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "ab423748-7eb7-4b20-9983-fc83ef751f7c",
+          "scriptId": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+          "execution": "404733d1-b889-4cd7-b575-a2ca02982069"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 1,
+          "test": "Response is array",
+          "message": "expected { …(3) } to be an array",
+          "stack": "AssertionError: expected { …(3) } to be an array\n   at Object.eval sandbox-script.js:2:2)",
+          "checksum": "dc1c11ca751092c3f27ac60189b0c669",
+          "id": "a8eb33da-2861-4fab-bb50-11e50655b18d",
+          "timestamp": 1779342931253,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 2,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:1 in test-script",
+        "source": {
+          "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+          "name": "Get All Categories",
+          "request": {
+            "url": {
+              "path": [
+                "categories",
+                "business",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "",
+                  "if (pm.response.json().length > 0) {",
+                  "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                  "}"
+                ],
+                "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "id": "31a2dc34-2ace-4c83-8a32-289ceb3bb0c4",
+          "name": "Categories",
+          "item": [
+            {
+              "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+              "name": "Get All Categories",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "business",
+                    "{{businessId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Response is array\", function () {",
+                      "  pm.expect(pm.response.json()).to.be.an('array');",
+                      "});",
+                      "",
+                      "if (pm.response.json().length > 0) {",
+                      "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "74cf7fad-e875-4ad9-a25e-b804da1ffd88",
+              "name": "Create Category",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Category {{$timestamp}}\",\n  \"description\": \"Category for testing\",\n  \"image\": \"https://example.com/image.jpg\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "94c515e9-5f40-4c83-8a06-63a1cb9e96b2",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test(\"Response has id\", function () {",
+                      "  pm.expect(pm.response.json().id).to.be.a('string');",
+                      "  pm.environment.set('categoryId', pm.response.json().id);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "403ca8a0-dc99-4961-82cd-94aba68c94a7",
+              "name": "Get Category by ID",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "{{categoryId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "9e52e2c2-6626-47de-bf31-01406b1126d1",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "d4bd5afd-541e-4c81-9ead-c983187f3f2e",
+              "name": "Update Category",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "{{categoryId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Category {{$timestamp}}\",\n  \"description\": \"Updated description\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "9b2e0e93-fcc2-48e7-87dd-8198b3f40ee7",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "event": []
+        },
+        "cursor": {
+          "ref": "d5a14ff6-751e-4fb8-a770-6f0252d153af",
+          "length": 29,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "ab423748-7eb7-4b20-9983-fc83ef751f7c",
+          "scriptId": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+          "execution": "404733d1-b889-4cd7-b575-a2ca02982069"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionFailure",
+          "message": "Status code is 200, Response is array",
+          "stack": "AssertionFailure: Status code is 200, Response is array\n    at postProcessContext (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:41:17)\n    at PostmanCollectionRun.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js:513:39)\n    at PostmanSandbox.<anonymous> (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js:139:13)\n    at Object.onceWrapper (node:events:631:26)\n    at PostmanSandbox.emit (node:events:509:28)\n    at context.__uvm_emit (/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js:71:21)\n    at Object.dispatch (evalmachine.<anonymous>:20:13)\n    at Object.<anonymous> (evalmachine.<anonymous>:66:7860)\n    at t.exports.terminate (evalmachine.<anonymous>:66:22105)\n    at Immediate._onImmediate (evalmachine.<anonymous>:66:5993)\n    at process.processImmediate (node:internal/timers:506:21)",
+          "checksum": "5cd7cc90462c31fa128fa328d093fab7",
+          "id": "beb41e3e-f0e2-4c3e-8ea9-691f01823369",
+          "timestamp": 1779342931255,
+          "stacktrace": [
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+              "lineNumber": 41,
+              "functionName": "postProcessContext",
+              "typeName": "Object",
+              "methodName": null,
+              "columnNumber": 17,
+              "native": false
+            },
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-runtime/lib/runner/extensions/event.command.js",
+              "lineNumber": 513,
+              "functionName": "",
+              "typeName": "PostmanCollectionRun",
+              "methodName": null,
+              "columnNumber": 39,
+              "native": false
+            },
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/postman-sandbox/lib/postman-sandbox.js",
+              "lineNumber": 139,
+              "functionName": "",
+              "typeName": "PostmanSandbox",
+              "methodName": null,
+              "columnNumber": 13,
+              "native": false
+            },
+            {
+              "fileName": "node:events",
+              "lineNumber": 631,
+              "functionName": "Object.onceWrapper",
+              "typeName": "Object",
+              "methodName": "onceWrapper",
+              "columnNumber": 26,
+              "native": false
+            },
+            {
+              "fileName": "node:events",
+              "lineNumber": 509,
+              "functionName": "PostmanSandbox.emit",
+              "typeName": "PostmanSandbox",
+              "methodName": "emit",
+              "columnNumber": 28,
+              "native": false
+            },
+            {
+              "fileName": "/home/kali/Documents/KAHA_Verse/Kaha_restaurant-ecommerce/restaurant-ecommerce/node_modules/uvm/lib/bridge.js",
+              "lineNumber": 71,
+              "functionName": "context.__uvm_emit",
+              "typeName": "context",
+              "methodName": "__uvm_emit",
+              "columnNumber": 21,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 20,
+              "functionName": "Object.dispatch",
+              "typeName": "Object",
+              "methodName": "dispatch",
+              "columnNumber": 13,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 66,
+              "functionName": "",
+              "typeName": "Object",
+              "methodName": null,
+              "columnNumber": 7860,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 66,
+              "functionName": "t.exports.terminate",
+              "typeName": "t",
+              "methodName": "exports.terminate",
+              "columnNumber": 22105,
+              "native": false
+            },
+            {
+              "fileName": "evalmachine.<anonymous>",
+              "lineNumber": 66,
+              "functionName": "Immediate._onImmediate",
+              "typeName": "Immediate",
+              "methodName": "_onImmediate",
+              "columnNumber": 5993,
+              "native": false
+            },
+            {
+              "fileName": "node:internal/timers",
+              "lineNumber": 506,
+              "functionName": "process.processImmediate",
+              "typeName": "process",
+              "methodName": "processImmediate",
+              "columnNumber": 21,
+              "native": false
+            }
+          ]
+        },
+        "at": "test-script:39:17",
+        "source": {
+          "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+          "name": "Get All Categories",
+          "request": {
+            "url": {
+              "path": [
+                "categories",
+                "business",
+                "{{businessId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "",
+                  "if (pm.response.json().length > 0) {",
+                  "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                  "}"
+                ],
+                "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "id": "31a2dc34-2ace-4c83-8a32-289ceb3bb0c4",
+          "name": "Categories",
+          "item": [
+            {
+              "id": "2f7b1bfa-36cc-4593-9301-c887279ddc61",
+              "name": "Get All Categories",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "business",
+                    "{{businessId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "49996a79-51b5-4df5-a8a3-2c4ecc437280",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Response is array\", function () {",
+                      "  pm.expect(pm.response.json()).to.be.an('array');",
+                      "});",
+                      "",
+                      "if (pm.response.json().length > 0) {",
+                      "  pm.environment.set('categoryId', pm.response.json()[0].id);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "404733d1-b889-4cd7-b575-a2ca02982069"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "74cf7fad-e875-4ad9-a25e-b804da1ffd88",
+              "name": "Create Category",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Category {{$timestamp}}\",\n  \"description\": \"Category for testing\",\n  \"image\": \"https://example.com/image.jpg\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "94c515e9-5f40-4c83-8a06-63a1cb9e96b2",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test(\"Response has id\", function () {",
+                      "  pm.expect(pm.response.json().id).to.be.a('string');",
+                      "  pm.environment.set('categoryId', pm.response.json().id);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "403ca8a0-dc99-4961-82cd-94aba68c94a7",
+              "name": "Get Category by ID",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "{{categoryId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "9e52e2c2-6626-47de-bf31-01406b1126d1",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "d4bd5afd-541e-4c81-9ead-c983187f3f2e",
+              "name": "Update Category",
+              "request": {
+                "url": {
+                  "path": [
+                    "categories",
+                    "{{categoryId}}"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Category {{$timestamp}}\",\n  \"description\": \"Updated description\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "9b2e0e93-fcc2-48e7-87dd-8198b3f40ee7",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "event": []
+        },
+        "cursor": {
+          "ref": "d5a14ff6-751e-4fb8-a770-6f0252d153af",
+          "length": 29,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "ab423748-7eb7-4b20-9983-fc83ef751f7c",
+          "scriptId": "49996a79-51b5-4df5-a8a3-2c4ecc437280"
+        }
+      }
+    ],
+    "error": null
+  }
+}

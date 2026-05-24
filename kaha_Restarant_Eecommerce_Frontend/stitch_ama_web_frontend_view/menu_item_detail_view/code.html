@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KAHA - Margherita Pizza Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container": "#ffe9e4",
+                        "slate-gray": "#636E72",
+                        "price-gold": "#B08968",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-tertiary-fixed": "#1b1c19",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "tertiary": "#5c5c58",
+                        "surface-bright": "#fff8f6",
+                        "on-primary-fixed-variant": "#8b1a00",
+                        "outline-variant": "#e3beb6",
+                        "surface-tint": "#b52703",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "status-delivered": "#27AE60",
+                        "on-background": "#271814",
+                        "inverse-surface": "#3d2c28",
+                        "inverse-primary": "#ffb4a3",
+                        "on-tertiary-fixed-variant": "#474744",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "status-shipped": "#9B51E0",
+                        "surface-container-highest": "#f9dcd6",
+                        "on-primary-container": "#fffbff",
+                        "surface-dim": "#f0d4ce",
+                        "on-surface-variant": "#5b403a",
+                        "on-surface": "#271814",
+                        "surface-container-high": "#ffe2dc",
+                        "secondary-fixed": "#dde4e6",
+                        "tertiary-container": "#757571",
+                        "primary-fixed": "#ffdad2",
+                        "on-secondary-container": "#5d6466",
+                        "status-cancelled": "#EB5757",
+                        "on-primary-fixed": "#3d0600",
+                        "primary-container": "#d53e1b",
+                        "background": "#fff8f6",
+                        "status-processing": "#2F80ED",
+                        "status-pending": "#F2994A",
+                        "tertiary-fixed": "#e4e2dd",
+                        "primary": "#b12401",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "surface": "#fff8f6",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#8f7069",
+                        "on-tertiary-container": "#fefcf7",
+                        "surface-variant": "#f9dcd6",
+                        "inverse-on-surface": "#ffede9",
+                        "surface-container-low": "#fff0ed",
+                        "secondary": "#586062"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "gutter": "20px",
+                        "container-max": "1200px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Manrope"],
+                        "label-md": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "price-display": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "title-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "display-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-thumb {
+            border: 2px solid theme('colors.primary');
+        }
+        .custom-radio:checked + label .radio-circle {
+            border-color: theme('colors.primary');
+        }
+        .custom-radio:checked + label .radio-dot {
+            background-color: theme('colors.primary');
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-20 max-w-container-max mx-auto bg-surface shadow-sm">
+<div class="flex items-center gap-xl">
+<span class="font-headline-lg text-headline-lg font-black text-primary">KAHA</span>
+<nav class="hidden md:flex gap-lg">
+<a class="text-secondary font-medium hover:text-primary-container transition-colors duration-200" href="#">Starters</a>
+<a class="text-primary font-bold border-b-2 border-primary hover:text-primary-container transition-colors duration-200" href="#">Main Course</a>
+<a class="text-secondary font-medium hover:text-primary-container transition-colors duration-200" href="#">Desserts</a>
+<a class="text-secondary font-medium hover:text-primary-container transition-colors duration-200" href="#">Beverages</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden lg:flex items-center bg-surface-container-low px-md py-xs rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md px-sm w-48" placeholder="Search menu..." type="text"/>
+</div>
+<button class="relative p-xs hover:bg-surface-variant rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="shopping_cart">shopping_cart</span>
+<span class="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span>
+</button>
+<button class="p-xs hover:bg-surface-variant rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-xl max-w-container-max mx-auto px-gutter">
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+<!-- Left: Visuals Section (Bento Style) -->
+<div class="lg:col-span-7 space-y-md">
+<div class="relative rounded-xl overflow-hidden shadow-md aspect-[4/3] bg-surface-container-low group">
+<img alt="Margherita Pizza" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A premium close-up of a classic Margherita pizza with vibrant red tomato sauce, creamy white buffalo mozzarella pearls, and fresh emerald green basil leaves on a charred, artisanal sourdough crust. The lighting is warm and directional, highlighting the bubbling cheese and crispy textures against a clean, minimalist wooden tabletop. The mood is sophisticated and appetizing, aligning with a high-end gourmet dining aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMMnV8uaunwodMJqz3k_rA1kpZbI1avTFToJoCHjISErcBZEWABZkrLVaQiFz1TGkhLSRRKiF_6XwV1I0ZnoprQDjdWgR91ciTylGbiMmM1dewix9z-9xYayADZlN5fZZZl0HTIVcqe1ojsXpQNWfjkUiX0BGnYYffx70eZcPKwrm2k6eKnWRzHLSESLCc7mi-Us48IMuR28KXdATwW-6nzwsDXY1yai1Yps58zF4cwZldc_nP9qfp4MwOl6b9XIGkTTn0on7WwjkF"/>
+<div class="absolute top-md left-md">
+<span class="bg-primary/90 text-on-primary px-md py-xs rounded-full font-label-md shadow-lg backdrop-blur-sm">Bestseller</span>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-sm">
+<button class="aspect-square rounded-lg overflow-hidden border-2 border-primary shadow-sm active-thumb">
+<img class="w-full h-full object-cover" data-alt="A detailed overhead shot of an authentic Italian pizza with melted mozzarella and fresh basil leaves on a white ceramic plate. The scene is bright and airy with soft shadows, reflecting a modern minimalist lifestyle style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIM941TxEcik-WgtdVj6Evdg65bBEUCDQTdgkRo0sUeyUdKy5GxfRMnEAxR1ThCWgOunuEMeRjHeYoM7IBKeH702811I-DH8XvNphYfMJ23oay5KXZ20rMyarfIwgb1R4kBMREMEs-nTB3FLCjtUcL75a6Nk7jc0JEyyor7q_S7WQjQVG3qNFvN_EGFA4jn53IuUCSSVZSZH0-hHPceBDNbn4qvuz1tj6fMvz9G2e2FAJpF0Kvy5RW_XOV4xKUsN1gUTPe6iZ89tmB"/>
+</button>
+<button class="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-outline transition-all shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A side view of a thick, gooey slice of Margherita pizza being lifted, showing long strings of melted cheese stretching. Warm, golden hour lighting creates a sensory, appetite-stimulating effect." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfz_Rhar3MSokl9Zcs5nWGP7_w-ZHY_cGJJ7uaKWkKh3is44Zr04E0aECZ5GgRqarCOTaFq0CD-uNkExBTJvYVq0pg80Lh5gMEIR4La8s50mD91QzFsOhMDiMrkT4EkD3AbXxWZcm540LDZtrVRWIP5PTxjtWCiGl-Ytsq2c-OzY21dJ2Z83PAVQ7G9X5jgvdJ2MYBMj1fod4ikMHTMQMNIA9rMwZVt_GpFuWNPeBzzEkf5FV32IMQl_0ZN9KjAQUKOqPUrEB8-kzQ"/>
+</button>
+<button class="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-outline transition-all shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A top-down composition of pizza ingredients including fresh tomatoes, buffalo mozzarella, and bunches of basil on a clean white surface. High-key lighting creates a professional, enterprise-grade culinary aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiaPGa9MliIwU5O5F4xwb79tySqbvLziTV5ls0LJqhHBU_DzWAJaNzpaaVR0nMi-v0FuUuIRusYxCfiEiLzZaf2Q6EbmSj3-mqhic8xbf8cO0HE1djOlO_ye_fZjvuf1j01FMQzTfNlQFTo8egYVguF7J9M3vn_-RmnUKCj89d4zNOT6EKQzMY4SIfvwkv32ZgeMLuIhU3yKTJvRZplVVdSVNz2_W1WFxL7lkST0SnlFsG2yc8OY_NIPLJmuPMLev4z1_Q5XYVf2DJ"/>
+</button>
+<div class="aspect-square rounded-lg bg-surface-container-highest flex flex-col items-center justify-center cursor-pointer hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" data-icon="play_circle">play_circle</span>
+<span class="font-label-md text-primary mt-xs text-[10px]">PREP VIDEO</span>
+</div>
+</div>
+</div>
+<!-- Right: Details Section -->
+<div class="lg:col-span-5 flex flex-col gap-lg">
+<section>
+<div class="flex justify-between items-start mb-xs">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Margherita Pizza</h1>
+<span class="font-price-display text-price-display text-primary">$18.50</span>
+</div>
+<div class="flex items-center gap-sm mb-md text-slate-gray">
+<div class="flex text-price-gold">
+<span class="material-symbols-outlined text-[18px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="star_half">star_half</span>
+</div>
+<span class="font-label-md">4.8 (124 reviews)</span>
+</div>
+<p class="font-body-lg text-body-lg text-secondary leading-relaxed">
+                        The gold standard of simplicity. Crafted with our 48-hour fermented sourdough, San Marzano tomato D.O.P. sauce, fresh buffalo mozzarella pearls, and organic basil finished with a drizzle of extra virgin olive oil.
+                    </p>
+</section>
+<hr class="border-outline-variant opacity-30"/>
+<!-- Selection Blocks -->
+<div class="space-y-xl">
+<!-- Variants: Size -->
+<div class="space-y-md">
+<div class="flex justify-between items-baseline">
+<h3 class="font-title-lg text-title-lg text-on-surface">Select Size</h3>
+<span class="font-label-md text-slate-gray">Required</span>
+</div>
+<div class="grid grid-cols-3 gap-md">
+<div class="relative">
+<input checked="" class="hidden custom-radio" id="size-sm" name="size" type="radio"/>
+<label class="flex flex-col items-center p-md border border-outline rounded-xl cursor-pointer hover:bg-surface-container-low transition-all" for="size-sm">
+<span class="font-label-md mb-xs">Small</span>
+<span class="text-xs text-slate-gray">10"</span>
+<div class="radio-circle w-4 h-4 rounded-full border border-outline-variant mt-sm flex items-center justify-center">
+<div class="radio-dot w-2 h-2 rounded-full scale-0 transition-transform"></div>
+</div>
+</label>
+</div>
+<div class="relative">
+<input class="hidden custom-radio" id="size-md" name="size" type="radio"/>
+<label class="flex flex-col items-center p-md border border-outline rounded-xl cursor-pointer hover:bg-surface-container-low transition-all" for="size-md">
+<span class="font-label-md mb-xs">Medium</span>
+<span class="text-xs text-slate-gray">12"</span>
+<div class="radio-circle w-4 h-4 rounded-full border border-outline-variant mt-sm flex items-center justify-center">
+<div class="radio-dot w-2 h-2 rounded-full scale-0 transition-transform"></div>
+</div>
+</label>
+</div>
+<div class="relative">
+<input class="hidden custom-radio" id="size-lg" name="size" type="radio"/>
+<label class="flex flex-col items-center p-md border border-outline rounded-xl cursor-pointer hover:bg-surface-container-low transition-all" for="size-lg">
+<span class="font-label-md mb-xs">Large</span>
+<span class="text-xs text-slate-gray">14"</span>
+<div class="radio-circle w-4 h-4 rounded-full border border-outline-variant mt-sm flex items-center justify-center">
+<div class="radio-dot w-2 h-2 rounded-full scale-0 transition-transform"></div>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Addon Group: Crust Type (Single Select) -->
+<div class="space-y-md">
+<div class="flex justify-between items-baseline">
+<h3 class="font-title-lg text-title-lg text-on-surface">Crust Type</h3>
+<span class="font-label-md text-primary bg-primary-container/10 px-sm py-[2px] rounded">1 REQUIRED</span>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center justify-between p-md bg-surface-container-lowest rounded-lg border border-transparent hover:border-outline-variant transition-colors cursor-pointer group">
+<div class="flex items-center gap-md">
+<input checked="" class="w-5 h-5 text-primary focus:ring-primary" name="crust" type="radio"/>
+<span class="font-body-md">Sourdough (Signature)</span>
+</div>
+<span class="font-label-md text-slate-gray">Free</span>
+</div>
+<div class="flex items-center justify-between p-md bg-surface-container-lowest rounded-lg border border-transparent hover:border-outline-variant transition-colors cursor-pointer group">
+<div class="flex items-center gap-md">
+<input class="w-5 h-5 text-primary focus:ring-primary" name="crust" type="radio"/>
+<span class="font-body-md">Gluten-Free Cauliflower</span>
+</div>
+<span class="font-label-md text-primary">+$3.00</span>
+</div>
+</div>
+</div>
+<!-- Addon Group: Toppings (Multi Select) -->
+<div class="space-y-md">
+<div class="flex justify-between items-baseline">
+<h3 class="font-title-lg text-title-lg text-on-surface">Extra Toppings</h3>
+<span class="font-label-md text-slate-gray">Max 5 items</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+<label class="flex items-center justify-between p-md bg-white border border-outline-variant rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+<div class="flex items-center gap-md">
+<input class="w-5 h-5 rounded-[4px] text-primary focus:ring-primary border-slate-gray" type="checkbox"/>
+<span class="font-body-md">Extra Mozzarella</span>
+</div>
+<span class="font-label-md text-primary">+$2.50</span>
+</label>
+<label class="flex items-center justify-between p-md bg-white border border-outline-variant rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+<div class="flex items-center gap-md">
+<input class="w-5 h-5 rounded-[4px] text-primary focus:ring-primary border-slate-gray" type="checkbox"/>
+<span class="font-body-md">Wild Arugula</span>
+</div>
+<span class="font-label-md text-primary">+$1.50</span>
+</label>
+<label class="flex items-center justify-between p-md bg-white border border-outline-variant rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+<div class="flex items-center gap-md">
+<input class="w-5 h-5 rounded-[4px] text-primary focus:ring-primary border-slate-gray" type="checkbox"/>
+<span class="font-body-md">Nduja Spicy Sausage</span>
+</div>
+<span class="font-label-md text-primary">+$3.00</span>
+</label>
+<label class="flex items-center justify-between p-md bg-white border border-outline-variant rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+<div class="flex items-center gap-md">
+<input class="w-5 h-5 rounded-[4px] text-primary focus:ring-primary border-slate-gray" type="checkbox"/>
+<span class="font-body-md">Sun-dried Tomatoes</span>
+</div>
+<span class="font-label-md text-primary">+$1.50</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Footer Sticky-like CTA -->
+<div class="mt-xl pt-lg border-t border-outline-variant flex flex-col sm:flex-row gap-lg items-center">
+<div class="flex items-center border border-outline rounded-lg overflow-hidden h-14 bg-white shadow-sm">
+<button class="w-12 flex items-center justify-center hover:bg-surface-variant transition-colors text-primary active:scale-90" onclick="updateQty(-1)">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<span class="w-12 text-center font-title-lg" id="qty-display">1</span>
+<button class="w-12 flex items-center justify-center hover:bg-surface-variant transition-colors text-primary active:scale-90" onclick="updateQty(1)">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+<button class="flex-1 w-full bg-primary text-on-primary h-14 rounded-lg font-headline-md flex items-center justify-between px-lg shadow-lg hover:brightness-90 active:scale-[0.98] transition-all">
+<span>Add to Cart</span>
+<span id="total-price">$18.50</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Ratings & Reviews Section -->
+<section class="mt-xl pt-xl border-t border-outline-variant">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-lg">Guest Reviews</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-xl">
+<!-- Summary Card -->
+<div class="bg-surface-container-low p-xl rounded-xl flex flex-col items-center justify-center text-center shadow-sm">
+<span class="text-[56px] font-black text-primary leading-none">4.8</span>
+<div class="flex text-price-gold my-sm">
+<span class="material-symbols-outlined" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="font-label-md text-slate-gray">Based on 124 reviews</span>
+<button class="mt-md font-label-md text-primary underline underline-offset-4">Write a review</button>
+</div>
+<!-- Review Feed -->
+<div class="md:col-span-2 space-y-lg">
+<div class="p-lg bg-white rounded-xl shadow-sm border border-transparent hover:border-outline-variant transition-all">
+<div class="flex justify-between mb-sm">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold">JD</div>
+<div>
+<h4 class="font-label-md text-on-surface">Julian D.</h4>
+<p class="text-[12px] text-slate-gray">Verified Buyer • 2 days ago</p>
+</div>
+</div>
+<div class="flex text-price-gold">
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<p class="font-body-md text-secondary italic">"Absolutely the best crust I've had in the city. The San Marzano sauce has that perfect sweetness that balances the char."</p>
+</div>
+<div class="p-lg bg-white rounded-xl shadow-sm border border-transparent hover:border-outline-variant transition-all">
+<div class="flex justify-between mb-sm">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold">MS</div>
+<div>
+<h4 class="font-label-md text-on-surface">Maria S.</h4>
+<p class="text-[12px] text-slate-gray">Verified Buyer • 1 week ago</p>
+</div>
+</div>
+<div class="flex text-price-gold">
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="star">star</span>
+</div>
+</div>
+<p class="font-body-md text-secondary italic">"Fresh ingredients and prompt delivery. The buffalo mozzarella was high quality. Could have used more basil, but still excellent."</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-start gap-lg bg-surface-container-highest border-t border-outline-variant">
+<div class="flex flex-col gap-md">
+<span class="font-headline-md text-headline-md font-black text-on-surface">KAHA</span>
+<p class="font-body-md text-on-surface-variant max-w-xs">Gourmet selections delivered to your doorstep. Enterprise-grade quality for urban diners.</p>
+</div>
+<div class="flex flex-wrap gap-xl">
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-on-surface uppercase tracking-wider">Company</span>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-on-surface uppercase tracking-wider">Support</span>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Delivery Info</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Support</a>
+</div>
+</div>
+<div class="w-full md:w-auto mt-lg md:mt-0 text-on-surface-variant font-label-md">
+            © 2024 KAHA Multi-Tenant Platform. All rights reserved.
+        </div>
+</footer>
+<script>
+        let quantity = 1;
+        const basePrice = 18.50;
+        
+        function updateQty(delta) {
+            quantity = Math.max(1, quantity + delta);
+            document.getElementById('qty-display').innerText = quantity;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            // Placeholder logic for calculation
+            const total = (basePrice * quantity).toFixed(2);
+            document.getElementById('total-price').innerText = `$${total}`;
+        }
+
+        // Simple thumbnail swapper logic (visual only)
+        document.querySelectorAll('.aspect-square.rounded-lg').forEach(thumb => {
+            thumb.addEventListener('click', function() {
+                if(this.classList.contains('active-thumb')) return;
+                
+                document.querySelectorAll('.aspect-square.rounded-lg').forEach(t => {
+                    t.classList.remove('active-thumb', 'border-primary');
+                    t.classList.add('border-transparent');
+                });
+                
+                this.classList.add('active-thumb', 'border-primary');
+                this.classList.remove('border-transparent');
+            });
+        });
+    </script>
+</body></html>

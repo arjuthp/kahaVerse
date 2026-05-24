@@ -1,0 +1,101 @@
+/* ========== MenuDetailModal — Savor Modern ========== */
+.modal-overlay {
+  position:fixed; inset:0; z-index:200;
+  display:flex; align-items:center; justify-content:center; padding:var(--space-md);
+  background:rgba(39,24,20,0.45); backdrop-filter:blur(4px);
+}
+
+.menu-modal-box {
+  background:var(--surface); border-radius:var(--radius-xl); box-shadow:var(--shadow-lg);
+  width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column;
+  overflow:hidden; position:relative; animation:scaleIn 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+@media(min-width:768px){
+  .menu-modal-box { flex-direction:row; }
+}
+
+.menu-modal-close {
+  position:absolute; top:var(--space-md); right:var(--space-md); z-index:10;
+  width:36px; height:36px; border-radius:var(--radius-full); border:none;
+  background:rgba(255,255,255,0.8); backdrop-filter:blur(4px); color:var(--on-surface);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow-sm); transition:all var(--transition-fast);
+}
+.menu-modal-close:hover { background:#fff; transform:scale(1.05); }
+
+/* Left: Image */
+.menu-modal-img-wrap {
+  position:relative; width:100%; height:240px; flex-shrink:0; background:var(--surface-container);
+}
+@media(min-width:768px){
+  .menu-modal-img-wrap { width:45%; height:auto; }
+}
+.menu-modal-img { width:100%; height:100%; object-fit:cover; }
+
+.menu-modal-badges { position:absolute; top:var(--space-md); left:var(--space-md); display:flex; gap:var(--space-xs); }
+
+/* Right: Content */
+.menu-modal-content {
+  flex:1; display:flex; flex-direction:column; background:var(--surface-lowest);
+  overflow-y:auto;
+}
+
+.menu-modal-body { padding:var(--space-xl); }
+
+.menu-modal-head { margin-bottom:var(--space-lg); }
+.menu-modal-title { font-family:'Manrope',sans-serif; font-size:28px; font-weight:700; color:var(--on-surface); margin:0 0 var(--space-xs); line-height:1.2; }
+.menu-modal-price { font-family:'Manrope',sans-serif; font-size:20px; font-weight:700; color:var(--primary); }
+.menu-modal-desc { font-size:15px; color:var(--on-surface-variant); margin-top:var(--space-sm); line-height:1.6; }
+
+/* Sections */
+.menu-modal-section { margin-top:var(--space-xl); padding-top:var(--space-xl); border-top:1px solid rgba(227,190,182,0.3); }
+.menu-modal-section-title {
+  font-family:'Manrope',sans-serif; font-size:18px; font-weight:600; color:var(--on-surface);
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-md);
+}
+.menu-modal-req { font-family:'Be Vietnam Pro',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; background:rgba(177,36,1,0.1); color:var(--primary); padding:2px 8px; border-radius:var(--radius-full); }
+.menu-modal-opt { font-family:'Be Vietnam Pro',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate-gray); }
+
+/* Options */
+.menu-option-list { display:flex; flex-direction:column; gap:var(--space-sm); }
+.menu-option-label {
+  display:flex; align-items:center; padding:var(--space-md);
+  border:1px solid var(--outline-variant); border-radius:var(--radius);
+  cursor:pointer; transition:all var(--transition-fast);
+}
+.menu-option-label:hover { background:var(--surface-low); }
+.menu-option-input { width:18px; height:18px; accent-color:var(--primary); margin-right:var(--space-md); flex-shrink:0; }
+.menu-option-text { flex:1; font-family:'Be Vietnam Pro',sans-serif; font-size:15px; font-weight:600; color:var(--on-surface); }
+.menu-option-price { font-family:'Manrope',sans-serif; font-size:15px; font-weight:700; color:var(--primary); }
+.menu-option-label--checked { border-color:var(--primary); background:rgba(177,36,1,0.04); }
+
+/* Footer */
+.menu-modal-footer {
+  padding:var(--space-lg) var(--space-xl); background:var(--surface-low);
+  border-top:1px solid rgba(227,190,182,0.3);
+  display:flex; align-items:center; gap:var(--space-md); margin-top:auto;
+}
+
+.menu-modal-qty {
+  display:flex; align-items:center; background:var(--surface-lowest);
+  border:1px solid var(--outline-variant); border-radius:var(--radius-full);
+  padding:var(--space-xs); gap:2px; height:48px;
+}
+.menu-modal-qty-btn {
+  width:36px; height:36px; border:none; background:transparent;
+  border-radius:var(--radius-full); cursor:pointer; color:var(--on-surface-variant);
+  display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700;
+  transition:all var(--transition-fast);
+}
+.menu-modal-qty-btn:hover { background:var(--surface-container); color:var(--primary); }
+.menu-modal-qty-count { min-width:32px; text-align:center; font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; color:var(--on-surface); }
+
+.menu-modal-add-btn {
+  flex:1; height:48px; display:flex; align-items:center; justify-content:center; gap:var(--space-sm);
+  background:var(--primary); color:var(--on-primary); border:none; border-radius:var(--radius-full);
+  font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; cursor:pointer;
+  box-shadow:0 4px 14px rgba(177,36,1,0.25); transition:all var(--transition-fast);
+}
+.menu-modal-add-btn:hover { background:var(--primary-container); transform:translateY(-1px); box-shadow:0 6px 20px rgba(177,36,1,0.3); }
+.menu-modal-add-btn:active { transform:scale(0.98); }
+.menu-modal-add-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }

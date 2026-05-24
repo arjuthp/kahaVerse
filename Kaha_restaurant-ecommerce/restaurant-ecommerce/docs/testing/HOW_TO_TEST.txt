@@ -1,0 +1,69 @@
+🚀 KAHA Restaurant API - Postman Testing
+
+✅ PRODUCTION READY - CREDENTIALS EMBEDDED!
+
+📦 QUICK START (3 Steps):
+
+1️⃣ Import to Postman:
+   - Kaha-Restaurant-Environment.postman_environment.json
+   - KAHA_Restaurant_Complete_Tests.postman_collection.json
+
+2️⃣ Get JWT Token:
+   curl -X POST https://api.kaha.com/v3/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"owner@kahastays.com","password":"password123"}'
+
+3️⃣ Update Environment:
+   - Select "Kaha Restaurant - Production Credentials" environment
+   - Paste JWT token into "authToken" variable
+   - Click Send on any request!
+
+🔑 EMBEDDED CREDENTIALS:
+
+Owner (Recommended):
+- Email: owner@kahastays.com
+- Password: password123
+- User ID: 00000000-0000-4000-a000-000000000010
+
+Admin:
+- Email: admin@kahastays.com  
+- Password: password123
+- User ID: 00000000-0000-4000-a000-000000000011
+
+Hotels:
+- Yak & Yeti: 00000000-0000-4000-a000-000000000100
+- Temple Tree: 00000000-0000-4000-a000-000000000101
+- Barahi Lodge: 00000000-0000-4000-a000-000000000102
+
+📋 WHAT'S TESTED:
+
+✅ Categories (5 operations)
+✅ Menu Items (7 operations)
+✅ Addons (5 operations)
+✅ Addon Groups (5 operations)
+✅ Cart (5 operations)
+✅ Orders (5 operations)
+✅ Menu Ratings (3 operations)
+
+🎯 FEATURES:
+
+- Auto-ID extraction from responses
+- Request chaining (IDs flow between requests)
+- Test assertions on every request
+- Production credentials pre-configured
+- No external scripts needed!
+
+📖 DETAILED GUIDES:
+
+- Quick Start: postman/QUICK_START.md
+- Full Guide: postman/PRODUCTION_TESTING_GUIDE.md
+- API Reference: postman/README.md
+
+⚙️ BEFORE TESTING:
+
+1. Start restaurant API: npm run dev (port 3001)
+2. Verify .env has:
+   JWT_SECRET_TOKEN=secret
+   KAH_API_V3_BASE_URL=https://api.kaha.com/v3
+
+🎉 THAT'S IT! Import, get token, test!

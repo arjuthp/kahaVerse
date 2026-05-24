@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Your Gourmet Basket | KAHA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container": "#ffe9e4",
+                        "slate-gray": "#636E72",
+                        "price-gold": "#B08968",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-tertiary-fixed": "#1b1c19",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "tertiary": "#5c5c58",
+                        "surface-bright": "#fff8f6",
+                        "on-primary-fixed-variant": "#8b1a00",
+                        "outline-variant": "#e3beb6",
+                        "surface-tint": "#b52703",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "status-delivered": "#27AE60",
+                        "on-background": "#271814",
+                        "inverse-surface": "#3d2c28",
+                        "inverse-primary": "#ffb4a3",
+                        "on-tertiary-fixed-variant": "#474744",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "status-shipped": "#9B51E0",
+                        "surface-container-highest": "#f9dcd6",
+                        "on-primary-container": "#fffbff",
+                        "surface-dim": "#f0d4ce",
+                        "on-surface-variant": "#5b403a",
+                        "on-surface": "#271814",
+                        "surface-container-high": "#ffe2dc",
+                        "secondary-fixed": "#dde4e6",
+                        "tertiary-container": "#757571",
+                        "primary-fixed": "#ffdad2",
+                        "on-secondary-container": "#5d6466",
+                        "status-cancelled": "#EB5757",
+                        "on-primary-fixed": "#3d0600",
+                        "primary-container": "#d53e1b",
+                        "background": "#fff8f6",
+                        "status-processing": "#2F80ED",
+                        "status-pending": "#F2994A",
+                        "tertiary-fixed": "#e4e2dd",
+                        "primary": "#b12401",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "surface": "#fff8f6",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#8f7069",
+                        "on-tertiary-container": "#fefcf7",
+                        "surface-variant": "#f9dcd6",
+                        "inverse-on-surface": "#ffede9",
+                        "surface-container-low": "#fff0ed",
+                        "secondary": "#586062"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "gutter": "20px",
+                        "container-max": "1200px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Manrope"],
+                        "label-md": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "price-display": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "title-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "display-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .active-scale:active { transform: scale(0.95); transition: transform 0.1s; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(227, 190, 182, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-20 max-w-container-max mx-auto bg-surface dark:bg-surface-dim shadow-sm">
+<div class="flex items-center gap-md">
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary">KAHA</span>
+<div class="hidden md:flex gap-lg ml-xl">
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary-container dark:hover:text-primary-fixed transition-colors duration-200" href="#">Starters</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary-container dark:hover:text-primary-fixed transition-colors duration-200" href="#">Main Course</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary-container dark:hover:text-primary-fixed transition-colors duration-200" href="#">Desserts</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-secondary">search</span>
+<input class="pl-xl pr-md py-xs bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary w-64" placeholder="Search menu..." type="text"/>
+</div>
+<button class="active-scale p-xs text-primary dark:text-inverse-primary border-b-2 border-primary font-bold">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+<button class="active-scale p-xs text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</nav>
+<main class="pt-24 pb-xl px-gutter max-w-container-max mx-auto min-h-screen">
+<header class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Your Gourmet Basket</h1>
+<p class="text-secondary font-body-md">Review your items before proceeding to checkout.</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xl" id="cart-container">
+<!-- Cart Items List -->
+<div class="lg:col-span-8 flex flex-col gap-md">
+<!-- Cart Item 1 -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0_20px_40px_-15px_rgba(88,96,98,0.1)] flex flex-col md:flex-row gap-lg group transition-all hover:translate-y-[-2px]">
+<div class="w-full md:w-40 h-40 shrink-0 overflow-hidden rounded-lg">
+<img alt="Salmon Salad" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A gourmet presentation of a fresh salmon salad bowl with vibrant greens, avocado slices, and toasted sesame seeds. The lighting is bright and natural, emphasizing a clean and appetizing light-mode aesthetic. High-end food photography with a shallow depth of field, set against a pristine white marble tabletop reflecting a premium dining experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYgtDCZ1MpPertJA7wvvFvv0UllnGeVOwnHr80eVudsd4vTcbu1M5vn-WRnTOO_t6akzY6nm2HF4VhDchv7jpW5NQYdhfFSnQf2j9LdZI3AbC8OJAtbo7S8GCl-EDQTdvqTnJ13-FzkS58cxflFjIa_sky_lqCwGVkykO4E218gLGE2x9A2yq8BrM24xNu95EvST3X_3TKoyOhDzYDF4DruS_o_rvxXht6M6I9KKEZIbT-GwJ3Zts49M6C6zJP7UNgpNyo8MLCsgqu"/>
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-title-lg text-on-surface">Grilled Atlantic Salmon Bowl</h3>
+<span class="font-price-display text-price-display text-primary">$24.50</span>
+</div>
+<p class="text-slate-gray font-label-md mt-xs">Variant: Medium Rare • Add-ons: Extra Avocado, Truffle Oil</p>
+<div class="mt-md">
+<label class="block text-xs font-bold text-outline uppercase tracking-wider mb-xs">Special Instructions</label>
+<textarea class="w-full p-sm bg-surface-container-low border border-outline-variant rounded-lg text-body-md focus:ring-1 focus:ring-primary focus:outline-none resize-none h-16" placeholder="e.g. Please pack dressing separately..."></textarea>
+</div>
+</div>
+<div class="flex justify-between items-center mt-md">
+<div class="flex items-center bg-secondary-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant hover:bg-primary hover:text-on-primary transition-colors active-scale">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-md font-bold text-on-surface-variant">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant hover:bg-primary hover:text-on-primary transition-colors active-scale">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<button class="text-error font-label-md flex items-center gap-xs hover:underline active-scale">
+<span class="material-symbols-outlined text-sm">delete</span> Remove
+                            </button>
+</div>
+</div>
+</div>
+<!-- Cart Item 2 -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0_20px_40px_-15px_rgba(88,96,98,0.1)] flex flex-col md:flex-row gap-lg group transition-all hover:translate-y-[-2px]">
+<div class="w-full md:w-40 h-40 shrink-0 overflow-hidden rounded-lg">
+<img alt="Margherita Pizza" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A rustic, thin-crust artisanal pizza topped with fresh buffalo mozzarella, aromatic basil leaves, and a rich tomato sauce. The scene is illuminated by warm, diffused golden hour light, creating a tactile and sensory appeal. The style is minimalist with organic shadows, placed on a dark slate board to make the vibrant terracotta red of the sauce pop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWKtl6KuH_coq0Czhhv-a1oY442Rz0oEKLnLniAbd0OijyNcWeRPTArHCpwIytuZQhDQAl838zNGCahYVIkX5pJM6JcztjNqm037obLl68s7EyR-NCPSZYpZ6phptz34fq2RBVXchxYJkWjUNiRwn55ZaCEjXewLzKL5pA7TRnwPumgFoDUX9WqV4PbkCbTW8Du41wqWMl5HOMbXU3K9cXjiZMbpWMuHn9sM0B0UKC4v73AkxwlsIH_8IniPqCwdHbs3cNeu2btLqn"/>
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-title-lg text-on-surface">Artisanal Margherita</h3>
+<span class="font-price-display text-price-display text-primary">$18.00</span>
+</div>
+<p class="text-slate-gray font-label-md mt-xs">Variant: Standard Crust • Add-ons: Burrata Upgrade</p>
+<div class="mt-md">
+<label class="block text-xs font-bold text-outline uppercase tracking-wider mb-xs">Special Instructions</label>
+<textarea class="w-full p-sm bg-surface-container-low border border-outline-variant rounded-lg text-body-md focus:ring-1 focus:ring-primary focus:outline-none resize-none h-16" placeholder="e.g. Extra crispy please..."></textarea>
+</div>
+</div>
+<div class="flex justify-between items-center mt-md">
+<div class="flex items-center bg-secondary-container rounded-full p-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant hover:bg-primary hover:text-on-primary transition-colors active-scale">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-md font-bold text-on-surface-variant">2</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant hover:bg-primary hover:text-on-primary transition-colors active-scale">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<button class="text-error font-label-md flex items-center gap-xs hover:underline active-scale">
+<span class="material-symbols-outlined text-sm">delete</span> Remove
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Summary Sidebar -->
+<aside class="lg:col-span-4">
+<div class="glass-card p-xl rounded-xl shadow-lg sticky top-24">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-lg">Order Summary</h2>
+<div class="space-y-md border-b border-outline-variant pb-lg mb-lg">
+<div class="flex justify-between text-body-md text-secondary">
+<span>Subtotal</span>
+<span class="text-on-surface font-semibold">$60.50</span>
+</div>
+<div class="flex justify-between text-body-md text-secondary">
+<span>Tax (13%)</span>
+<span class="text-on-surface font-semibold">$7.86</span>
+</div>
+<div class="flex justify-between text-body-md text-secondary">
+<span>Delivery Fee</span>
+<span class="text-status-delivered font-semibold">FREE</span>
+</div>
+</div>
+<div class="flex justify-between items-end mb-xl">
+<div>
+<p class="text-slate-gray font-label-md uppercase tracking-widest">Total Amount</p>
+<p class="font-display-lg text-display-lg text-primary leading-none mt-xs">$68.36</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-20 text-4xl">receipt_long</span>
+</div>
+<button class="w-full bg-primary text-on-primary py-md rounded-xl font-title-lg text-title-lg hover:bg-primary-container transition-all shadow-md active-scale flex items-center justify-center gap-md">
+                        Proceed to Checkout
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="text-center text-xs text-slate-gray mt-md">By proceeding, you agree to our Terms and Service.</p>
+</div>
+<!-- Upsell Card -->
+<div class="mt-lg bg-surface-container-high p-lg rounded-xl border border-dashed border-primary/30 flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-3xl">celebration</span>
+<div>
+<p class="font-bold text-on-surface-variant">Add a Dessert?</p>
+<p class="text-sm text-secondary">Spend $10 more to get a free drink.</p>
+</div>
+</div>
+</aside>
+</div>
+<!-- Empty State (Hidden by default) -->
+<div class="hidden flex-col items-center justify-center py-24 text-center" id="empty-cart">
+<div class="w-48 h-48 bg-surface-container rounded-full flex items-center justify-center mb-xl">
+<span class="material-symbols-outlined text-7xl text-outline-variant">shopping_basket</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-md">Your basket is empty</h2>
+<p class="text-secondary body-lg max-w-md mx-auto mb-xl">Looks like you haven't added any gourmet delights yet. Let's find something delicious for you.</p>
+<a class="bg-primary text-on-primary px-xl py-md rounded-xl font-title-lg hover:bg-primary-container transition-all active-scale" href="#">
+                Explore the Menu
+            </a>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-start gap-lg bg-surface-container-highest dark:bg-surface-dim border-t border-outline-variant">
+<div class="max-w-xs">
+<span class="font-headline-md text-headline-md font-black text-on-surface">KAHA</span>
+<p class="text-on-surface-variant font-body-md mt-sm">Crafting premium digital dining experiences with taste and technology.</p>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-xl">
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-on-surface font-bold uppercase mb-xs">Company</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">About Us</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Contact Support</a>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-on-surface font-bold uppercase mb-xs">Service</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Delivery Info</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-on-surface font-bold uppercase mb-xs">Legal</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-md" href="#">Privacy Policy</a>
+</div>
+</div>
+<div class="w-full md:w-auto pt-lg border-t md:border-none border-outline-variant text-on-surface-variant font-label-md">
+            © 2024 KAHA Multi-Tenant Platform. All rights reserved.
+        </div>
+</footer>
+<script>
+        // Simple logic for removing items and showing empty state for demonstration
+        document.querySelectorAll('.text-error').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const item = e.target.closest('.bg-surface-container-lowest');
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(20px)';
+                setTimeout(() => {
+                    item.remove();
+                    const remainingItems = document.querySelectorAll('#cart-container .lg\\:col-span-8 > div');
+                    if (remainingItems.length === 0) {
+                        document.getElementById('cart-container').classList.add('hidden');
+                        document.getElementById('empty-cart').classList.remove('hidden');
+                    }
+                }, 300);
+            });
+        });
+
+        // Quantity controls
+        document.querySelectorAll('.bg-secondary-container').forEach(container => {
+            const countSpan = container.querySelector('span');
+            const btns = container.querySelectorAll('button');
+            
+            btns[0].addEventListener('click', () => {
+                let count = parseInt(countSpan.innerText);
+                if (count > 1) countSpan.innerText = count - 1;
+            });
+            
+            btns[1].addEventListener('click', () => {
+                let count = parseInt(countSpan.innerText);
+                countSpan.innerText = count + 1;
+            });
+        });
+    </script>
+</body></html>

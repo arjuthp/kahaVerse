@@ -1,0 +1,5616 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "kaha-complete-tests-v1"
+    },
+    "item": [
+      {
+        "id": "7a9c0776-e600-4536-ac0f-c9b586c1bea6",
+        "name": "🏥 Health Check",
+        "item": [
+          {
+            "id": "d2709ad7-58dc-45e5-a6b6-fd7f41ec5797",
+            "name": "GET - Health Check",
+            "request": {
+              "url": {
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "0f6359f2-6c6f-4314-8a89-151aab17f4a1",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 200', function() {",
+                    "    pm.response.to.have.status(200);",
+                    "});"
+                  ],
+                  "_lastExecutionId": "ca594ebb-3359-4ea3-944b-716ecbb50005"
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "ea173006-4797-4c5b-9634-d48ab37ec8db",
+        "name": "🔐 Get Auth Token (Kaha Main v3)",
+        "item": [
+          {
+            "id": "a08ab555-a48b-400c-a9f5-f467fb67b267",
+            "name": "LOGIN - Owner (Recommended)",
+            "request": {
+              "url": {
+                "protocol": "https",
+                "path": [
+                  "api",
+                  "auth",
+                  "login"
+                ],
+                "host": [
+                  "restaurant",
+                  "kaha",
+                  "com",
+                  "np"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "5e79a5bd-6bd0-4a21-8c21-26677310b75d",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 200', function() {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    if (jsonData.token) {",
+                    "        pm.environment.set('authToken', jsonData.token);",
+                    "        console.log('✅ Auth token saved to environment');",
+                    "    }",
+                    "    if (jsonData.user && jsonData.user.id) {",
+                    "        pm.environment.set('userId', jsonData.user.id);",
+                    "        console.log('✅ User ID:', jsonData.user.id);",
+                    "    }",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "06ab1989-b9aa-4653-a6d2-a929951a21b3",
+            "name": "LOGIN - Admin",
+            "request": {
+              "url": {
+                "protocol": "https",
+                "path": [
+                  "api",
+                  "auth",
+                  "login"
+                ],
+                "host": [
+                  "restaurant",
+                  "kaha",
+                  "com",
+                  "np"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "206ee8d8-13fe-4ee9-93dc-7f45dcd3fe03",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 200', function() {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    if (jsonData.token) {",
+                    "        pm.environment.set('authToken', jsonData.token);",
+                    "        console.log('✅ Admin token saved to environment');",
+                    "    }",
+                    "    if (jsonData.user && jsonData.user.id) {",
+                    "        pm.environment.set('userId', jsonData.user.id);",
+                    "        console.log('✅ User ID:', jsonData.user.id);",
+                    "    }",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "ec23eb6e-c5c7-46f3-b941-c29e22b3f71f",
+        "name": "Categories - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "c6f55972-750f-49c7-9f58-5eb618156ca5",
+            "name": "✅ CREATE - Valid Category",
+            "request": {
+              "url": {
+                "path": [
+                  "categories"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Burgers\",\n  \"icon\": \"🍔\",\n  \"description\": \"Delicious burgers with various toppings\",\n  \"businessId\": \"{{businessId}}\",\n  \"isAvailable\": true,\n  \"createdBy\": \"{{userId}}\",\n  \"position\": 1\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "877f128d-181f-4abd-94aa-1d058e228e3e",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('categoryId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "0c69acbe-f8e7-4e5f-8b22-70c7d261b7b9",
+            "name": "❌ CREATE - Missing Required Fields",
+            "request": {
+              "url": {
+                "path": [
+                  "categories"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"icon\": \"🍕\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "16fc4b7c-4bc8-4b68-bf76-99735d043774",
+            "name": "❌ CREATE - Invalid Data Types",
+            "request": {
+              "url": {
+                "path": [
+                  "categories"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": 12345,\n  \"icon\": true,\n  \"businessId\": \"{{businessId}}\",\n  \"isAvailable\": \"not-a-boolean\",\n  \"position\": \"not-a-number\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "ca318ba0-7f5c-4c9c-b04b-f5884fab7934",
+            "name": "❌ CREATE - Unauthorized (No Token)",
+            "request": {
+              "url": {
+                "path": [
+                  "categories"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Unauthorized Category\",\n  \"businessId\": \"{{businessId}}\"\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "169de45b-65ad-4115-a484-c131a31d9ee9",
+            "name": "❌ CREATE - Insufficient Permissions (User Token)",
+            "request": {
+              "url": {
+                "path": [
+                  "categories"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Should Fail\",\n  \"businessId\": \"{{businessId}}\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "d610321e-eb38-4302-b2fc-f0bdb396891a",
+            "name": "✅ READ - Get All Categories by Business",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "04d38a66-0c31-49ba-9e35-7cd9e99795e4",
+            "name": "✅ READ - Get Category by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "549e541c-b6ad-4349-af64-0b508bf380f4",
+            "name": "❌ READ - Non-existent Category ID",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a1afff1d-df6c-48a8-b17b-1080cc68a9f9",
+            "name": "❌ READ - Invalid UUID Format",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "invalid-uuid-format"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "41e31029-3990-4f65-96b0-6c796158958a",
+            "name": "❌ READ - Non-existent Business ID",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "929a1b6a-13bb-4207-85c1-8504834e7d61",
+            "name": "✅ UPDATE - Valid Category Update",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Premium Burgers\",\n  \"description\": \"Updated description for premium burgers\",\n  \"isAvailable\": true\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "8cdfd881-201c-48b4-8229-2006cdab7837",
+            "name": "❌ UPDATE - Non-existent Category",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Should Fail\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "d27c0a89-baae-4a14-833b-9e24340ad0d8",
+            "name": "❌ UPDATE - Unauthorized User",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Unauthorized Update\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "020d1e37-9b86-477c-bd39-640713eeb79a",
+            "name": "❌ UPDATE - Invalid Data Type",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"isAvailable\": \"not-a-boolean\",\n  \"position\": \"not-a-number\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "cfb89036-7c55-42e9-8180-f2ddd1f75c61",
+            "name": "⚠️ DELETE - Valid Category (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "7abb6da3-4266-4a51-8421-906acd7129fd",
+            "name": "❌ DELETE - Non-existent Category",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "50ae2127-2035-4279-a530-48808c9235d9",
+            "name": "❌ DELETE - Unauthorized User",
+            "request": {
+              "url": {
+                "path": [
+                  "categories",
+                  "{{categoryId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "d2b6c80d-266b-4e19-8360-6c3d1b4c93cf",
+        "name": "Menu Items - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "4ff7536f-e021-40ab-bdce-16ee26282ef4",
+            "name": "✅ CREATE - Valid Menu Item",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Classic Cheeseburger\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"description\": \"Juicy beef patty with melted cheese\",\n  \"details\": {\n    \"calories\": 650,\n    \"allergens\": [\"dairy\", \"gluten\"]\n  },\n  \"services\": [\"home_delivery\", \"takeaway\", \"dine_in\"],\n  \"images\": [\"https://example.com/burger1.jpg\"],\n  \"isBarItem\": false,\n  \"isSignature\": true,\n  \"isAvailable\": true,\n  \"allowAddOns\": true,\n  \"price\": 12.99,\n  \"discountedPrice\": 10.99,\n  \"addOnIds\": []\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "353f220c-e68b-45ae-9f43-4d507efc9eac",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('menuId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "186773ad-bc04-45e6-a943-dc1384adb4a5",
+            "name": "❌ CREATE - Missing Required Fields (Name)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"description\": \"Missing name\",\n  \"price\": 9.99,\n  \"services\": [\"dine_in\"]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "d363e20e-01c3-4240-a618-cdda3bf3c605",
+            "name": "❌ CREATE - Missing Required Fields (CategoryId)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Menu Without Category\",\n  \"description\": \"Missing categoryId\",\n  \"price\": 9.99,\n  \"services\": [\"dine_in\"]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "64a1e512-7382-45e9-a528-1710afdca844",
+            "name": "❌ CREATE - Invalid Price (Negative)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Invalid Price Item\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"price\": -5.99,\n  \"services\": [\"dine_in\"]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "55efe7f7-eb5e-430e-b18b-2892762f9c6d",
+            "name": "❌ CREATE - Invalid Price (Zero)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Zero Price Item\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"price\": 0,\n  \"services\": [\"dine_in\"]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2eb50a04-847e-4a87-95d9-9c8d392ebe8c",
+            "name": "❌ CREATE - Invalid Service Type",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Invalid Service Item\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"price\": 9.99,\n  \"services\": [\"invalid_service_type\"]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "fffad328-ec51-4ccc-8c0f-cb0497a21c58",
+            "name": "❌ CREATE - Unauthorized (No Token)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Unauthorized Menu\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"price\": 9.99,\n  \"services\": [\"dine_in\"]\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "bd2a9ffe-6d44-40e0-95d5-0e9d0835220a",
+            "name": "❌ CREATE - Insufficient Permissions (User Token)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Should Fail\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"price\": 9.99,\n  \"services\": [\"dine_in\"]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c51ac1c1-c9db-4a6d-9234-7237e734f8fd",
+            "name": "✅ READ - Get All Menu Items by Business",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "1040bbae-52c8-43a4-93d3-8caac72423ec",
+            "name": "✅ READ - Get Menu Items by Category",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [
+                  {
+                    "key": "categoryId",
+                    "value": "{{categoryId}}"
+                  }
+                ],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "e9d6b320-d5a1-469d-97cd-891f65e74a9f",
+            "name": "✅ READ - Get Menu Item by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "4db18ed4-cf1b-426f-be4b-c5aa30576050",
+            "name": "❌ READ - Non-existent Menu ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "4376fb4d-b976-47cd-a94e-5e50c1805f2e",
+            "name": "❌ READ - Invalid UUID Format",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "invalid-uuid"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "8453f835-4574-4ea5-9c63-a92cb87f3a2a",
+            "name": "❌ READ - Non-existent Business ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "5fe5af74-d8cf-4ae2-bae7-62e5942bd01b",
+            "name": "✅ UPDATE - Valid Menu Update",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Premium Cheeseburger\",\n  \"description\": \"Updated with premium ingredients\",\n  \"price\": 14.99,\n  \"discountedPrice\": 12.99,\n  \"isAvailable\": true\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "6e271cb0-915b-41d7-b06f-e22ae1108135",
+            "name": "✅ UPDATE - Toggle Signature Status",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "toggle-signature",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"isSignature\": true\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "76e0151a-c598-4b42-a282-92b0aebfded5",
+            "name": "❌ UPDATE - Invalid Price Update",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"price\": \"not-a-number\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a7dd1f4c-3106-491b-851d-2bd2770b5ea4",
+            "name": "❌ UPDATE - Negative Price",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"price\": -9.99\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "ea64e95d-0693-43e6-8d23-4f4eeb26b904",
+            "name": "❌ UPDATE - Non-existent Menu",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Should Fail\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "bab7f4c1-96ac-41c9-802c-3585d556d7d6",
+            "name": "❌ UPDATE - Unauthorized User",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Unauthorized Update\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "4fc78c84-453d-4e7b-850d-dbcaa512d984",
+            "name": "⚠️ DELETE - Valid Menu Item (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "72a18094-2763-4dbf-8ad2-4b5bac8e8d6d",
+            "name": "❌ DELETE - Non-existent Menu",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "47f4c653-c588-42fc-9a80-d09a4bf4a16e",
+            "name": "❌ DELETE - Unauthorized User",
+            "request": {
+              "url": {
+                "path": [
+                  "menu",
+                  "{{menuId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "8f9050c5-515a-4c08-92d7-3436f59b74e4",
+        "name": "Addons - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "7dfdb79f-d522-4623-a306-c14f13568a89",
+            "name": "✅ CREATE - Valid Addon",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Extra Cheese\",\n  \"price\": 1.50,\n  \"businessId\": \"{{businessId}}\",\n  \"isAvailable\": true,\n  \"description\": \"Add extra melted cheese\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "5f9d2de9-5b70-4e07-9bc3-ebefc5b87b2b",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('addonId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "6f57f3d5-95e1-40e4-9807-933855e1f6da",
+            "name": "❌ CREATE - Missing Required Fields (Name)",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"price\": 1.50,\n  \"businessId\": \"{{businessId}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "e1cc8004-751b-434d-bb17-499e5d724fca",
+            "name": "❌ CREATE - Missing Required Fields (Price)",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Missing Price Addon\",\n  \"businessId\": \"{{businessId}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "eb13b36e-9b4b-4e46-8138-1060aa5fee27",
+            "name": "❌ CREATE - Negative Price",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Invalid Addon\",\n  \"price\": -2.50,\n  \"businessId\": \"{{businessId}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "0e809649-6eb0-4438-b987-ee06f7f48baa",
+            "name": "❌ CREATE - Zero Price",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Zero Price Addon\",\n  \"price\": 0,\n  \"businessId\": \"{{businessId}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a6d63030-46b0-4733-a351-3457fe82076f",
+            "name": "❌ CREATE - Invalid Price Type",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Invalid Type Addon\",\n  \"price\": \"not-a-number\",\n  \"businessId\": \"{{businessId}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "3cad8fde-b785-4be7-9c7f-61413da5bf55",
+            "name": "❌ CREATE - Invalid Name Type",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": 12345,\n  \"price\": 1.50,\n  \"businessId\": \"{{businessId}}\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "3d8388e5-64dc-45d2-827c-640d056fb1c8",
+            "name": "✅ READ - Get All Addons",
+            "request": {
+              "url": {
+                "path": [
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "507eb7eb-28c9-437c-96e9-25e7e16a6f45",
+            "name": "✅ READ - Get Addon by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c565b9b0-e025-4e40-9602-073fa1ade39e",
+            "name": "❌ READ - Non-existent Addon ID",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "9117db9a-4841-4676-a238-02770f32b2bb",
+            "name": "❌ READ - Invalid UUID Format",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "invalid-uuid"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "fc6d4626-6bc7-4ad3-be45-87f0aecb4555",
+            "name": "✅ UPDATE - Valid Addon Update",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Premium Extra Cheese\",\n  \"price\": 2.00,\n  \"isAvailable\": true\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "e5d37a14-e6f2-45cb-9f16-0ba44918b04a",
+            "name": "❌ UPDATE - Negative Price",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"price\": -1.50\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c0a0d72c-1a14-43ed-9ee4-5ff87d5aeabc",
+            "name": "❌ UPDATE - Invalid Price Type",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"price\": \"not-a-number\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "442905d0-14b4-4172-a7b7-6635bf277b11",
+            "name": "❌ UPDATE - Non-existent Addon",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Should Fail\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "f97ebfe5-7913-4fa6-a353-bcfc61ee4bc8",
+            "name": "⚠️ DELETE - Valid Addon (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "4c6f2b3c-0c5e-436e-8ff7-ea94dc2d83a1",
+            "name": "❌ DELETE - Non-existent Addon",
+            "request": {
+              "url": {
+                "path": [
+                  "addons",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE"
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "4576bcbb-ffda-4494-a9fe-4885b166b321",
+        "name": "Addon Groups - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "a1b38e2d-e91f-490a-9fb6-3eb7c8910600",
+            "name": "✅ CREATE - Valid Addon Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Toppings\",\n  \"description\": \"Additional toppings for your burger\",\n  \"isRequired\": false,\n  \"maxSelection\": 3\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "8e8f0e7c-ecfd-42ef-8641-70d10541a530",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('addonGroupId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "e0981f4b-c0f3-4cce-a423-ad8874f1cd6f",
+            "name": "❌ CREATE - Missing Required Fields (Name)",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"description\": \"Missing name\",\n  \"isRequired\": true\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "6a45ae59-b4a7-4c3e-95db-716476421b72",
+            "name": "❌ CREATE - Invalid MaxSelection (Negative)",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Invalid Group\",\n  \"maxSelection\": -1\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "51f0b12f-5a17-416d-9107-e2766361960a",
+            "name": "❌ CREATE - Invalid MaxSelection (Zero)",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Zero Selection Group\",\n  \"maxSelection\": 0\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "37dde595-0fdb-49a6-975b-fad1a869c6ed",
+            "name": "✅ READ - Get All Addon Groups",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c71d59d9-dc1a-4ba2-a170-b59b6d81bba4",
+            "name": "✅ READ - Get Addon Group by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "ce79dc6b-3448-4605-bee0-47ff3387a51e",
+            "name": "❌ READ - Non-existent Addon Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "0fe70121-3e11-43d3-96e3-c9280b273b24",
+            "name": "✅ UPDATE - Valid Addon Group Update",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Premium Toppings\",\n  \"description\": \"Updated toppings group\",\n  \"maxSelection\": 5\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "66b1de3e-41e6-4ab0-b9f4-30a6df88a2a8",
+            "name": "❌ UPDATE - Invalid MaxSelection",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"maxSelection\": -5\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c1dc494a-36ab-44ff-81fa-842426d0a52d",
+            "name": "❌ UPDATE - Non-existent Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Should Fail\"\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "e62f2690-8110-44e2-92dc-a5694495f497",
+            "name": "✅ ADD - Addon to Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}",
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Cheese\",\n  \"price\": 1.00,\n  \"description\": \"Extra cheese\"\n}"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "4471c31d-2741-4cf0-97af-b9f8f7944be5",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('addonId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "ddcda02d-4bdd-4fc5-991e-0a65e65a5bb8",
+            "name": "❌ ADD - Addon to Non-existent Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "00000000-0000-0000-0000-000000000000",
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Bacon\",\n  \"price\": 1.50\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "3fa8dc1a-3bd5-4c67-bcfc-65dd84172dd0",
+            "name": "❌ ADD - Addon with Negative Price",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}",
+                  "addons"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Invalid Addon\",\n  \"price\": -0.50\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "68987a92-8b69-4107-a1b2-0b56b57ef5f7",
+            "name": "✅ UPDATE - Addon in Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}",
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Premium Cheese\",\n  \"price\": 1.50\n}"
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "742b3a30-1dc0-45d7-b523-253f1af5bf42",
+            "name": "⚠️ DELETE - Addon from Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}",
+                  "addons",
+                  "{{addonId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "7d46facc-86ba-47e9-bb30-626fb4e09b4e",
+            "name": "❌ DELETE - Non-existent Addon from Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}",
+                  "addons",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2c67086a-bd96-4058-829c-95f89da62800",
+            "name": "⚠️ DELETE - Addon Group (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "{{addonGroupId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "bfb3cd6a-f87a-4449-b895-3bf7e9cc885e",
+            "name": "❌ DELETE - Non-existent Addon Group",
+            "request": {
+              "url": {
+                "path": [
+                  "addon-groups",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE"
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "01e93309-0ecc-4785-8401-21484e46d6c4",
+        "name": "Cart - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "c1f6f4b1-1061-426e-a765-63e8e7b45946",
+            "name": "✅ CREATE - New Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "cart"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"businessId\": \"{{businessId}}\",\n  \"userId\": \"{{userId}}\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "01cd2850-ebfa-4517-95f2-8567bb4e64ed",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('cartId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "6f244cf2-b04c-499d-b2ac-c60cc9179347",
+            "name": "✅ ADD - Item to Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"quantity\": 2,\n  \"specialInstructions\": \"No onions please\",\n  \"addonInfo\": [\n    {\n      \"addonsId\": \"{{addonId}}\"\n    }\n  ]\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "c286848e-cff9-4df7-9e82-317061c24813",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('cartItemId', jsonData.id || jsonData.data.id || jsonData.cartItem?.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "17960b6c-8a49-4758-8445-0b616392f991",
+            "name": "❌ ADD - Item with Invalid Menu ID",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"00000000-0000-0000-0000-000000000000\",\n  \"quantity\": 1\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "4d2a6400-2dd1-4e46-9ea3-5474c0ad9075",
+            "name": "❌ ADD - Item with Zero Quantity",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"quantity\": 0\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "eeacad87-81f7-4fc1-9f99-51627f07fe72",
+            "name": "❌ ADD - Item with Negative Quantity",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"quantity\": -5\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "38cc7f0d-25bc-410d-a85c-3b3faed0ce9c",
+            "name": "❌ ADD - Item with Invalid Quantity Type",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"quantity\": \"not-a-number\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a5bc50a1-084f-4f27-b3df-54bdaeeb0b0a",
+            "name": "❌ ADD - Item without Authentication",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"quantity\": 1\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "281b8d08-2460-47b9-b8da-f62c855c9ce3",
+            "name": "❌ ADD - Item with Missing MenuId",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "item"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"quantity\": 1\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2aed76bb-353e-4708-9849-7a3b72b29e64",
+            "name": "✅ READ - Get User Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "cart"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2489627b-1f25-4399-a4f7-a4a48bca7269",
+            "name": "❌ READ - Cart without Authentication",
+            "request": {
+              "url": {
+                "path": [
+                  "cart"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "dee37f41-5cdc-4b3a-8966-9bf216f5c3d1",
+            "name": "✅ UPDATE - Cart Item Quantity",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartItemId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"quantity\": 3,\n  \"specialInstructions\": \"Extra spicy\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "9933dac3-d578-4ffe-99d4-9d2a693fe496",
+            "name": "❌ UPDATE - Cart Item with Negative Quantity",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartItemId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"quantity\": -1\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a47e1f31-f1c7-48ee-9716-65aacb869f26",
+            "name": "❌ UPDATE - Cart Item with Zero Quantity",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartItemId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"quantity\": 0\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "9c739038-4475-46e9-9e8d-9f62214d3256",
+            "name": "❌ UPDATE - Non-existent Cart Item",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"quantity\": 1\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "27bc77cd-e614-427d-b412-ce75c2bf5b2a",
+            "name": "⚠️ DELETE - Cart Item (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartItemId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "d964262b-9e73-41b1-a74a-99b425577898",
+            "name": "❌ DELETE - Cart Item without Authentication",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartItemId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "DELETE",
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2ca574a9-e5f5-4df4-b06e-ae324f0ac763",
+            "name": "⚠️ DELETE - Entire Cart (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "cart",
+                  "{{cartId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "ae406f47-8b62-4047-acda-11cd8e0104af",
+        "name": "Orders - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "00aab51d-f949-48ed-aee3-f092d2e0a881",
+            "name": "✅ CREATE - New Order (DINE_IN)",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"DINE_IN\",\n  \"tableNumber\": \"Table 5\",\n  \"paymentMethod\": \"CASH\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "65655df4-ca28-4f3d-93de-a91bbd92ab64",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('orderId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "2ec85da3-468e-4f27-b684-1e21bdad948f",
+            "name": "✅ CREATE - New Order (TAKEAWAY)",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"TAKEAWAY\",\n  \"paymentMethod\": \"CARD\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "f45a1d26-1157-44be-820e-48aaf65d5a91",
+            "name": "✅ CREATE - New Order (HOME_DELIVERY)",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"HOME_DELIVERY\",\n  \"deliveryAddress\": \"123 Main St, Apt 4B\",\n  \"paymentMethod\": \"CARD\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "e2e37a61-abc4-4534-972e-46bc19a9a683",
+            "name": "❌ CREATE - Order with Empty Cart",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"00000000-0000-0000-0000-000000000000\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"DINE_IN\",\n  \"paymentMethod\": \"CASH\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "7e837eb5-5ba8-4ee5-90d9-1841d4d4478b",
+            "name": "❌ CREATE - Order with Invalid Service Type",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"INVALID_TYPE\",\n  \"paymentMethod\": \"CASH\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2fec6e13-4250-4da0-811c-42d2995a3b78",
+            "name": "❌ CREATE - Order with Invalid Payment Method",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"DINE_IN\",\n  \"paymentMethod\": \"INVALID_PAYMENT\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "ef50d3fb-0395-4705-bdad-8356cb4197f2",
+            "name": "❌ CREATE - Order Missing Required Fields (CartId)",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"DINE_IN\",\n  \"paymentMethod\": \"CASH\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "44f8fc6c-2db6-4651-92d5-e3cb2b799e4f",
+            "name": "❌ CREATE - Order without Authentication",
+            "request": {
+              "url": {
+                "path": [
+                  "order"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"businessId\": \"{{businessId}}\",\n  \"serviceType\": \"TAKEAWAY\",\n  \"paymentMethod\": \"CARD\"\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "1aabeac1-dc49-4717-b1ea-dd24fa8c60cb",
+            "name": "✅ READ - Get User Orders",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "user"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c9bec44a-f148-4df8-bad7-8bc12b4397fd",
+            "name": "✅ READ - Get Order by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "dec04335-6cd2-4a8d-b110-fbb55ee3c3a6",
+            "name": "✅ READ - Get Business Orders",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "business-man-vs",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET"
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "52d6074b-9b95-4a9e-9a3a-8cc598b78390",
+            "name": "❌ READ - Non-existent Order ID",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c8e087e8-b807-47e7-906e-c20655b7e7e6",
+            "name": "❌ READ - Orders without Authentication",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "user"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "method": "GET",
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "24efe0fd-4664-435e-9bfa-c53032e92f93",
+            "name": "✅ UPDATE - Change Order Status (CONFIRMED)",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}",
+                  "change-status"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "37ea6e55-bceb-4002-84bb-7541ec4dddac",
+            "name": "✅ UPDATE - Change Order Status (COMPLETED)",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}",
+                  "change-status"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "1280b77b-a74d-40c7-b7bd-8e573ae47c0a",
+            "name": "✅ UPDATE - Change Order Status (CANCELLED)",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}",
+                  "change-status"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"CANCELLED\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "b97fc579-8c4a-408a-bad4-bbc02dbea0ef",
+            "name": "❌ UPDATE - Change to Invalid Status",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "{{orderId}}",
+                  "change-status"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"INVALID_STATUS\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "ecb48419-e69f-4faa-b21c-61eafa8a2fae",
+            "name": "❌ UPDATE - Non-existent Order Status Change",
+            "request": {
+              "url": {
+                "path": [
+                  "order",
+                  "00000000-0000-0000-0000-000000000000",
+                  "change-status"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      },
+      {
+        "id": "2020238c-f44a-4a66-adfb-e3e1c548de93",
+        "name": "Menu Ratings - CRUD & Edge Cases",
+        "item": [
+          {
+            "id": "3d9c1e84-1ab7-471d-9b7d-f85640f46299",
+            "name": "✅ CREATE - Valid Menu Rating",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": 5,\n  \"comment\": \"Amazing burger! Highly recommended.\",\n  \"isAnonymous\": false\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "id": "eeb9bfbf-214b-4931-b461-1244e9bb29f7",
+                  "type": "text/javascript",
+                  "exec": [
+                    "pm.test('Status code is 201 or 200', function() {",
+                    "    pm.expect([200, 201]).to.include(pm.response.code);",
+                    "});",
+                    "",
+                    "if (pm.response.code === 201 || pm.response.code === 200) {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.environment.set('ratingId', jsonData.id || jsonData.data.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "8f5e4ea3-cd5c-4dbc-b765-988bc3413a5a",
+            "name": "✅ CREATE - Valid Menu Rating (5 stars)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": 5,\n  \"comment\": \"Perfect!\",\n  \"isAnonymous\": true\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "6052ab54-7a24-4a79-a317-9941dffcbde1",
+            "name": "✅ CREATE - Valid Menu Rating (1 star)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": 1,\n  \"comment\": \"Disappointing quality\",\n  \"isAnonymous\": false\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "a1d447f6-9dad-4524-8325-ca6c6277c4f9",
+            "name": "❌ CREATE - Rating Above Maximum (6 stars)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": 6,\n  \"comment\": \"Invalid rating\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "f8144084-fbd8-4d54-b68e-6b65deab64d7",
+            "name": "❌ CREATE - Rating Below Minimum (0 stars)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": 0,\n  \"comment\": \"Invalid rating\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "fa328775-a99d-443a-9355-772c2458d114",
+            "name": "❌ CREATE - Negative Rating",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": -2,\n  \"comment\": \"Invalid rating\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "69cc7a80-daf3-4e96-87ff-337557031879",
+            "name": "❌ CREATE - Missing Menu ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Missing menuId\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c8e96e76-015e-44d9-ab35-5f33b9684e1c",
+            "name": "❌ CREATE - Missing Rating Value",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"comment\": \"Missing rating value\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "05bb56c7-43ee-4708-b239-89a8193bbd3e",
+            "name": "❌ CREATE - Invalid Rating Type",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": \"five\",\n  \"comment\": \"Invalid type\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "bf8338de-a2d4-47c3-a820-767c97510b39",
+            "name": "❌ CREATE - Without Authentication",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "method": "POST",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"menuId\": \"{{menuId}}\",\n  \"rating\": 4,\n  \"comment\": \"No auth\"\n}"
+              },
+              "auth": {
+                "type": "noauth",
+                "noauth": []
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "682b02cc-45c6-4bc4-b5e1-e70bbc62cdb3",
+            "name": "✅ READ - Get Business Menu Ratings",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "my-business"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "006236b2-3221-436b-bdc8-3b4350877950",
+            "name": "✅ READ - Get Ratings by Business ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "business",
+                  "{{businessId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "850de35c-9999-4686-bcfa-e4b99f798692",
+            "name": "✅ READ - Get Rating by ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "{{ratingId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "0218beea-ba50-4b5f-827d-244307d55b20",
+            "name": "❌ READ - Non-existent Rating ID",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "GET",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "2be96610-c45f-4ffd-b7c8-c2cb9df94327",
+            "name": "✅ UPDATE - Valid Rating Update",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"id\": \"{{ratingId}}\",\n  \"rating\": 4,\n  \"comment\": \"Updated comment - still good!\"\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c25ef0ae-edc5-46ec-8009-cd5083f56d15",
+            "name": "❌ UPDATE - Rating Out of Range",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"id\": \"{{ratingId}}\",\n  \"rating\": 10\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "f3fdaa6f-9156-4d83-8371-a4b0a14a8f30",
+            "name": "✅ UPDATE - Toggle Visibility (Hide)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "{{ratingId}}",
+                  "visibility"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"isVisible\": false\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "c3e41689-1b2a-4c60-b232-79635cbc190f",
+            "name": "✅ UPDATE - Toggle Visibility (Show)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "{{ratingId}}",
+                  "visibility"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "method": "PATCH",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"isVisible\": true\n}"
+              },
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{adminToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "6fbcf5d2-a309-451a-b560-5878f12f7607",
+            "name": "⚠️ DELETE - Rating (Run Last)",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "{{ratingId}}"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          },
+          {
+            "id": "12a2bfeb-fc84-4a07-b51b-872490df57a6",
+            "name": "❌ DELETE - Non-existent Rating",
+            "request": {
+              "url": {
+                "path": [
+                  "menu-ratings",
+                  "00000000-0000-0000-0000-000000000000"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": []
+              },
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{authToken}}"
+                }
+              ],
+              "method": "DELETE",
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "type": "string",
+                    "value": "{{authToken}}",
+                    "key": "token"
+                  }
+                ]
+              }
+            },
+            "response": [],
+            "event": []
+          }
+        ],
+        "event": []
+      }
+    ],
+    "auth": {
+      "type": "bearer",
+      "bearer": [
+        {
+          "type": "string",
+          "value": "{{authToken}}",
+          "key": "token"
+        }
+      ]
+    },
+    "event": [],
+    "variable": [
+      {
+        "type": "string",
+        "value": "http://localhost:3001/api/v1",
+        "key": "baseUrl"
+      },
+      {
+        "type": "string",
+        "value": "http://localhost:3001",
+        "key": "healthCheckUrl"
+      },
+      {
+        "type": "string",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY",
+        "key": "authToken"
+      },
+      {
+        "type": "string",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY",
+        "key": "adminToken"
+      },
+      {
+        "type": "string",
+        "value": "biz-mock-001",
+        "key": "businessId"
+      },
+      {
+        "type": "string",
+        "value": "admin-mock-001",
+        "key": "userId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "categoryId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "menuId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "addonId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "addonGroupId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "cartId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "cartItemId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "orderId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "ratingId"
+      }
+    ],
+    "info": {
+      "_postman_id": "kaha-complete-tests-v1",
+      "name": "KAHA Restaurant - Complete CRUD & Edge Cases Tests",
+      "version": {
+        "raw": "1.0.0",
+        "major": 1,
+        "minor": 0,
+        "patch": 0,
+        "prerelease": [],
+        "build": [],
+        "string": "1.0.0"
+      },
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Comprehensive testing suite with all modules: Categories, Menu, Addons, Addon Groups, Cart, Orders, and Menu Ratings. Includes all CRUD operations, edge cases, validation tests, and error scenarios.",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "id": "kaha-restaurant-production-env-live",
+    "name": "Kaha Restaurant - Production (Live)",
+    "values": [
+      {
+        "type": "string",
+        "value": "http://localhost:3001/api/v1",
+        "key": "baseUrl"
+      },
+      {
+        "type": "string",
+        "value": "http://localhost:3001",
+        "key": "healthCheckUrl"
+      },
+      {
+        "type": "string",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY",
+        "key": "authToken"
+      },
+      {
+        "type": "string",
+        "value": "biz-mock-001",
+        "key": "businessId"
+      },
+      {
+        "type": "string",
+        "value": "admin-mock-001",
+        "key": "userId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "categoryId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "menuItemId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "addonGroupId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "addonId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "cartId"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "orderId"
+      }
+    ]
+  },
+  "globals": {
+    "id": "14e45b9d-2c1a-4a2e-818a-576f7a06d0a1",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 1
+      },
+      "tests": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "testScripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 22,
+      "responseMin": 22,
+      "responseMax": 22,
+      "responseSd": 0,
+      "dnsAverage": 5.099239000000011,
+      "dnsMin": 5.099239000000011,
+      "dnsMax": 5.099239000000011,
+      "dnsSd": 0,
+      "firstByteAverage": 7.413509999999974,
+      "firstByteMin": 7.413509999999974,
+      "firstByteMax": 7.413509999999974,
+      "firstByteSd": 0,
+      "started": 1779340787952,
+      "completed": 1779340788042
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 133,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "0273a057-91c7-40a3-9811-26ae23e763b1",
+          "httpRequestId": "44cb3b32-ac73-45aa-977f-af99967fa252"
+        },
+        "item": {
+          "id": "d2709ad7-58dc-45e5-a6b6-fd7f41ec5797",
+          "name": "GET - Health Check",
+          "request": {
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "0f6359f2-6c6f-4314-8a89-151aab17f4a1",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "_lastExecutionId": "ca594ebb-3359-4ea3-944b-716ecbb50005"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "3001",
+            "path": [
+              "api",
+              "v1"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY",
+              "system": true
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "38b0167a-c196-4d63-bd70-2e3c39c6adea",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:3001",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "type": "string",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY",
+                "key": "token"
+              }
+            ]
+          }
+        },
+        "response": {
+          "id": "a0df1db4-5d97-454c-a5af-b492c7087162",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "Content-Type",
+              "value": "text/html; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "4"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"4-6FuITHvNBEi2WTO2LWz6+jc/c48\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 05:19:47 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              109,
+              97,
+              110,
+              33
+            ]
+          },
+          "cookie": [],
+          "responseTime": 22,
+          "responseSize": 4
+        },
+        "id": "d2709ad7-58dc-45e5-a6b6-fd7f41ec5797",
+        "assertions": [
+          {
+            "assertion": "Status code is 200",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "34585212-40df-4cec-ba13-7eaffe7dd889",
+          "length": 133,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "a44a16bd-e02b-4c89-96d2-d37cc4dd2a87"
+        },
+        "item": {
+          "id": "a08ab555-a48b-400c-a9f5-f467fb67b267",
+          "name": "LOGIN - Owner (Recommended)",
+          "request": {
+            "url": {
+              "protocol": "https",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ],
+              "host": [
+                "restaurant",
+                "kaha",
+                "com",
+                "np"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth",
+              "noauth": []
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5e79a5bd-6bd0-4a21-8c21-26677310b75d",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.environment.set('authToken', jsonData.token);",
+                  "        console.log('✅ Auth token saved to environment');",
+                  "    }",
+                  "    if (jsonData.user && jsonData.user.id) {",
+                  "        pm.environment.set('userId', jsonData.user.id);",
+                  "        console.log('✅ User ID:', jsonData.user.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ],
+            "host": [
+              "restaurant",
+              "kaha",
+              "com",
+              "np"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "c8b6fee9-654e-4f77-95e8-a218ad5cdfd8",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "restaurant.kaha.com.np",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}"
+          },
+          "auth": {
+            "type": "noauth",
+            "noauth": []
+          }
+        },
+        "id": "a08ab555-a48b-400c-a9f5-f467fb67b267",
+        "requestError": {
+          "errno": -3008,
+          "code": "ENOTFOUND",
+          "syscall": "getaddrinfo",
+          "hostname": "restaurant.kaha.com.np"
+        }
+      }
+    ],
+    "transfers": {
+      "responseTotal": 4
+    },
+    "failures": [
+      {
+        "error": {
+          "errno": -3008,
+          "code": "ENOTFOUND",
+          "syscall": "getaddrinfo",
+          "hostname": "restaurant.kaha.com.np",
+          "name": "Error",
+          "message": "getaddrinfo ENOTFOUND restaurant.kaha.com.np",
+          "stack": "Error: getaddrinfo ENOTFOUND restaurant.kaha.com.np\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)",
+          "checksum": "fc5a3265b8c78492a7c2555e68d05494",
+          "id": "7341df55-5383-41af-977b-efcae97634ac",
+          "timestamp": 1779340788038,
+          "stacktrace": [
+            {
+              "fileName": "node:dns",
+              "lineNumber": 122,
+              "functionName": "GetAddrInfoReqWrap.onlookupall [as oncomplete]",
+              "typeName": "GetAddrInfoReqWrap",
+              "methodName": "onlookupall [as oncomplete]",
+              "columnNumber": 26,
+              "native": false
+            }
+          ]
+        },
+        "at": "request",
+        "source": {
+          "id": "a08ab555-a48b-400c-a9f5-f467fb67b267",
+          "name": "LOGIN - Owner (Recommended)",
+          "request": {
+            "url": {
+              "protocol": "https",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ],
+              "host": [
+                "restaurant",
+                "kaha",
+                "com",
+                "np"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "system": true
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "system": true
+              },
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "system": true
+              },
+              {
+                "key": "Postman-Token",
+                "value": "c8b6fee9-654e-4f77-95e8-a218ad5cdfd8",
+                "system": true
+              },
+              {
+                "key": "Host",
+                "value": "restaurant.kaha.com.np",
+                "system": true
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "system": true
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "system": true
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth",
+              "noauth": []
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5e79a5bd-6bd0-4a21-8c21-26677310b75d",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.environment.set('authToken', jsonData.token);",
+                  "        console.log('✅ Auth token saved to environment');",
+                  "    }",
+                  "    if (jsonData.user && jsonData.user.id) {",
+                  "        pm.environment.set('userId', jsonData.user.id);",
+                  "        console.log('✅ User ID:', jsonData.user.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        "cursor": {
+          "ref": "34585212-40df-4cec-ba13-7eaffe7dd889",
+          "length": 133,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "a44a16bd-e02b-4c89-96d2-d37cc4dd2a87"
+        }
+      }
+    ],
+    "error": null
+  }
+}

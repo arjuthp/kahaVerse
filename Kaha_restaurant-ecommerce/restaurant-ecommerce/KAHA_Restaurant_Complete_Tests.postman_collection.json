@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "KAHA Restaurant - API Tests",
+    "description": "Automated API testing suite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY",
+      "type": "string"
+    },
+    {
+      "key": "businessId",
+      "value": "biz-mock-001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3001",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Categories",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["categories"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Menu",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/menu",
+          "host": ["{{baseUrl}}"],
+          "path": ["menu"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Orders",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/order/user",
+          "host": ["{{baseUrl}}"],
+          "path": ["order", "user"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Addons",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/addons",
+          "host": ["{{baseUrl}}"],
+          "path": ["addons"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

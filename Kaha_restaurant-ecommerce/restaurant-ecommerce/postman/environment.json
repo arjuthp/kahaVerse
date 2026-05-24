@@ -1,0 +1,8 @@
+{
+  "id": "kaha-local-env",
+  "name": "KAHA Local Environment",
+  "values": [
+    {"key": "baseUrl", "value": "https://api.kaha.com.np/main/api/v3", "enabled": true},
+    {"key": "accessToken", "value": "", "enabled": true}
+  ]
+}

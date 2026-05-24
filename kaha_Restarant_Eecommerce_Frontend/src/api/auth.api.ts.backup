@@ -1,0 +1,135 @@
+import type { User } from '../types';
+import { UserRoleEnum } from '../types';
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+}
+
+const LOCAL_USERS_KEY = 'kaha_local_users';
+
+// Pre-generated backend-compatible tokens
+const ADMIN_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLW1vY2stMDAxIiwia2FoYUlkIjoia2FoYS1hZG1pbi0wMDEiLCJidXNpbmVzc0lkIjoiYml6LW1vY2stMDAxIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJCVVNJTkVTU19TVVBFUl9BRE1JTiIsImlhdCI6MTc3OTI0MzU1OSwiZXhwIjoxNzgxODM1NTU5fQ.bgpNW3hddZ86L41Yyam_JrbupoCjkKn7CclEUFgvPaY';
+const USER_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItbW9jay0wMDEiLCJrYWhhSWQiOiJrYWhhLW1vY2stMDAxIiwiYnVzaW5lc3NJZCI6ImJpei1tb2NrLTAwMSIsImVtYWlsIjoidXNlckB0ZXN0LmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzc5MjQzNTU5LCJleHAiOjE3ODE4MzU1NTl9.bPgJV73sIYKBXCep5nd_ANx2HPU5L_0vo0yWirSbz1s';
+
+function getLocalUsers(): any[] {
+  const users = localStorage.getItem(LOCAL_USERS_KEY);
+  return users ? JSON.parse(users) : [];
+}
+
+function saveLocalUser(user: any) {
+  const users = getLocalUsers();
+  users.push(user);
+  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+}
+
+export const authApi = {
+  register: async (payload: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }): Promise<AuthResponse> => {
+    // Check if user already exists
+    const users = getLocalUsers();
+    if (users.some(u => u.email.toLowerCase() === payload.email.toLowerCase()) || payload.email.toLowerCase() === 'user@test.com') {
+      throw new Error('Email already registered');
+    }
+
+    const newUser = {
+      id: `user-${Date.now()}`,
+      name: payload.name,
+      email: payload.email,
+      password: payload.password,
+      phone: payload.phone || '',
+      role: UserRoleEnum.USER,
+      businessId: 'biz-mock-001'
+    };
+
+    saveLocalUser(newUser);
+
+    // Track active user in all users overview
+    const activeUsers = JSON.parse(localStorage.getItem('kaha_all_users') || '[]');
+    if (!activeUsers.some((u: any) => u.email === newUser.email)) {
+      activeUsers.push({ id: newUser.id, name: newUser.name, email: newUser.email, role: 'customer' });
+      localStorage.setItem('kaha_all_users', JSON.stringify(activeUsers));
+    }
+
+    return {
+      accessToken: USER_TOKEN,
+      refreshToken: 'mock-refresh-token',
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        role: UserRoleEnum.USER,
+        businessId: newUser.businessId
+      }
+    };
+  },
+
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    const lowerEmail = email.toLowerCase();
+    
+    // Seed standard mock user if requested
+    if (lowerEmail === 'user@test.com') {
+      return {
+        accessToken: USER_TOKEN,
+        refreshToken: 'mock-refresh-token',
+        user: {
+          id: 'user-mock-001',
+          name: 'Customer User',
+          email: 'user@test.com',
+          role: UserRoleEnum.USER,
+          businessId: 'biz-mock-001'
+        }
+      };
+    }
+
+    // Look for local registered user
+    const users = getLocalUsers();
+    const user = users.find(u => u.email.toLowerCase() === lowerEmail);
+
+    if (!user || user.password !== password) {
+      throw new Error('Invalid email or password');
+    }
+
+    return {
+      accessToken: USER_TOKEN,
+      refreshToken: 'mock-refresh-token',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: UserRoleEnum.USER,
+        businessId: user.businessId
+      }
+    };
+  },
+
+  adminLogin: async (email: string, password: string): Promise<AuthResponse> => {
+    // Both standard and custom admin addresses
+    if ((email === 'admin@kahaeats.com' || email === 'admin@test.com') && password === 'admin123') {
+      return {
+        accessToken: ADMIN_TOKEN,
+        refreshToken: 'mock-refresh-token',
+        user: {
+          id: 'admin-mock-001',
+          name: 'Business Super Admin',
+          email: 'admin@kahaeats.com',
+          role: UserRoleEnum.BUSINESS_SUPER_ADMIN,
+          businessId: 'biz-mock-001'
+        }
+      };
+    }
+
+    throw new Error('Invalid administrator credentials');
+  },
+
+  logout: async (): Promise<void> => {
+    localStorage.removeItem('kaha_refresh_token');
+  },
+};

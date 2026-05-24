@@ -1,0 +1,187 @@
+/* ========== AdminDashboard — Savor Modern ========== */
+.admin-page {
+  padding-top: var(--navbar-height);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  left: 0; top: var(--navbar-height); bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--surface-low);
+  border-right: 1px solid var(--outline-variant);
+  padding: var(--space-md);
+  gap: var(--space-xs);
+  overflow-y: auto;
+  z-index: 40;
+}
+@media(min-width:768px){ .admin-sidebar{ display:flex; } }
+
+.admin-sidebar__heading { padding:var(--space-md) var(--space-xs); margin-bottom:var(--space-sm); }
+.admin-sidebar__title { font-family:'Manrope',sans-serif; font-size:20px; font-weight:700; color:var(--primary); margin-bottom:2px; }
+.admin-sidebar__sub { font-size:13px; color:var(--on-surface-variant); max-width:none; margin:0; }
+
+.admin-sidebar__nav { display:flex; flex-direction:column; gap:var(--space-xs); flex:1; }
+.admin-sidebar__link {
+  display:flex; align-items:center; gap:var(--space-md);
+  padding:var(--space-sm) var(--space-md); border-radius:var(--radius);
+  font-family:'Be Vietnam Pro',sans-serif; font-size:14px; font-weight:600;
+  letter-spacing:0.03em; color:var(--on-surface-variant);
+  cursor:pointer; background:none; border:none; text-align:left; width:100%;
+  text-decoration:none; transition:all var(--transition-fast);
+}
+.admin-sidebar__link:hover { background:var(--secondary-container); color:var(--on-secondary-container); transform:translateX(4px); }
+.admin-sidebar__link--active { background:var(--primary-container); color:var(--on-primary-container); font-weight:700; }
+.admin-sidebar__link--active:hover { transform:none; }
+.admin-sidebar__icon { font-size:18px; }
+
+.admin-sidebar__bottom { margin-top:auto; padding-top:var(--space-lg); }
+
+/* Main area */
+.admin-main {
+  flex: 1;
+  padding: var(--space-xl) var(--space-xl) var(--space-xl);
+  padding-top: calc(var(--navbar-height) + var(--space-xl));
+}
+@media(min-width:768px){ .admin-main{ margin-left:var(--sidebar-width); } }
+@media(max-width:767px){ .admin-main{ padding:var(--space-md); padding-top:calc(var(--navbar-height)+var(--space-md)); } }
+
+/* Header */
+.admin-main-header {
+  display:flex; flex-direction:column; gap:var(--space-md); margin-bottom:var(--space-xl);
+}
+@media(min-width:640px){ .admin-main-header{ flex-direction:row; align-items:center; justify-content:space-between; } }
+.admin-main-header h1 { font-family:'Manrope',sans-serif; font-size:28px; font-weight:700; color:var(--on-surface); margin:0; }
+.admin-main-header p { font-size:14px; color:var(--on-surface-variant); margin:4px 0 0; max-width:none; }
+
+/* Stats grid */
+.admin-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-md); margin-bottom:var(--space-xl); }
+@media(min-width:768px){ .admin-stats{ grid-template-columns:repeat(4,1fr); } }
+
+.admin-stat-card {
+  background:var(--surface-lowest); border-radius:var(--radius-lg); padding:var(--space-lg);
+  box-shadow:var(--shadow-sm); border:1px solid rgba(227,190,182,0.3);
+  display:flex; align-items:center; gap:var(--space-md);
+}
+.admin-stat-icon {
+  width:48px; height:48px; border-radius:var(--radius-full);
+  display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;
+}
+.admin-stat-icon--primary { background:var(--primary-fixed); color:var(--primary); }
+.admin-stat-icon--secondary { background:var(--secondary-container); color:var(--secondary); }
+.admin-stat-icon--gold { background:var(--surface-highest); color:var(--primary); }
+.admin-stat-icon--success { background:rgba(39,174,96,0.12); color:var(--status-delivered); }
+
+.admin-stat-label { font-family:'Be Vietnam Pro',sans-serif; font-size:13px; font-weight:600; color:var(--on-surface-variant); letter-spacing:0.03em; }
+.admin-stat-value { font-family:'Manrope',sans-serif; font-size:28px; font-weight:700; color:var(--on-surface); line-height:1.2; }
+
+/* Menu items grid */
+.admin-menu-grid {
+  display:grid; grid-template-columns:1fr; gap:var(--space-lg);
+}
+@media(min-width:640px){ .admin-menu-grid{ grid-template-columns:repeat(2,1fr); } }
+@media(min-width:1024px){ .admin-menu-grid{ grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1280px){ .admin-menu-grid{ grid-template-columns:repeat(4,1fr); } }
+
+.admin-item-card {
+  background:var(--surface-lowest); border-radius:var(--radius-lg); overflow:hidden;
+  box-shadow:var(--shadow-sm); display:flex; flex-direction:column;
+  transition:all var(--transition-normal);
+}
+.admin-item-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-md); }
+
+.admin-item-card__img-wrap { aspect-ratio:4/3; position:relative; overflow:hidden; }
+.admin-item-card__img { width:100%; height:100%; object-fit:cover; transition:transform var(--transition-slow); }
+.admin-item-card:hover .admin-item-card__img{ transform:scale(1.06); }
+.admin-item-card__cat-badge {
+  position:absolute; top:var(--space-md); right:var(--space-md);
+  background:rgba(255,255,255,0.85); backdrop-filter:blur(4px);
+  padding:3px var(--space-sm); border-radius:var(--radius-full);
+  font-family:'Be Vietnam Pro',sans-serif; font-size:12px; font-weight:700;
+  color:var(--primary); box-shadow:var(--shadow-sm);
+}
+
+.admin-item-card__body { padding:var(--space-lg); flex:1; display:flex; flex-direction:column; }
+.admin-item-card__header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:var(--space-sm); }
+.admin-item-card__name { font-family:'Be Vietnam Pro',sans-serif; font-size:17px; font-weight:600; color:var(--on-surface); margin:0; }
+.admin-item-card__price-col { display:flex; flex-direction:column; align-items:flex-end; }
+.admin-item-card__desc { font-size:13px; color:var(--slate-gray); line-clamp:2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:var(--space-md); max-width:none; }
+.admin-item-card__toggles { margin-top:auto; display:flex; flex-direction:column; gap:var(--space-sm); }
+.admin-item-card__toggle-row { display:flex; align-items:center; justify-content:space-between; }
+.admin-item-card__toggle-label { font-family:'Be Vietnam Pro',sans-serif; font-size:13px; font-weight:600; color:var(--on-surface-variant); }
+
+/* Add item skeleton card */
+.admin-add-card {
+  border:2px dashed var(--outline-variant); border-radius:var(--radius-lg);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:var(--space-xl); cursor:pointer; min-height:280px;
+  transition:all var(--transition-fast); background:transparent;
+}
+.admin-add-card:hover { border-color:var(--primary); background:rgba(177,36,1,0.04); }
+.admin-add-card__icon {
+  width:64px; height:64px; border-radius:var(--radius-full); background:var(--surface-container);
+  display:flex; align-items:center; justify-content:center; font-size:28px;
+  margin-bottom:var(--space-md); transition:transform var(--transition-fast);
+}
+.admin-add-card:hover .admin-add-card__icon { transform:scale(1.1); }
+.admin-add-card h3 { font-family:'Manrope',sans-serif; font-size:20px; color:var(--on-surface-variant); margin:0 0 var(--space-xs); }
+.admin-add-card p { font-size:13px; color:var(--on-surface-variant); text-align:center; max-width:200px; margin:0; }
+.admin-add-card:hover h3, .admin-add-card:hover p { color:var(--primary); }
+
+/* Modal */
+.modal-overlay {
+  position:fixed; inset:0; z-index:200;
+  display:flex; align-items:center; justify-content:center; padding:var(--space-md);
+  background:rgba(39,24,20,0.45); backdrop-filter:blur(4px);
+}
+.modal-box {
+  background:var(--surface); border-radius:20px; box-shadow:var(--shadow-lg);
+  width:100%; max-width:800px; overflow:hidden; animation:scaleIn 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:var(--space-lg); background:var(--surface-low);
+  border-bottom:1px solid var(--outline-variant);
+}
+.modal-header h2 { font-family:'Manrope',sans-serif; font-size:22px; font-weight:600; color:var(--on-surface); margin:0; }
+.modal-close {
+  width:36px; height:36px; border-radius:var(--radius-full); border:none; background:transparent;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  color:var(--on-surface-variant); transition:background var(--transition-fast); font-size:20px;
+}
+.modal-close:hover { background:var(--surface-container); }
+.modal-body { padding:var(--space-lg); display:grid; grid-template-columns:1fr; gap:var(--space-xl); max-height:75vh; overflow-y:auto; }
+@media(min-width:640px){ .modal-body{ grid-template-columns:1fr 1fr; } }
+.modal-footer {
+  padding:var(--space-lg); background:var(--surface-low);
+  border-top:1px solid var(--outline-variant);
+  display:flex; justify-content:flex-end; gap:var(--space-md);
+}
+
+/* Image upload area */
+.img-upload-area {
+  aspect-ratio:16/9; border:2px dashed var(--outline-variant); border-radius:var(--radius-lg);
+  background:var(--surface-container); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; cursor:pointer; gap:var(--space-sm);
+  transition:all var(--transition-fast);
+}
+.img-upload-area:hover { border-color:var(--primary); background:var(--surface-low); }
+.img-upload-area__icon { font-size:40px; color:var(--on-surface-variant); }
+.img-upload-area p { font-family:'Be Vietnam Pro',sans-serif; font-size:14px; font-weight:600; color:var(--on-surface); max-width:none; margin:0; }
+.img-upload-area span { font-size:12px; color:var(--slate-gray); }
+
+/* Orders table in admin */
+.admin-orders-table { width:100%; border-collapse:collapse; }
+.admin-orders-table th {
+  text-align:left; padding:var(--space-sm) var(--space-md);
+  font-family:'Be Vietnam Pro',sans-serif; font-size:12px; font-weight:700;
+  letter-spacing:0.06em; text-transform:uppercase; color:var(--on-surface-variant);
+  background:var(--surface-low); border-bottom:1px solid var(--outline-variant);
+}
+.admin-orders-table td { padding:var(--space-md); border-bottom:1px solid rgba(227,190,182,0.2); font-size:14px; }
+.admin-orders-table tr:hover td { background:var(--surface-low); }
+.admin-orders-table tr:last-child td { border-bottom:none; }

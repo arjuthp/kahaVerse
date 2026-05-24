@@ -1,0 +1,96 @@
+/* ========== CartPage — Savor Modern ========== */
+.cart-page {
+  padding-top: calc(var(--navbar-height) + var(--space-xl));
+  padding-bottom: var(--space-xl);
+  min-height: 100vh;
+}
+.cart-header { margin-bottom: var(--space-xl); }
+.cart-header h1 { font-family:'Manrope',sans-serif; font-size:32px; font-weight:700; letter-spacing:-0.01em; color:var(--on-surface); margin-bottom:var(--space-xs); }
+.cart-header p { font-size:15px; color:var(--secondary); margin:0; max-width:none; }
+
+.cart-grid { display:grid; grid-template-columns:1fr; gap:var(--space-xl); }
+@media(min-width:1024px){ .cart-grid{ grid-template-columns:1fr 380px; } }
+
+.cart-items-list { display:flex; flex-direction:column; gap:var(--space-md); }
+
+.cart-item {
+  background:var(--surface-lowest); border-radius:var(--radius-lg);
+  padding:var(--space-md); display:flex; gap:var(--space-lg);
+  box-shadow:0 20px 40px -15px rgba(88,96,98,0.1);
+  transition:all var(--transition-normal); flex-direction:column;
+}
+@media(min-width:640px){ .cart-item{ flex-direction:row; } }
+.cart-item:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); }
+
+.cart-item__img-wrap {
+  width:100%; height:160px; border-radius:var(--radius); overflow:hidden;
+  flex-shrink:0; background:var(--surface-container);
+}
+@media(min-width:640px){ .cart-item__img-wrap{ width:160px; height:160px; } }
+.cart-item__img { width:100%; height:100%; object-fit:cover; transition:transform var(--transition-slow); }
+.cart-item:hover .cart-item__img{ transform:scale(1.08); }
+
+.cart-item__body { flex:1; display:flex; flex-direction:column; justify-content:space-between; }
+.cart-item__row { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-sm); }
+.cart-item__name { font-family:'Be Vietnam Pro',sans-serif; font-size:18px; font-weight:600; color:var(--on-surface); margin:0; }
+.cart-item__meta { font-size:13px; font-weight:600; color:var(--slate-gray); letter-spacing:0.03em; margin-top:var(--space-xs); max-width:none; margin-bottom:0; }
+
+.cart-item__instructions { margin-top:var(--space-md); }
+.cart-item__instructions label { display:block; font-size:11px; font-weight:700; color:var(--outline); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:var(--space-xs); }
+.cart-item__instructions textarea {
+  width:100%; background:var(--surface-low); border:1px solid var(--outline-variant);
+  border-radius:var(--radius); padding:var(--space-sm) var(--space-md);
+  font-family:'Be Vietnam Pro',sans-serif; font-size:14px; color:var(--on-surface);
+  resize:none; height:64px; outline:none; transition:border-color var(--transition-fast);
+}
+.cart-item__instructions textarea:focus{ border-color:var(--primary); box-shadow:0 0 0 1px rgba(177,36,1,0.12); }
+
+.cart-item__actions { display:flex; justify-content:space-between; align-items:center; margin-top:var(--space-md); }
+.cart-item__qty { display:flex; align-items:center; background:var(--secondary-container); border-radius:var(--radius-full); padding:var(--space-xs); gap:2px; }
+.cart-item__qty-btn {
+  width:32px; height:32px; border:none; background:var(--surface-lowest); color:var(--on-surface-variant);
+  border-radius:var(--radius-full); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:700; transition:all var(--transition-fast);
+}
+.cart-item__qty-btn:hover{ background:var(--primary); color:var(--on-primary); }
+.cart-item__qty-count { min-width:32px; text-align:center; font-family:'Manrope',sans-serif; font-weight:700; color:var(--on-surface-variant); }
+
+.cart-item__remove { display:flex; align-items:center; gap:var(--space-xs); background:none; border:none; color:var(--error); font-family:'Be Vietnam Pro',sans-serif; font-size:13px; font-weight:600; cursor:pointer; border-radius:var(--radius); transition:all var(--transition-fast); }
+.cart-item__remove:hover{ text-decoration:underline; }
+
+/* Summary */
+.cart-summary { position:sticky; top:calc(var(--navbar-height) + var(--space-md)); }
+.cart-summary-card {
+  background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(227,190,182,0.35); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:var(--space-xl);
+}
+.cart-summary-title { font-family:'Manrope',sans-serif; font-size:24px; font-weight:600; color:var(--on-surface); margin-bottom:var(--space-lg); }
+.cart-summary-rows { display:flex; flex-direction:column; gap:var(--space-md); }
+.cart-summary-row { display:flex; justify-content:space-between; align-items:center; font-size:15px; color:var(--secondary); }
+.cart-summary-row span:last-child { font-weight:600; color:var(--on-surface); }
+.cart-summary-row--free span:last-child { color:var(--status-delivered); }
+.cart-summary-divider { height:1px; background:var(--outline-variant); margin:var(--space-lg) 0; }
+.cart-summary-total { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:var(--space-xl); }
+.cart-summary-total-label { font-size:12px; font-weight:700; color:var(--slate-gray); text-transform:uppercase; letter-spacing:0.1em; }
+.cart-summary-total-amount { font-family:'Manrope',sans-serif; font-size:40px; font-weight:800; color:var(--primary); line-height:1; letter-spacing:-0.02em; }
+
+.cart-checkout-btn {
+  width:100%; display:flex; align-items:center; justify-content:center; gap:var(--space-sm);
+  padding:var(--space-md) var(--space-lg); background:var(--primary); color:var(--on-primary);
+  border:none; border-radius:var(--radius-lg); font-family:'Be Vietnam Pro',sans-serif;
+  font-size:18px; font-weight:600; cursor:pointer;
+  box-shadow:0 4px 14px rgba(177,36,1,0.28); transition:all var(--transition-fast); text-decoration:none;
+}
+.cart-checkout-btn:hover{ background:var(--primary-container); color:var(--on-primary-container); }
+.cart-checkout-btn:active{ transform:scale(0.98); }
+.cart-terms { text-align:center; font-size:12px; color:var(--slate-gray); margin-top:var(--space-sm); max-width:none; margin-bottom:0; }
+
+.cart-upsell { margin-top:var(--space-lg); background:var(--surface-high); border:1px dashed rgba(177,36,1,0.25); border-radius:var(--radius-lg); padding:var(--space-lg); display:flex; align-items:center; gap:var(--space-md); }
+.cart-upsell-icon { font-size:28px; flex-shrink:0; }
+.cart-upsell-text { font-size:14px; color:var(--on-surface-variant); max-width:none; margin:0; }
+.cart-upsell-text strong { color:var(--on-surface); }
+
+.cart-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:96px var(--space-md); text-align:center; gap:var(--space-lg); }
+.cart-empty__icon { width:120px; height:120px; background:var(--surface-container); border-radius:var(--radius-full); display:flex; align-items:center; justify-content:center; font-size:48px; }
+.cart-empty h2 { font-family:'Manrope',sans-serif; font-size:28px; color:var(--on-surface); margin:0; }
+.cart-empty p { color:var(--secondary); max-width:360px; margin:0; }

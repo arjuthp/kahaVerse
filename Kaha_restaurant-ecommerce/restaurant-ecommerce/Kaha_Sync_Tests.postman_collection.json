@@ -1,0 +1,283 @@
+{
+  "info": {
+    "name": "Kaha Sync - Restaurant E-commerce",
+    "description": "Test collection for Kaha sync integration",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "serviceAccountToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "restaurantId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Admin - Service Accounts",
+      "item": [
+        {
+          "name": "Create Service Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('serviceAccountToken', response.token);",
+                  "    pm.environment.set('serviceAccountToken', response.token);",
+                  "    console.log('Service Account Token:', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kaha Integration\",\n  \"description\": \"Service account for Kaha main-api-v3 integration\",\n  \"validityDays\": 365\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/service-accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "service-accounts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Service Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/service-accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "service-accounts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Service Account",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/service-accounts/:id/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "service-accounts", ":id", "deactivate"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "service-account-id-here"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kaha Sync",
+      "item": [
+        {
+          "name": "Sync User and Restaurant (Create)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', response.userId);",
+                  "    pm.collectionVariables.set('restaurantId', response.restaurantId);",
+                  "    console.log('User ID:', response.userId);",
+                  "    console.log('Restaurant ID:', response.restaurantId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{serviceAccountToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"externalUserId\": \"kaha-user-12345\",\n    \"phone\": \"9801234567\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john.doe@example.com\"\n  },\n  \"restaurant\": {\n    \"externalRestaurantId\": \"kaha-business-67890\",\n    \"name\": \"Mountain View Restaurant\",\n    \"description\": \"A beautiful restaurant serving authentic Nepali cuisine\",\n    \"address\": {\n      \"country\": \"Nepal\",\n      \"state\": \"Bagmati\",\n      \"city\": \"Kathmandu\",\n      \"streetAddress\": \"Thamel Street, Ward 26\",\n      \"postalCode\": \"44600\",\n      \"landmark\": \"Near Garden of Dreams\"\n    },\n    \"contact\": {\n      \"phones\": [\"+977-1-4567890\", \"9801234567\"],\n      \"email\": \"info@mountainview.com\",\n      \"website\": \"https://mountainview.com\"\n    },\n    \"coordinates\": {\n      \"latitude\": 27.7172,\n      \"longitude\": 85.3240\n    },\n    \"logoUrl\": \"https://cdn.kaha.com.np/logos/restaurant-logo.jpg\",\n    \"bannerUrl\": \"https://cdn.kaha.com.np/banners/restaurant-banner.jpg\",\n    \"rating\": 4.5,\n    \"businessHours\": {\n      \"monday\": { \"open\": \"09:00\", \"close\": \"22:00\", \"isOpen\": true },\n      \"tuesday\": { \"open\": \"09:00\", \"close\": \"22:00\", \"isOpen\": true },\n      \"wednesday\": { \"open\": \"09:00\", \"close\": \"22:00\", \"isOpen\": true },\n      \"thursday\": { \"open\": \"09:00\", \"close\": \"22:00\", \"isOpen\": true },\n      \"friday\": { \"open\": \"09:00\", \"close\": \"22:00\", \"isOpen\": true },\n      \"saturday\": { \"open\": \"09:00\", \"close\": \"22:00\", \"isOpen\": true },\n      \"sunday\": { \"open\": \"10:00\", \"close\": \"21:00\", \"isOpen\": true }\n    },\n    \"metadata\": {\n      \"cuisine\": [\"Nepali\", \"Indian\", \"Chinese\"],\n      \"features\": [\"Outdoor Seating\", \"WiFi\", \"Parking\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kaha-sync/user-restaurant",
+              "host": ["{{baseUrl}}"],
+              "path": ["kaha-sync", "user-restaurant"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync User and Restaurant (Update)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{serviceAccountToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"externalUserId\": \"kaha-user-12345\",\n    \"phone\": \"9801234567\",\n    \"firstName\": \"John Updated\",\n    \"lastName\": \"Doe Updated\",\n    \"email\": \"john.updated@example.com\"\n  },\n  \"restaurant\": {\n    \"externalRestaurantId\": \"kaha-business-67890\",\n    \"name\": \"Mountain View Restaurant (Updated)\",\n    \"description\": \"Updated description - Now serving international cuisine\",\n    \"address\": {\n      \"country\": \"Nepal\",\n      \"state\": \"Bagmati\",\n      \"city\": \"Kathmandu\",\n      \"streetAddress\": \"Thamel Street, Ward 26 (Updated Location)\",\n      \"postalCode\": \"44600\"\n    },\n    \"contact\": {\n      \"phones\": [\"+977-1-4567890\", \"9801234567\", \"9801234568\"],\n      \"email\": \"info@mountainview.com\",\n      \"website\": \"https://mountainview.com\"\n    },\n    \"coordinates\": {\n      \"latitude\": 27.7172,\n      \"longitude\": 85.3240\n    },\n    \"rating\": 4.8,\n    \"metadata\": {\n      \"cuisine\": [\"Nepali\", \"Indian\", \"Chinese\", \"Continental\"],\n      \"features\": [\"Outdoor Seating\", \"WiFi\", \"Parking\", \"Live Music\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kaha-sync/user-restaurant",
+              "host": ["{{baseUrl}}"],
+              "path": ["kaha-sync", "user-restaurant"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Multiple Restaurants (Different User)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{serviceAccountToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"externalUserId\": \"kaha-user-99999\",\n    \"phone\": \"9809876543\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"email\": \"jane.smith@example.com\"\n  },\n  \"restaurant\": {\n    \"externalRestaurantId\": \"kaha-business-11111\",\n    \"name\": \"Himalayan Delights\",\n    \"description\": \"Traditional Himalayan cuisine\",\n    \"address\": {\n      \"country\": \"Nepal\",\n      \"city\": \"Pokhara\"\n    },\n    \"contact\": {\n      \"phones\": [\"9809876543\"],\n      \"email\": \"info@himalayandelights.com\"\n    },\n    \"rating\": 4.2\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kaha-sync/user-restaurant",
+              "host": ["{{baseUrl}}"],
+              "path": ["kaha-sync", "user-restaurant"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "item": [
+        {
+          "name": "Sync Without Token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"externalUserId\": \"test\",\n    \"phone\": \"9801111111\"\n  },\n  \"restaurant\": {\n    \"externalRestaurantId\": \"test\",\n    \"name\": \"Test Restaurant\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kaha-sync/user-restaurant",
+              "host": ["{{baseUrl}}"],
+              "path": ["kaha-sync", "user-restaurant"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync With Invalid Token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token-here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"externalUserId\": \"test\",\n    \"phone\": \"9801111111\"\n  },\n  \"restaurant\": {\n    \"externalRestaurantId\": \"test\",\n    \"name\": \"Test Restaurant\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kaha-sync/user-restaurant",
+              "host": ["{{baseUrl}}"],
+              "path": ["kaha-sync", "user-restaurant"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Duplicate Phone (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{serviceAccountToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"externalUserId\": \"kaha-user-different\",\n    \"phone\": \"9801234567\",\n    \"firstName\": \"Different\",\n    \"lastName\": \"User\"\n  },\n  \"restaurant\": {\n    \"externalRestaurantId\": \"kaha-business-different\",\n    \"name\": \"Different Restaurant\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kaha-sync/user-restaurant",
+              "host": ["{{baseUrl}}"],
+              "path": ["kaha-sync", "user-restaurant"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
