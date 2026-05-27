@@ -47,11 +47,21 @@ export class AuthService {
         throw new UnauthorizedException('User ID not found in token payload');
       }
 
-      // Step 3: Fetch full user profile details from Kaha Main V3
-      const userProfile = await this.serviceCommunicationService.getUser(userId, kahaToken);
+      // Step 3: Fetch full user profile details from Kaha Main V3 (with fallback)
+      let userProfile: any = {};
+      try {
+        userProfile = await this.serviceCommunicationService.getUser(userId, kahaToken);
+      } catch (err) {
+        this.logger.warn(`Failed to fetch user profile details from Kaha Main V3: ${err.message}`);
+      }
       
-      // Step 4: Retrieve business memberships for this user
-      const memberships = await this.serviceCommunicationService.getBusinessUsers(kahaToken);
+      // Step 4: Retrieve business memberships for this user (with fallback)
+      let memberships = [];
+      try {
+        memberships = await this.serviceCommunicationService.getBusinessUsers(kahaToken);
+      } catch (err) {
+        this.logger.warn(`Failed to fetch business memberships from Kaha Main V3: ${err.message}`);
+      }
       
       // Find a valid business ID or default to a test one
       let businessId = '7476ee15-1407-41fa-9a49-89e0caaf945d'; // Default test business ID
@@ -63,7 +73,7 @@ export class AuthService {
         }
       }
 
-      const role = userProfile.role || loginRes.role || 'user';
+      const role = userProfile?.role || loginRes.role || 'user';
 
       // Step 5: Sign our own JWT token containing the required payload structure
       const localPayload = {
