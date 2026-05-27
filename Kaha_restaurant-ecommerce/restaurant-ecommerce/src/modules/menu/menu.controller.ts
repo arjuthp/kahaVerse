@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "auth/guards";
 import { RolesGuard } from "auth/guards/roles.guard";
 import { Roles } from "common/decorator";
@@ -27,6 +27,7 @@ import {
 } from "./dtos";
 
 @ApiTags("Menu")
+@ApiBearerAuth()
 @Controller("menu")
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}

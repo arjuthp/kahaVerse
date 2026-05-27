@@ -10,10 +10,11 @@ import {
 
 import { AddonsService } from "./addons.service";
 import { CreateAddOnDto, UpdateAddOnsDto } from "./dto";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { ParseUUIDPipe } from "common/pipes";
 
 @ApiTags("addons")
+@ApiBearerAuth()
 @Controller("addons")
 export class AddonsController {
   constructor(private readonly addonsService: AddonsService) {}

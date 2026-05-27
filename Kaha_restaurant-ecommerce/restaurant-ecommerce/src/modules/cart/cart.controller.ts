@@ -9,8 +9,9 @@ import {
   UseGuards,
   Req,
   Patch,
+  BadRequestException,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags, ApiBody } from "@nestjs/swagger";
 
 import { JwtAuthGuard } from "auth/guards";
 import { CartService } from "./cart.service";
@@ -24,7 +25,11 @@ export class CartController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiBody({ schema: { type: 'object', properties: { businessId: { type: 'string', example: '7476ee15-1407-41fa-9a49-89e0caaf945d' } } } })
   async createCart(@Req() req: any, @Body("businessId") businessId: string) {
+    if (!businessId) {
+      throw new BadRequestException("businessId is required in the request body");
+    }
     const userId = req?.user?.id.toString();
     return this.cartService.createCart(userId, businessId);
   }
@@ -50,6 +55,8 @@ export class CartController {
   }
 
   @Patch("/:itemId")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async updateCartItem(
     @Param("itemId") cartItemId: string,
     @Body() body: UpdateCartItemDto,

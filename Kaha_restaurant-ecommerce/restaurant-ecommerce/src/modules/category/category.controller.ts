@@ -9,7 +9,7 @@ import {
   Req,
   Patch,
 } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 
 import { JwtAuthGuard } from "auth/guards";
 import { RolesGuard } from "auth/guards/roles.guard";
@@ -20,6 +20,7 @@ import { CategoryService } from "./category.service";
 import { CreateCategoryDto, UpdateCategoryDto } from "./dtos";
 
 @ApiTags("categories")
+@ApiBearerAuth()
 @Controller("categories")
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}

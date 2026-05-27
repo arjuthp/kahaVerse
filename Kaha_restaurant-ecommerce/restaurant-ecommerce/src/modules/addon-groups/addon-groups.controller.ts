@@ -1,8 +1,11 @@
 import { Controller, Post, Get, Patch, Delete, Body, Param } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AddonGroupsService } from './addon-groups.service';
 import { CreateAddonGroupDto, CreateAddonDto, UpdateAddonDto } from './dtos';
 import { ParseUUIDPipe } from 'common/pipes';
 
+@ApiTags('addon-groups')
+@ApiBearerAuth()
 @Controller('addon-groups')
 export class AddonGroupsController {
   constructor(private readonly addonGroupsService: AddonGroupsService) {}

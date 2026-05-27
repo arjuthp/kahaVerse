@@ -20,12 +20,13 @@ export class CategoryService {
   constructor(private readonly categoryRepository: CategoryRepository) {}
 
   async createCategory(body: CreateCategoryDto): Promise<ISuccessReponse> {
-    const { name, parentId } = body;
+    const { name, parentId, ...rest } = body;
 
     await this.checkForExistingCategory(name);
 
+    let parentCatById = null;
     if (parentId) {
-      const parentCatById = await this.categoryRepository.findOne({
+      parentCatById = await this.categoryRepository.findOne({
         where: { id: parentId },
       });
 
@@ -34,12 +35,16 @@ export class CategoryService {
       }
     }
 
-    const category = this.categoryRepository.create(body);
-
-    await this.categoryRepository.save({
-      ...category,
-      parent: { id: parentId },
+    const category = this.categoryRepository.create({
+      ...rest,
+      name,
     });
+    
+    if (parentCatById) {
+      category.parent = parentCatById;
+    }
+
+    await this.categoryRepository.save(category);
 
     return { message: "Category successfully created." };
   }

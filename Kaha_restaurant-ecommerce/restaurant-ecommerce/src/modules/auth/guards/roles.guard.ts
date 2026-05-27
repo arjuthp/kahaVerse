@@ -146,11 +146,18 @@ export class RolesGuard implements CanActivate {
       
       this.logger.debug(`Business user role: ${JSON.stringify(businessUserRole)}`);
       
-      // Handle single 'role' object (not array) from upstream API
-      const userRole = businessUserRole?.role?.name || businessUserRole?.role;
+      // Handle single 'role' object (not array) from upstream API, fallback to JWT role
+      const userRole = businessUserRole?.role?.name || businessUserRole?.role || req.user?.role;
       this.logger.debug(`Comparing: ${userRole} with ${JSON.stringify(requiredRoles)}`);
       
-      const hasRole = requiredRoles.some((role) => userRole === role);
+      let hasRole = requiredRoles.some((role) => userRole === role);
+      
+      // Global admin override
+      if (!hasRole && (req.user?.role === 'admin' || req.user?.role === 'super_admin' || userRole === 'admin' || userRole === 'super_admin')) {
+        this.logger.debug(`Granting access via global admin override`);
+        hasRole = true;
+      }
+      
       this.logger.debug(`Has required role: ${hasRole}`);
       
       return hasRole;
@@ -166,7 +173,14 @@ export class RolesGuard implements CanActivate {
     
     this.logger.debug(`User role: ${JSON.stringify(user)}`);
     
-    const hasRole = requiredRoles.some((role) => user.role === role);
+    let hasRole = requiredRoles.some((role) => user.role === role);
+    
+    // Global admin override
+    if (!hasRole && (user.role === 'admin' || user.role === 'super_admin' || req.user?.role === 'admin' || req.user?.role === 'super_admin')) {
+      this.logger.debug(`Granting access via global admin override`);
+      hasRole = true;
+    }
+    
     this.logger.debug(`Has required role: ${hasRole}`);
     
     return hasRole;
