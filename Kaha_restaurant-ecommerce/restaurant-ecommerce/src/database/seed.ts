@@ -1,6 +1,44 @@
 /**
+ * ==================== PURPOSE ====================
  * KAHA Restaurant Ecommerce — Mock Data Seed Script
- *
+ * Populate LOCAL PostgreSQL database with mock/sample data for development and testing
+ * 
+ * ==================== INPUTS ====================
+ * - .env file with valid DB_* credentials (DB_HOST, DB_PORT, DB_NAME, DB_USER_NAME, DB_PASSWORD)
+ * - Database must be running and reachable
+ * - TypeORM entities must be compiled to dist folder
+ * 
+ * ==================== ACTIONS ====================
+ * 1. Connect to PostgreSQL database using DataSource
+ * 2. Seed Categories (with parent/child hierarchy): Food, Drinks, Desserts + Burgers, Pizza, Pasta, Coffee, Juices
+ * 3. Seed Addon Groups (with selection types): Sauces, Extras, Size, Pizza Toppings
+ * 4. Seed Addons (individual items within groups): 22 total addons across 4 groups
+ * 5. Seed Menu Items (13 items): Burgers (3), Pizza (2), Pasta (2), Coffee (3), Juices (1), Desserts (2)
+ * 6. Seed Menu Variants (pricing/size options): Multi-variant options for each menu item
+ * 7. Prevent duplicate seeding by checking if data already exists
+ * 
+ * ==================== CHECKS ====================
+ * ✅ Database connection established before seeding
+ * ✅ Entities exist in correct compile path (dist/**\/*.entity.{ts,js})
+ * ✅ All required env variables present with defaults
+ * ✅ Idempotent: Checks for existing data before seeding (no duplicates)
+ * ✅ Business ID consistency: All data uses MOCK_BUSINESS_ID placeholder
+ * ✅ Relationships: Categories linked to parent categories, Addons linked to groups, Menu items linked to addon groups
+ * 
+ * ==================== OUTPUTS ====================
+ * - Database populated with mock data:
+ *   • 6 Categories (3 parent + 5 child)
+ *   • 4 Addon Groups with 22 total Addons
+ *   • 13 Menu Items with 39 total Variants
+ * - Seed summary logged to console
+ * - Ready for integration testing and API endpoint development
+ * 
+ * ==================== IMPORTANT NOTES ====================
+ * ⚠️  User/Business data lives in EXTERNAL Kaha Main V3 microservice (NOT in this database)
+ *     This script uses placeholder businessId: "biz-mock-001" for LOCAL testing only
+ * ⚠️  This is DEVELOPMENT SEED DATA only - use real data in production
+ * ⚠️  Idempotent design: Safe to run multiple times (checks existing data first)
+ * 
  * Usage:
  *   npx ts-node -r tsconfig-paths/register src/database/seed.ts
  *
@@ -42,6 +80,16 @@ import { MenuServiceEnum } from "../common/enums/menu.service.enum";
 import { AddonSelectionTypeEnum } from "../common/enums/addon-selection-type.enum";
 
 // ─── DataSource ───────────────────────────────────────────────────────────────
+// ==================== SECTION 1: PURPOSE - Create Database Connection ====================
+// PURPOSE: Establish TypeORM DataSource for connecting to PostgreSQL database
+// INPUT: Environment variables (DB_HOST, DB_PORT, DB_NAME, DB_USER_NAME, DB_PASSWORD) with defaults
+// ACTIONS:
+//   1. Create DataSource with PostgreSQL type
+//   2. Load connection credentials from env vars (with safe defaults)
+//   3. Register all entities that will be seeded
+//   4. Enable synchronize for automatic schema creation
+// CHECKS: Connection parameters valid, all entities registered, DataSource properly configured
+// OUTPUT: AppDataSource ready to initialize and seed database
 const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.DB_HOST || "localhost",
@@ -69,6 +117,13 @@ const AppDataSource = new DataSource({
 });
 
 // ─── Seed Config ─────────────────────────────────────────────────────────────
+// ==================== SECTION 2: PURPOSE - Define Mock Business ID ====================
+// PURPOSE: Set placeholder business ID for all seeded local data
+// INPUT: String ID for mock business (local testing only)
+// ACTIONS: Define MOCK_BUSINESS_ID constant for use across all seed operations
+// CHECKS: ID is valid UUID-like format for consistency
+// OUTPUT: Consistent business ID used for all seeded entities
+// NOTE: In production, replace with real businessId from KAH_API_V3 microservice
 // Replace these with real IDs from your KAH_API_V3 microservice,
 // or keep as-is and override via the Postman environment variables.
 const MOCK_BUSINESS_ID = "biz-mock-001";
@@ -79,10 +134,33 @@ function log(msg: string) {
 }
 
 // ─── Main Seed ───────────────────────────────────────────────────────────────
+// ==================== SECTION 3: PURPOSE - Execute Database Seeding ====================
+// PURPOSE: Main orchestration function that seeds all mock data into database
+// INPUT: PostgreSQL database connection via AppDataSource
+// ACTIONS:
+//   1. Initialize database connection
+//   2. Get repository instances for each entity type
+//   3. Seed categories (parent and child) - 6 total categories
+//   4. Seed addon groups and their addons - 4 groups with 22 addons
+//   5. Seed menu items with linked categories and addon groups - 13 items
+//   6. Seed menu variants for each item - 39 total variants
+//   7. Log summary statistics to console
+//   8. Close database connection
+// CHECKS:
+//   - Database connected successfully
+//   - All repositories retrieved
+//   - Idempotent: checks for existing data before seeding
+//   - All relationships properly established
+//   - Summary counts match expected totals
+// OUTPUT:
+//   - Populated PostgreSQL database with complete restaurant mock data
+//   - Console output with seed summary
 async function seed() {
+  // ==================== STEP 1: Initialize Database Connection ====================
   await AppDataSource.initialize();
   log("Database connected.");
 
+  // ==================== STEP 2: Get Repository Instances ====================
   const categoryRepo = AppDataSource.getRepository(CategoryEntity);
   const menuRepo = AppDataSource.getRepository(MenuEntity);
   const variantRepo = AppDataSource.getRepository(MenuVariantEntity);
@@ -657,6 +735,18 @@ async function seed() {
   }
 
   // ── Summary ────────────────────────────────────────────────────────────────
+  // ==================== SECTION 4: PURPOSE - Display Seed Summary ====================
+  // PURPOSE: Query database and display final statistics
+  // INPUT: Database after seeding complete
+  // ACTIONS:
+  //   1. Count total categories in database
+  //   2. Count total addon groups in database
+  //   3. Count total menu items in database
+  //   4. Count total variants in database
+  //   5. Count total addons in database
+  //   6. Log summary to console
+  // CHECKS: All counts match expected values
+  // OUTPUT: Summary statistics displayed and data ready for use
   const [totalCats, totalGroups, totalMenus, totalVariants, totalAddons] =
     await Promise.all([
       categoryRepo.count(),
@@ -680,6 +770,16 @@ async function seed() {
   await AppDataSource.destroy();
 }
 
+// ==================== SECTION 5: PURPOSE - Execute Seed and Handle Errors ====================
+// PURPOSE: Run seed function and handle any errors gracefully
+// INPUT: seed() function with all seeding logic
+// ACTIONS:
+//   1. Execute seed function
+//   2. Catch any errors that occur
+//   3. Log error to console with context
+//   4. Exit process with error code (1)
+// CHECKS: Error handling in place
+// OUTPUT: Seed execution complete with proper error handling
 seed().catch((err) => {
   console.error("[SEED] Fatal error:", err);
   process.exit(1);

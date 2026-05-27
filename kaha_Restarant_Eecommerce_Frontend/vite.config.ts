@@ -5,17 +5,36 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5173,
     proxy: {
-      // Auth calls → Kaha Main V3 (production)
-      // Rewrites: /api/v1/auth/... → /auth/...
-      '/api/v1/auth': {
-        target: 'https://api.kaha.com.np/main/api/v3',
+      // API calls → Restaurant E-Commerce Backend
+      // Routes specific API paths to localhost:3001
+      // Excludes static assets, HTML, and other frontend resources
+      '^/api': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace('/api/v1/auth', '/auth'),
       },
-      // Everything else → Restaurant E-Commerce Backend (NestJS port 3001)
-      '/api': {
+      '^/menu': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '^/cart': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '^/order': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '^/categories': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '^/addon': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '^/menu-ratings': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

@@ -3,6 +3,7 @@ import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RolesGuard } from '../guards/roles.guard';
 import { ServiceCommunicationService } from 'serviceCommunication/service-communication.service';
+import { ConfigurationService } from 'configuration/configuration.service';
 import { UserRoleEnum } from 'common/enums';
 import { MockDataFactory } from '../../../test-utils';
 
@@ -26,6 +27,13 @@ describe('RolesGuard', () => {
           useValue: {
             getBusinessUserRoles: jest.fn(),
             getUserRoles: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigurationService,
+          useValue: {
+            useMockAuth: false,
+            kahaMainV3BaseURL: 'https://api.kaha.com.np/main/api/v3',
           },
         },
       ],

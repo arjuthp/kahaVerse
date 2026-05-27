@@ -62,17 +62,17 @@ describe('CartService', () => {
       cartRepository.findOne.mockResolvedValue(null);
       cartRepository.save.mockResolvedValue({ ...MockDataFactory.mockCart, id: 'cart-001' });
 
-      const result = await service.createCart('user-mock-001');
+      const result = await service.createCart('user-mock-001', 'biz-mock-001');
 
       expect(result).toBeDefined();
       expect(result.id).toBe('cart-001');
-      expect(cartRepository.save).toHaveBeenCalledWith({ userId: 'user-mock-001' });
+      expect(cartRepository.save).toHaveBeenCalledWith({ userId: 'user-mock-001', businessId: 'biz-mock-001' });
     });
 
     it('should throw ConflictException if cart already exists', async () => {
       cartRepository.findOne.mockResolvedValue(MockDataFactory.mockCart);
 
-      await expect(service.createCart('user-mock-001')).rejects.toThrow(
+      await expect(service.createCart('user-mock-001', 'biz-mock-001')).rejects.toThrow(
         ConflictException
       );
     });

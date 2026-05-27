@@ -4,8 +4,9 @@
 
 | Server | Purpose | Port | URL |
 |--------|---------|------|-----|
+| **Frontend UI** | Restaurant E-commerce Client | 5173 or 5174 | `http://localhost:5173` |
+| **Restaurant API** | Backend API Being Tested | 3001 | `http://localhost:3001/api/v1` |
 | **Kaha Main V3** | Auth Service (External) | 3002 or 5002 | `http://localhost:3002/api/v3` |
-| **Restaurant API** | Your API Being Tested | 3001 | `http://localhost:3001/api/v1` |
 | **Database** | PostgreSQL/MySQL | 5432 | `localhost:5432` |
 
 ---

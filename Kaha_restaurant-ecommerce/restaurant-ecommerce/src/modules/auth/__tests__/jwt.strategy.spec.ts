@@ -29,7 +29,7 @@ describe('JwtStrategy', () => {
   });
 
   describe('validate', () => {
-    it('should validate and return user payload without role', async () => {
+    it('should validate and return user payload with role', async () => {
       const payload = MockDataFactory.mockJwtPayload;
 
       const result = await strategy.validate(payload);
@@ -38,18 +38,19 @@ describe('JwtStrategy', () => {
         id: payload.id,
         kahaId: payload.kahaId,
         businessId: payload.businessId,
+        role: payload.role,
       });
-      // Note: JWT Strategy does NOT return role
-      // Role is fetched later by RolesGuard via ServiceCommunicationService
+      // Note: JWT Strategy returns role from decoded JWT payload
+      // Role is also validated by RolesGuard via ServiceCommunicationService
     });
 
-    it('should extract id, kahaId, and businessId from payload', async () => {
+    it('should extract id, kahaId, businessId, and role from payload', async () => {
       const payload = {
         id: 'admin-mock-001',
         kahaId: 'kaha-admin-001',
         businessId: 'biz-mock-001',
         email: 'admin@test.com',
-        role: 'BUSINESS_SUPER_ADMIN', // This is in payload but not returned
+        role: 'BUSINESS_SUPER_ADMIN', // This is returned by strategy
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 3600,
       };
@@ -59,7 +60,7 @@ describe('JwtStrategy', () => {
       expect(result.id).toBe('admin-mock-001');
       expect(result.kahaId).toBe('kaha-admin-001');
       expect(result.businessId).toBe('biz-mock-001');
-      expect(result).not.toHaveProperty('role'); // Role not returned by strategy
+      expect(result.role).toBe('BUSINESS_SUPER_ADMIN'); // Role IS returned by strategy
       expect(result).not.toHaveProperty('email'); // Email not returned by strategy
     });
 

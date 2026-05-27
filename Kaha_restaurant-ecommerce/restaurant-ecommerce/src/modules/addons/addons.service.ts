@@ -36,6 +36,10 @@ export class AddonsService {
       where: { id },
     });
 
+    if (!addons) {
+      throw new NotFoundException(`Addon with ID ${id} not found.`);
+    }
+
     return this.transformToAddonResponse(addons);
   }
 

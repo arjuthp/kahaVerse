@@ -37,6 +37,37 @@ export class ServiceCommunicationService {
   }
 
   /**
+   * Login against Kaha Main V3 API
+   * 
+   * API: POST /auth/login
+   * @param contactNumber User contact number
+   * @param password User password
+   * @returns Login response containing accessToken and role
+   */
+  async login(contactNumber: string, password: string): Promise<any> {
+    const baseUrl = this.configService.kahaMainV3BaseURL;
+    const url = `${baseUrl}/auth/login`;
+
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(url, {
+          contactNumber,
+          password,
+        })
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        `Failed to login to Kaha Main V3: ${error.message}`,
+        error.stack
+      );
+      throw new InternalServerErrorException(
+        "Invalid credentials or Kaha Main V3 service unavailable"
+      );
+    }
+  }
+
+  /**
    * Get business user role information
    * 
    * ⚠️ IMPORTANT: Upstream returns a SINGLE 'role' object, NOT an array
@@ -199,6 +230,35 @@ export class ServiceCommunicationService {
       );
       throw new InternalServerErrorException(
         'Failed to fetch business information'
+      );
+    }
+  }
+
+  /**
+   * Get business user memberships for the logged-in user
+   * 
+   * API: GET /business-users
+   * @param authToken JWT token
+   * @returns Array of business user memberships
+   */
+  async getBusinessUsers(authToken: string): Promise<any> {
+    const baseUrl = this.configService.kahaMainV3BaseURL;
+    const url = `${baseUrl}/business-users`;
+
+    try {
+      const response = await lastValueFrom(
+        this.httpService.get(url, {
+          headers: this.createHeaders(authToken),
+        })
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch business users: ${error.message}`,
+        error.stack
+      );
+      throw new InternalServerErrorException(
+        "Failed to fetch business memberships"
       );
     }
   }

@@ -15,6 +15,7 @@ import { JwtAuthGuard } from "auth/guards";
 import { RolesGuard } from "auth/guards/roles.guard";
 import { Roles } from "common/decorator";
 import { UserRoleEnum } from "common/enums";
+import { ParseUUIDPipe } from "common/pipes";
 
 import { MenuService } from "./menu.service";
 import {
@@ -39,7 +40,7 @@ export class MenuController {
     return this.menuService.createMenu(businessId, body);
   }
 
-  @Get(":businessId")
+  @Get("business/:businessId")
   async findAllMenu(
     @Param("businessId") businessId: string,
     @Query() query: FilterMenuDto
@@ -49,7 +50,7 @@ export class MenuController {
 
   @ApiOperation({ summary: "Id refers to menuId" })
   @Get(":id")
-  async findMenuById(@Param("id") menuId: string) {
+  async findMenuById(@Param("id", ParseUUIDPipe) menuId: string) {
     return this.menuService.findMenuById(menuId);
   }
 
@@ -57,7 +58,7 @@ export class MenuController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
   async updateMenu(
-    @Param("id") menuId: string,
+    @Param("id", ParseUUIDPipe) menuId: string,
     @Body() body: UpdateMenuDto,
     @Req() req
   ) {
@@ -84,7 +85,7 @@ export class MenuController {
   @Delete(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
-  async deleteMenu(@Param("id") id: string, @Req() req) {
+  async deleteMenu(@Param("id", ParseUUIDPipe) id: string, @Req() req) {
     const businessId = req.user.businessId;
 
     return this.menuService.deleteMenu(id, businessId);
@@ -93,7 +94,7 @@ export class MenuController {
   @Post(":id/variants")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
-  async addVariant(@Param("id") id: string, @Body() body: CreateMenuVariantDto, @Req() req) {
+  async addVariant(@Param("id", ParseUUIDPipe) id: string, @Body() body: CreateMenuVariantDto, @Req() req) {
     return this.menuService.addVariant(id, req.user.businessId, body);
   }
 

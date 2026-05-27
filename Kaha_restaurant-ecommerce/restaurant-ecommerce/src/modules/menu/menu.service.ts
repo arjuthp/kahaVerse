@@ -145,6 +145,10 @@ export class MenuService {
   async findMenuById(menuId: string): Promise<IMenuResponse> {
     const menu = await this.menuRepository.findOne({ where: { id: menuId } });
 
+    if (!menu) {
+      throw new NotFoundException(`Menu with ID ${menuId} not found.`);
+    }
+
     return this.transformToMenuResponse(menu);
   }
 

@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = '/api/v1'; // Proxied by Vite to http://localhost:3001/api/v1
+// Base URL for restaurant API
+// In development: proxied by Vite to http://localhost:3001
+// In production: direct API URL
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -10,7 +13,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor — attach JWT token
+// Request interceptor — attach JWT token and business ID
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('kaha_token');
@@ -29,6 +32,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('kaha_token');
       localStorage.removeItem('kaha_user');
+      localStorage.removeItem('kaha_refresh_token');
       window.location.href = '/login';
     }
     return Promise.reject(error);

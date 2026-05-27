@@ -6,18 +6,35 @@ import { AppModule } from "./app.module";
 import { ConfigurationService } from "configuration/configuration.service";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Disable NestJS's built-in body parser so we can control the order ourselves
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const configService = app.get(ConfigurationService);
 
-  app.setGlobalPrefix("api");
+  // Register body parsers directly on the underlying Express instance
+  // This guarantees they run BEFORE any route handler
+  const expressApp = app.getHttpAdapter().getInstance();
+  const express = require("express");
+  expressApp.use(express.json({ limit: "10mb" }));
+  expressApp.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  expressApp.use((req, res, next) => {
+    console.log(`[GLOBAL BODY LOGGER] ${req.method} ${req.path} -> body keys:`, req.body ? Object.keys(req.body) : 'UNDEFINED');
+    next();
+  });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.setGlobalPrefix("api");
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
 
   app.enableCors({
     origin: ["*", "http://localhost:5173", "http://localhost:5174"],
   });
 
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: false,
+      transform: true,
+      forbidNonWhitelisted: false,
+    })
+  );
 
   const config = new DocumentBuilder()
     .setTitle("KAHA-Restaurant Backend API")
@@ -31,4 +48,5 @@ async function bootstrap() {
 
   await app.listen(configService.appPort);
 }
+
 bootstrap();

@@ -26,9 +26,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const data = await cartApi.getCart(businessId);
       setCart(data);
-    } catch (err: any) {
+    } catch (err) {
       // Cart may not exist yet
-      if (err?.response?.status === 404) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr?.response?.status === 404) {
         setCart(null);
       } else {
         console.error('Failed to fetch cart:', err);
@@ -49,8 +50,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       // Backend returns { message } not updated cart — re-fetch for accurate itemCount
       await cartApi.addItem(fullPayload as AddToCartDto);
       await fetchCart();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to add item';
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const message = (axiosErr?.response?.data?.message as string) || 'Failed to add item';
       toast.error(message);
       throw err;
     } finally {
@@ -64,8 +66,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       await cartApi.removeItem(cartItemId);
       await fetchCart();
       toast.success('Item removed');
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to remove item';
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const message = (axiosErr?.response?.data?.message as string) || 'Failed to remove item';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -77,8 +80,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const updated = await cartApi.updateItem(cartItemId, { quantity, specialInstructions });
       setCart(updated);
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to update item';
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const message = (axiosErr?.response?.data?.message as string) || 'Failed to update item';
       toast.error(message);
       throw err;
     } finally {
@@ -96,8 +100,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       await cartApi.clearCart(cart.id);
       setCart(null);
       toast.success('Cart cleared');
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to clear cart';
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const message = (axiosErr?.response?.data?.message as string) || 'Failed to clear cart';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -116,7 +121,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     ) || 0;
     return total + (itemPrice * item.quantity) + addonsTotal;
   }, 0) ?? 0;
-
 
   return (
     <CartContext.Provider
@@ -142,3 +146,4 @@ export const useCart = (): CartContextType => {
   if (!ctx) throw new Error('useCart must be used within CartProvider');
   return ctx;
 };
+

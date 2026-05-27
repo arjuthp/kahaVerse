@@ -11,6 +11,7 @@ import {
 import { AddonsService } from "./addons.service";
 import { CreateAddOnDto, UpdateAddOnsDto } from "./dto";
 import { ApiTags } from "@nestjs/swagger";
+import { ParseUUIDPipe } from "common/pipes";
 
 @ApiTags("addons")
 @Controller("addons")
@@ -25,18 +26,18 @@ export class AddonsController {
     return this.addonsService.findAllAddOns();
   }
 
-  @Get(":id") findAddOnById(@Param("id") id: string) {
+  @Get(":id") findAddOnById(@Param("id", ParseUUIDPipe) id: string) {
     return this.addonsService.findAddOnById(id);
   }
 
   @Patch(":id") updateAddOn(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() body: UpdateAddOnsDto
   ) {
     return this.addonsService.updateAddOn(id, body);
   }
 
-  @Delete(":id") deleteAddOn(@Param("id") id: string) {
+  @Delete(":id") deleteAddOn(@Param("id", ParseUUIDPipe) id: string) {
     return this.addonsService.deleteAddOn(id);
   }
 }
