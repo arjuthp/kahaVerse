@@ -20,14 +20,14 @@ export class AddonGroupsController {
     return this.addonGroupsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.addonGroupsService.findOne(id);
-  }
-
   @Get('menu/:menuId')
   findByMenu(@Param('menuId', ParseUUIDPipe) menuId: string) {
     return this.addonGroupsService.findByMenu(menuId);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.addonGroupsService.findOne(id);
   }
 
   @Patch(':id')
