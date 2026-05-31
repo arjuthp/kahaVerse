@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AddonGroupRepository, AddonsRepository } from 'src/repositories';
+import { MenuRepository } from 'src/repositories';
 import { CreateAddonGroupDto, CreateAddonDto, UpdateAddonDto } from './dtos';
 
 @Injectable()
@@ -7,6 +8,7 @@ export class AddonGroupsService {
   constructor(
     private readonly addonGroupRepository: AddonGroupRepository,
     private readonly addonRepository: AddonsRepository,
+    private readonly menuRepository: MenuRepository,
   ) {}
 
   async createGroup(body: CreateAddonGroupDto) {
@@ -21,6 +23,19 @@ export class AddonGroupsService {
     const group = await this.addonGroupRepository.findOne({ where: { id }, relations: ['addons'] });
     if (!group) throw new NotFoundException('Addon Group not found');
     return group;
+  }
+
+  async findByMenu(menuId: string) {
+    // Public endpoint — returns all active addon groups with their active choices for a menu item
+    const menu = await this.menuRepository.findOne({
+      where: { id: menuId },
+      relations: ['addonGroups', 'addonGroups.addons'],
+    });
+    if (!menu) throw new NotFoundException('Menu not found');
+    return (menu.addonGroups || []).map(group => ({
+      ...group,
+      addons: (group.addons || []).filter(a => a.isActive !== false),
+    }));
   }
 
   async updateGroup(id: string, body: Partial<CreateAddonGroupDto>) {

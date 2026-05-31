@@ -25,6 +25,11 @@ export class AddonGroupsController {
     return this.addonGroupsService.findOne(id);
   }
 
+  @Get('menu/:menuId')
+  findByMenu(@Param('menuId', ParseUUIDPipe) menuId: string) {
+    return this.addonGroupsService.findByMenu(menuId);
+  }
+
   @Patch(':id')
   updateGroup(@Param('id', ParseUUIDPipe) id: string, @Body() body: Partial<CreateAddonGroupDto>) {
     return this.addonGroupsService.updateGroup(id, body);

@@ -6,12 +6,11 @@ export enum AddonSelectionTypeEnum {
 }
 
 export enum OrderStatusEnum {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  PREPARING = 'PREPARING',
-  READY = 'READY',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED',
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  SHIPPED = 'shipped',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled',
 }
 
 export enum ServiceTypeEnum {
@@ -95,6 +94,9 @@ export interface AddonInfo {
   name: string;
   isRequired: boolean;
 }
+
+// Alias for addon type to avoid confusion
+export type MenuAddon = Addon;
 
 export interface Menu {
   id: string;

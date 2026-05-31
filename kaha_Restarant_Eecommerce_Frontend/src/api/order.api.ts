@@ -12,20 +12,27 @@ function normalizeOrder(order: any): Order {
       quantity: item.quantity,
       menuNameSnapshot: item.menuNameSnapshot || item.menuName || item.menu?.name || 'Item',
       variantNameSnapshot: item.variantNameSnapshot || item.variantName || undefined,
-      unitPriceSnapshot: item.unitPriceSnapshot || item.price || 0,
-      lineTotal: item.lineTotal || 0,
+      unitPriceSnapshot: Number(item.unitPriceSnapshot || item.price || 0),
+      lineTotal: Number(item.lineTotal || 0),
       menu: item.menu,
       menuVariant: item.menuVariant,
       addons: (item.addonsInfo || item.addons || []).map((a: any) => ({
         id: a.id,
         quantity: a.quantity,
         addonNameSnapshot: a.addonNameSnapshot || a.name || '',
-        priceSnapshot: a.priceSnapshot || a.price || 0,
+        priceSnapshot: Number(a.priceSnapshot || a.price || 0),
         addon: a.addon,
       })),
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     })),
+    subtotal: Number(order.subtotal || 0),
+    taxAmount: Number(order.taxAmount || 0),
+    deliveryFee: Number(order.deliveryFee || 0),
+    serviceCharge: Number(order.serviceCharge || 0),
+    discountAmount: Number(order.discountAmount || 0),
+    tipAmount: Number(order.tipAmount || 0),
+    totalAmount: Number(order.totalAmount || 0),
     orderStatus: order.orderStatus || [],
   };
 }
@@ -33,8 +40,14 @@ function normalizeOrder(order: any): Order {
 // ===== ORDER API =====
 
 export const orderApi = {
+  // Wrapper to return {data: ...}
+  createOrder: async (payload: CreateOrderDto): Promise<{data: Order}> => {
+    const order = await orderApi.createOrderDirect(payload);
+    return {data: order};
+  },
+
   // Create order manually (with order items)
-  createOrder: async (payload: CreateOrderDto): Promise<Order> => {
+  createOrderDirect: async (payload: CreateOrderDto): Promise<Order> => {
     const { data } = await api.post('/order', payload);
     return normalizeOrder(data);
   },
@@ -48,6 +61,12 @@ export const orderApi = {
     };
   },
 
+  // Wrapper for getOrders
+  getOrders: async ({customerId, ...params}: {customerId?: string; status?: OrderStatusEnum; serviceType?: string; page?: number; limit?: number;}): Promise<{data: Order[]}> => {
+    const orders = await orderApi.getUserOrders(params);
+    return {data: orders};
+  },
+
   // Get user's orders
   getUserOrders: async (params?: {
     status?: OrderStatusEnum;
@@ -58,6 +77,12 @@ export const orderApi = {
     const { data } = await api.get('/order/user', { params });
     const list = Array.isArray(data) ? data : data.data || [];
     return list.map(normalizeOrder);
+  },
+
+  // Wrapper for getOrderDetails
+  getOrderDetails: async (id: string): Promise<{data: Order}> => {
+    const order = await orderApi.getOrderById(id);
+    return {data: order};
   },
 
   // Get single order by ID
@@ -74,6 +99,12 @@ export const orderApi = {
     const { data } = await api.get(`/order/business-man-vs/${businessId}`, { params });
     const list = Array.isArray(data) ? data : data.data || [];
     return list.map(normalizeOrder);
+  },
+
+  // Wrapper for updateOrderStatus
+  updateOrderStatus: async (orderId: string, status: string): Promise<{data: Order}> => {
+    const order = await orderApi.updateStatus(orderId, {status});
+    return {data: order};
   },
 
   // Update order status

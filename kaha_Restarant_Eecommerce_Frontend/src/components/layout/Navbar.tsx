@@ -11,6 +11,8 @@ const Navbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [badgeBounce, setBadgeBounce] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const prevItemCount = useRef(itemCount);
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,9 +37,20 @@ const Navbar: React.FC = () => {
     if (isAuthenticated) fetchCart();
   }, [isAuthenticated]);
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); setDropdownOpen(false); }, [location.pathname]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
+
+  const handleLogout = () => { setDropdownOpen(false); logout(); navigate('/'); };
   const BUSINESS_ID = import.meta.env.VITE_BUSINESS_ID || '';
 
   const isActive = (path: string) => location.pathname.includes(path);
@@ -52,7 +65,7 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Nav */}
         <div className="navbar__links">
-          <Link to={`/menu/${BUSINESS_ID}`} className={`navbar__link ${isActive('/menu') ? 'navbar__link--active' : ''}`}>Menu</Link>
+          <Link to="/menu" className={`navbar__link ${isActive('/menu') ? 'navbar__link--active' : ''}`}>Menu</Link>
           {isAuthenticated && (
             <Link to="/orders" className={`navbar__link ${isActive('/orders') ? 'navbar__link--active' : ''}`}>My Orders</Link>
           )}
@@ -91,26 +104,32 @@ const Navbar: React.FC = () => {
                 )}
               </Link>
 
-              {/* User Dropdown */}
-              <div className="navbar__user">
-                <div className="navbar__user-avatar">
+              {/* User Dropdown — click to toggle, outside click to close */}
+              <div className="navbar__user" ref={dropdownRef}>
+                <button
+                  className="navbar__user-avatar"
+                  onClick={() => setDropdownOpen(prev => !prev)}
+                  aria-label="User menu"
+                >
                   {user?.name?.charAt(0).toUpperCase() || '?'}
-                </div>
-                <div className="navbar__user-dropdown">
-                  <div className="navbar__user-name">{user?.name}</div>
-                  <div className="navbar__user-role">{user?.role}</div>
-                  <hr className="divider" style={{ margin: '8px 0' }} />
-                  {isAdmin && (
-                    <Link to="/admin" className="navbar__dropdown-item">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                      Dashboard
-                    </Link>
-                  )}
-                  <button className="navbar__dropdown-item navbar__dropdown-item--danger" onClick={handleLogout}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    Log Out
-                  </button>
-                </div>
+                </button>
+                {dropdownOpen && (
+                  <div className="navbar__user-dropdown navbar__user-dropdown--open">
+                    <div className="navbar__user-name">{user?.name}</div>
+                    <div className="navbar__user-role">{user?.role}</div>
+                    <hr className="divider" style={{ margin: '8px 0' }} />
+                    {isAdmin && (
+                      <Link to="/admin" className="navbar__dropdown-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Dashboard
+                      </Link>
+                    )}
+                    <button className="navbar__dropdown-item navbar__dropdown-item--danger" onClick={handleLogout}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Log Out
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -134,7 +153,7 @@ const Navbar: React.FC = () => {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="navbar__mobile">
-          <Link to={`/menu/${BUSINESS_ID}`} className="navbar__mobile-link">🍽️ Menu</Link>
+          <Link to="/menu" className="navbar__mobile-link">🍽️ Menu</Link>
           {isAuthenticated && (
             <>
               <Link to="/cart" className="navbar__mobile-link">

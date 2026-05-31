@@ -8,7 +8,7 @@ import './AuthPages.css';
 const RegisterPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', contactNumber: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +19,7 @@ const RegisterPage: React.FC = () => {
       const { accessToken, refreshToken, user } = await authApi.register({
         name: form.name,
         email: form.email,
+        phone: form.contactNumber,
         password: form.password,
       });
       localStorage.setItem('kaha_refresh_token', refreshToken);
@@ -26,7 +27,7 @@ const RegisterPage: React.FC = () => {
       toast.success(`Welcome to KAHA Eats, ${user.name}!`);
       navigate('/');
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Registration failed. Please try again.';
+      const msg = err?.message || err?.response?.data?.message || 'Registration failed. Please try again.';
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -52,6 +53,18 @@ const RegisterPage: React.FC = () => {
                 placeholder="John Doe"
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Contact Number</label>
+              <input
+                type="tel"
+                className="input"
+                placeholder="98XXXXXXXX"
+                value={form.contactNumber}
+                onChange={e => setForm(f => ({ ...f, contactNumber: e.target.value }))}
                 required
               />
             </div>

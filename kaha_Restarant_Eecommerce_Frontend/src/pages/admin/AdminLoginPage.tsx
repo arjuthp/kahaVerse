@@ -9,7 +9,7 @@ const AdminLoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ contactNumber: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +17,7 @@ const AdminLoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { accessToken, refreshToken, user } = await authApi.adminLogin(form.email, form.password);
+      const { accessToken, refreshToken, user } = await authApi.adminLogin(form.contactNumber, form.password);
       localStorage.setItem('kaha_refresh_token', refreshToken);
       login(accessToken, user);
       toast.success('Admin Verified Successfully');
@@ -42,19 +42,19 @@ const AdminLoginPage: React.FC = () => {
 
           <div style={{ background: 'var(--surface-high)', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '24px', border: '1px dashed var(--outline)' }}>
             <strong>🔑 Admin Credentials:</strong><br/>
-            Email: <code>admin@kahaeats.com</code><br/>
-            Password: <code>admin123</code>
+            Contact Number: <code>9813870231</code><br/>
+            Password: <code>ishwor19944</code>
           </div>
 
           <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="input-group">
-              <label className="input-label">Admin Email</label>
+              <label className="input-label">Admin Contact Number</label>
               <input
-                type="email"
+                type="text"
                 className="input"
-                placeholder="admin@example.com"
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                placeholder="e.g. 9813870231"
+                value={form.contactNumber}
+                onChange={e => setForm(f => ({ ...f, contactNumber: e.target.value }))}
                 required
               />
             </div>

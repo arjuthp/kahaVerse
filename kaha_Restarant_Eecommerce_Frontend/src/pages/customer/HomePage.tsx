@@ -52,7 +52,7 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="home-page">
-      
+
       {/* ====== HERO ====== */}
       <section className="hero-section">
         <div className="hero-bg">
@@ -69,7 +69,7 @@ const HomePage: React.FC = () => {
           <div className="hero-cta">
             <button
               className="hero-btn hero-btn--primary"
-              onClick={() => navigate(`/menu/${BUSINESS_ID}`)}
+              onClick={() => navigate('/menu')}
             >
               Order Now
             </button>
@@ -119,7 +119,7 @@ const HomePage: React.FC = () => {
           )}
 
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
-            <Link to={`/menu/${BUSINESS_ID}`} className="btn btn-primary" style={{ padding: '12px 32px', borderRadius: '30px' }}>
+            <Link to="/menu" className="btn btn-primary" style={{ padding: '12px 32px', borderRadius: '30px' }}>
               View Complete Menu ➔
             </Link>
           </div>
@@ -153,7 +153,7 @@ const HomePage: React.FC = () => {
           <p style={{ color: 'var(--on-surface-variant)', marginBottom: '32px' }}>Join thousands of satisfied customers and discover your new favorite meal today.</p>
           
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <Link to={`/menu/${BUSINESS_ID}`} className="btn btn-primary btn-lg" style={{ padding: '16px 32px' }}>
+            <Link to="/menu" className="btn btn-primary btn-lg" style={{ padding: '16px 32px' }}>
               Explore Menu
             </Link>
             <Link to="/register" className="btn btn-secondary btn-lg" style={{ padding: '16px 32px' }}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { orderApi } from '../../api/order.api';
 import { useCart } from '../../context/CartContext';
 import { ServiceTypeEnum, PaymentMethodEnum } from '../../types';
@@ -9,6 +9,7 @@ import './CheckoutPage.css';
 const CheckoutPage: React.FC = () => {
   const { cart, fetchCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [serviceType, setServiceType] = useState<ServiceTypeEnum>(ServiceTypeEnum.DINE_IN);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodEnum>(PaymentMethodEnum.CASH);
@@ -22,11 +23,17 @@ const CheckoutPage: React.FC = () => {
   // Prefer businessId from the cart (most reliable), fall back to env
   const BUSINESS_ID = (cart as any)?.businessId || import.meta.env.VITE_BUSINESS_ID || '';
 
-  const subtotal = cart?.cartItems?.reduce((sum, item) => {
+  const selectedItemIds = (location.state as any)?.selectedItemIds as string[] | undefined;
+
+  const activeItems = cart?.cartItems?.filter(item => 
+    !selectedItemIds || selectedItemIds.includes(item.id)
+  ) || [];
+
+  const subtotal = activeItems.reduce((sum, item) => {
     const base = item.unitPriceSnapshot * item.quantity;
     const addons = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
     return sum + base + addons;
-  }, 0) ?? 0;
+  }, 0);
 
   const taxAmount = subtotal * 0.13;
   const deliveryFee = serviceType === ServiceTypeEnum.DELIVERY ? 50 : 0;
@@ -35,11 +42,11 @@ const CheckoutPage: React.FC = () => {
   const grandTotal = subtotal + taxAmount + deliveryFee + serviceCharge - discountAmount + tipAmount;
 
   const handlePlaceOrder = async () => {
-    if (!cart?.id || !cart.cartItems?.length) { toast.error('Your cart is empty'); return; }
+    if (!cart?.id || !activeItems.length) { toast.error('Your checkout selection is empty'); return; }
     setLoading(true);
     try {
       const res = await orderApi.createOrderFromCart({
-        cartItemIds: cart.cartItems.map(item => item.id),
+        cartItemIds: activeItems.map(item => item.id),
         businessId: BUSINESS_ID,
         serviceType,
         tableNumber: serviceType === ServiceTypeEnum.DINE_IN ? tableNumber : undefined,
@@ -210,11 +217,11 @@ const CheckoutPage: React.FC = () => {
           <aside className="checkout-summary">
             <div className="checkout-summary-head">
               <h3>Order Summary</h3>
-              <p>{cart?.cartItems?.length || 0} ITEMS</p>
+              <p>{activeItems.length} ITEMS</p>
             </div>
             
             <div className="checkout-items-list">
-              {cart?.cartItems?.map(item => {
+              {activeItems.map(item => {
                 const itemAddonsTotal = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
                 const linePrice = (item.unitPriceSnapshot * item.quantity) + itemAddonsTotal;
                 return (

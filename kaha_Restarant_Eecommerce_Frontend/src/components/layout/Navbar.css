@@ -174,8 +174,9 @@
   font-weight: 700;
   border: 2px solid var(--outline-variant);
   transition: border-color var(--transition-fast);
+  cursor: pointer;
 }
-.navbar__user:hover .navbar__user-avatar { border-color: var(--primary); }
+.navbar__user-avatar:hover { border-color: var(--primary); }
 
 .navbar__user-dropdown {
   display: none;
@@ -191,7 +192,8 @@
   z-index: 200;
   animation: scaleIn 0.2s cubic-bezier(0.16,1,0.3,1);
 }
-.navbar__user:hover .navbar__user-dropdown { display: block; }
+/* Shown via React state — not CSS hover */
+.navbar__user-dropdown--open { display: block; }
 
 .navbar__user-name {
   padding: var(--space-xs) var(--space-sm);

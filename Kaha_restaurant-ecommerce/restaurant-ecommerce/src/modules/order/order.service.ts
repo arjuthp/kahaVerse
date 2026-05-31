@@ -53,7 +53,7 @@ export class OrderService {
   async createOrder(
     body: CreateOrderDto,
     userId: string
-  ): Promise<ISuccessReponse> {
+  ): Promise<any> {
     const { orderItems, ...rest } = body;
     const orderNumber = `ORD-${Date.now()}`;
     
@@ -145,7 +145,7 @@ export class OrderService {
     order.serviceCharge = body.serviceCharge || 0;
     order.discountAmount = body.discountAmount || 0;
     order.tipAmount = body.tipAmount || 0;
-    order.totalAmount = subtotal + taxAmount + deliveryFee + order.serviceCharge - order.discountAmount + order.tipAmount;
+    order.totalAmount = subtotal + taxAmount + deliveryFee + Number(order.serviceCharge) - Number(order.discountAmount) + Number(order.tipAmount);
 
     await this.orderRepository.save(order);
 
@@ -155,7 +155,7 @@ export class OrderService {
       updatedBy: userId,
     });
 
-    return { message: "Order created successfully" };
+    return { message: "Order created successfully", orderId: order.id, order };
   }
 
   /**
@@ -175,7 +175,7 @@ export class OrderService {
   async createOrderFromCart(
     body: CreateOrderFromCartDto,
     userId: string
-  ): Promise<ISuccessReponse> {
+  ): Promise<any> {
     const { businessId, cartItemIds, serviceType, tableNumber, remarks, paymentMethod, deliveryFee, serviceCharge, tipAmount, discountAmount } = body;
 
     // Find user's cart
@@ -326,10 +326,10 @@ export class OrderService {
     // Calculate order totals
     const subtotal = orderItemTotals.reduce((sum, value) => sum + value, 0);
     const taxAmount = subtotal * 0.13; // 13% tax
-    const finalDeliveryFee = order.deliveryFee;
-    const finalServiceCharge = order.serviceCharge;
-    const finalDiscountAmount = order.discountAmount;
-    const finalTipAmount = order.tipAmount;
+    const finalDeliveryFee = Number(order.deliveryFee || 0);
+    const finalServiceCharge = Number(order.serviceCharge || 0);
+    const finalDiscountAmount = Number(order.discountAmount || 0);
+    const finalTipAmount = Number(order.tipAmount || 0);
     
     order.subtotal = subtotal;
     order.taxAmount = taxAmount;
@@ -348,7 +348,9 @@ export class OrderService {
     await this.cartItemRepository.remove(itemsToOrder);
 
     return { 
-      message: `Order created successfully. ${itemsToOrder.length} item(s) ordered. Order #${order.orderNumber}, Total: ${order.totalAmount}`
+      message: `Order created successfully. ${itemsToOrder.length} item(s) ordered. Order #${order.orderNumber}, Total: ${order.totalAmount}`,
+      orderId: order.id,
+      order
     };
   }
 

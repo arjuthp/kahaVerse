@@ -10,7 +10,9 @@ export class CartItemAddOnsEntity extends BaseEntity {
   @Column("numeric", { precision: 12, scale: 2, nullable: true })
   unitPriceSnapshot: number;
 
-  @ManyToOne(() => CartItemEntity, (cartItem) => cartItem.addOns)
+  @ManyToOne(() => CartItemEntity, (cartItem) => cartItem.addOns, {
+    onDelete: 'CASCADE',
+  })
   cartItem: CartItemEntity;
 
   @ManyToOne(() => AddOnEntity)

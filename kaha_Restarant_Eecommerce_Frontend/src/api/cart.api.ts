@@ -1,6 +1,20 @@
 import api from './axios';
 import type { Cart, AddToCartDto } from '../types';
 
+function getStoredBusinessId(): string {
+  try {
+    const raw = localStorage.getItem('kaha_user');
+    if (raw) {
+      const user = JSON.parse(raw) as { businessId?: string; kahaId?: string };
+      if (user.businessId) return user.businessId;
+      if (user.kahaId) return user.kahaId;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return import.meta.env.VITE_BUSINESS_ID || '';
+}
+
 // Backend returns cartItemsInfo — normalize to cartItems so all frontend consumers work
 function normalizeCart(data: any): Cart {
   const items = data.cartItemsInfo || data.cartItems || [];
@@ -48,8 +62,8 @@ function normalizeCart(data: any): Cart {
 
 export const cartApi = {
   // Create a new cart
-  createCart: async (): Promise<Cart> => {
-    const { data } = await api.post('/cart');
+  createCart: async (businessId?: string): Promise<Cart> => {
+    const { data } = await api.post('/cart', { businessId: businessId || getStoredBusinessId() });
     return normalizeCart(data);
   },
 
@@ -69,9 +83,8 @@ export const cartApi = {
   updateItem: async (
     itemId: string,
     payload: { quantity: number; specialInstructions?: string },
-  ): Promise<Cart> => {
-    const { data } = await api.patch(`/cart/${itemId}`, payload);
-    return normalizeCart(data);
+  ): Promise<void> => {
+    await api.patch(`/cart/${itemId}`, payload);
   },
 
   // Remove item from cart
@@ -79,8 +92,10 @@ export const cartApi = {
     await api.delete(`/cart/${itemId}`);
   },
 
-  // Clear entire cart (delete all items)
-  clearCart: async (cartId: string): Promise<void> => {
-    await api.delete(`/cart/${cartId}`);
+  // Clear cart by deleting cart items (backend has conflicting DELETE /cart/:id handlers)
+  clearCart: async (): Promise<void> => {
+    const cart = await cartApi.getCart();
+    const items = cart?.cartItems || [];
+    await Promise.all(items.map((i) => api.delete(`/cart/${i.id}`)));
   },
 };

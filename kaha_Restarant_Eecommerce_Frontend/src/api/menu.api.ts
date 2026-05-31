@@ -47,6 +47,27 @@ export const categoryApi = {
   delete: async (id: string): Promise<void> => {
     await api.delete(`/categories/${id}`);
   },
+
+  // Wrapper functions for admin page compatibility
+  getCategories: async (params: string | { businessId: string }): Promise<{ data: Category[] }> => {
+    const businessId = typeof params === 'string' ? params : params.businessId;
+    const list = await categoryApi.getByBusiness(businessId);
+    return { data: list };
+  },
+
+  createCategory: async (payload: any): Promise<{ data: Category }> => {
+    const category = await categoryApi.create(payload);
+    return { data: category };
+  },
+
+  updateCategory: async (id: string, payload: any): Promise<{ data: Category }> => {
+    const category = await categoryApi.update(id, payload);
+    return { data: category };
+  },
+
+  deleteCategory: async (id: string): Promise<void> => {
+    return categoryApi.delete(id);
+  },
 };
 
 const categoryMap: Record<string, string> = {
@@ -61,6 +82,29 @@ const categoryMap: Record<string, string> = {
 // ===== MENU API =====
 
 export const menuApi = {
+  // Wrapper for getByBusiness to return {data: ...}
+  getMenus: async (params: {businessId: string; categoryId?: string; isSignature?: boolean; isAvailable?: boolean; search?: string; minPrice?: number; maxPrice?: number; page?: number; limit?: number;}): Promise<{data: Menu[]}> => {
+    const menus = await menuApi.getByBusiness(params.businessId, params);
+    return {data: menus};
+  },
+
+  // Wrapper for create
+  createMenu: async (payload: any): Promise<{data: Menu}> => {
+    const menu = await menuApi.create(payload);
+    return {data: menu};
+  },
+
+  // Wrapper for update
+  updateMenu: async (id: string, payload: any): Promise<{data: Menu}> => {
+    const menu = await menuApi.update(id, payload);
+    return {data: menu};
+  },
+
+  // Wrapper for delete
+  deleteMenu: async (id: string): Promise<void> => {
+    return await menuApi.delete(id);
+  },
+
   getByBusiness: async (
     businessId: string,
     params?: {
@@ -75,7 +119,7 @@ export const menuApi = {
     },
   ): Promise<Menu[]> => {
     try {
-      const { data } = await api.get(`/menu/${businessId}`, { params });
+      const { data } = await api.get(`/menu/business/${businessId}`, { params });
       const items = Array.isArray(data) ? data : data.data || [];
       return items.map((item: any) => {
         const actualCategory = typeof item.category === 'object' ? item.category : null;

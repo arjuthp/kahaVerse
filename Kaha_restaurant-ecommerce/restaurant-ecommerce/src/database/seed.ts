@@ -126,7 +126,7 @@ const AppDataSource = new DataSource({
 // NOTE: In production, replace with real businessId from KAH_API_V3 microservice
 // Replace these with real IDs from your KAH_API_V3 microservice,
 // or keep as-is and override via the Postman environment variables.
-const MOCK_BUSINESS_ID = "biz-mock-001";
+const MOCK_BUSINESS_ID = "7476ee15-1407-41fa-9a49-89e0caaf945d";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function log(msg: string) {
@@ -609,6 +609,85 @@ async function seed() {
       details: { calories: "380 kcal", allergens: "Dairy, Eggs, Gluten" },
     });
 
+    // ── Additional Items ──
+    const greenSalad = menuRepo.create({
+      name: "Green Garden Salad",
+      description: "Fresh mixed greens with vinaigrette dressing",
+      price: 380,
+      businessId: MOCK_BUSINESS_ID,
+      category: catBurgers,
+      isAvailable: true,
+      isBarItem: false,
+      isSignature: false,
+      allowAddOns: true,
+      services: [MenuServiceEnum.DINE_IN, MenuServiceEnum.TAKEAWAY],
+      images: ["https://placehold.co/400x300?text=Garden+Salad"],
+      details: { calories: "200 kcal", allergens: "None" },
+      addonGroups: [sgSauces],
+    });
+
+    const lasooni = menuRepo.create({
+      name: "Lasagna",
+      description: "Layered pasta with meat sauce and bechamel",
+      price: 580,
+      businessId: MOCK_BUSINESS_ID,
+      category: catPasta,
+      isAvailable: true,
+      isBarItem: false,
+      isSignature: true,
+      allowAddOns: false,
+      services: [MenuServiceEnum.DINE_IN, MenuServiceEnum.HOME_DELIVERY],
+      images: ["https://placehold.co/400x300?text=Lasagna"],
+      details: { calories: "850 kcal", allergens: "Gluten, Dairy, Eggs" },
+    });
+
+    const mochaLatte = menuRepo.create({
+      name: "Mocha Latte",
+      description: "Espresso with steamed milk and chocolate",
+      price: 250,
+      businessId: MOCK_BUSINESS_ID,
+      category: catCoffee,
+      isAvailable: true,
+      isBarItem: true,
+      isSignature: false,
+      allowAddOns: true,
+      services: [MenuServiceEnum.DINE_IN, MenuServiceEnum.TAKEAWAY],
+      images: ["https://placehold.co/400x300?text=Mocha+Latte"],
+      details: { caffeine: "80mg", allergens: "Dairy" },
+      addonGroups: [sgDrinkSize],
+    });
+
+    const strawberryShake = menuRepo.create({
+      name: "Strawberry Milkshake",
+      description: "Creamy strawberry shake with whipped cream",
+      price: 280,
+      businessId: MOCK_BUSINESS_ID,
+      category: catJuices,
+      isAvailable: true,
+      isBarItem: true,
+      isSignature: false,
+      allowAddOns: true,
+      services: [MenuServiceEnum.DINE_IN, MenuServiceEnum.TAKEAWAY],
+      images: ["https://placehold.co/400x300?text=Strawberry+Shake"],
+      details: { calories: "350 kcal", allergens: "Dairy" },
+      addonGroups: [sgDrinkSize],
+    });
+
+    const chocolateCake = menuRepo.create({
+      name: "Chocolate Lava Cake",
+      description: "Warm chocolate cake with molten center",
+      price: 320,
+      businessId: MOCK_BUSINESS_ID,
+      category: catDesserts,
+      isAvailable: true,
+      isBarItem: false,
+      isSignature: true,
+      allowAddOns: false,
+      services: [MenuServiceEnum.DINE_IN, MenuServiceEnum.TAKEAWAY],
+      images: ["https://placehold.co/400x300?text=Lava+Cake"],
+      details: { calories: "520 kcal", allergens: "Dairy, Eggs, Gluten" },
+    });
+
     const savedMenus = await menuRepo.save([
       classicBurger,
       chickenBurger,
@@ -623,6 +702,11 @@ async function seed() {
       orangeJuice,
       cheesecake,
       tiramisu,
+      greenSalad,
+      lasooni,
+      mochaLatte,
+      strawberryShake,
+      chocolateCake,
     ]);
 
     // ── 4. Menu Variants ───────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,9 +10,23 @@ const CartPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (isAuthenticated) fetchCart();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (cart?.cartItems) {
+      setSelectedItemIds(cart.cartItems.map(item => item.id));
+    }
+  }, [cart]);
+
+  const toggleSelectItem = (itemId: string) => {
+    setSelectedItemIds(prev =>
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    );
+  };
 
   if (!isAuthenticated) {
     return (
@@ -53,7 +67,7 @@ const CartPage: React.FC = () => {
             <p>Looks like you haven't added anything to your cart yet. Browse our menu to find something delicious.</p>
             <button
               className="cart-checkout-btn"
-              onClick={() => navigate(`/menu/${import.meta.env.VITE_BUSINESS_ID || ''}`)}
+              onClick={() => navigate('/menu')}
               style={{ maxWidth: '300px' }}
             >
               Browse Menu
@@ -64,11 +78,13 @@ const CartPage: React.FC = () => {
     );
   }
 
-  const grandTotal = cart.cartItems.reduce((sum, item) => {
-    const base = item.unitPriceSnapshot * item.quantity;
-    const addons = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
-    return sum + base + addons;
-  }, 0);
+  const grandTotal = cart.cartItems
+    .filter(item => selectedItemIds.includes(item.id))
+    .reduce((sum, item) => {
+      const base = item.unitPriceSnapshot * item.quantity;
+      const addons = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
+      return sum + base + addons;
+    }, 0);
 
   return (
     <div className="cart-page">
@@ -92,6 +108,8 @@ const CartPage: React.FC = () => {
               <CartItemRow
                 key={item.id}
                 item={item}
+                isSelected={selectedItemIds.includes(item.id)}
+                onToggleSelect={() => toggleSelectItem(item.id)}
                 onRemove={() => removeItem(item.id)}
                 onUpdate={(qty) => updateItem(item.id, qty)}
               />
@@ -104,16 +122,23 @@ const CartPage: React.FC = () => {
               <h3 className="cart-summary-title">Order Summary</h3>
               
               <div className="cart-summary-rows">
-                {cart.cartItems.map(item => {
-                  const addonsTotal = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
-                  const lineTotal = (item.unitPriceSnapshot * item.quantity) + addonsTotal;
-                  return (
-                    <div key={item.id} className="cart-summary-row">
-                      <span>{item.quantity}x {item.menu?.name ?? 'Item'}</span>
-                      <span>NPR {lineTotal.toFixed(2)}</span>
-                    </div>
-                  );
-                })}
+                {cart.cartItems
+                  .filter(item => selectedItemIds.includes(item.id))
+                  .map(item => {
+                    const addonsTotal = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
+                    const lineTotal = (item.unitPriceSnapshot * item.quantity) + addonsTotal;
+                    return (
+                      <div key={item.id} className="cart-summary-row">
+                        <span>{item.quantity}x {item.menu?.name ?? 'Item'}</span>
+                        <span>NPR {lineTotal.toFixed(2)}</span>
+                      </div>
+                    );
+                  })}
+                {selectedItemIds.length === 0 && (
+                  <div className="cart-summary-row" style={{ color: 'var(--slate-gray)', fontSize: '13px' }}>
+                    No items selected for checkout
+                  </div>
+                )}
               </div>
 
               <div className="cart-summary-divider" />
@@ -123,7 +148,12 @@ const CartPage: React.FC = () => {
                 <span className="cart-summary-total-amount">NPR {grandTotal.toFixed(2)}</span>
               </div>
 
-              <button className="cart-checkout-btn" onClick={() => navigate('/checkout')}>
+              <button 
+                className="cart-checkout-btn" 
+                onClick={() => navigate('/checkout', { state: { selectedItemIds } })}
+                disabled={selectedItemIds.length === 0}
+                style={{ opacity: selectedItemIds.length === 0 ? 0.6 : 1, cursor: selectedItemIds.length === 0 ? 'not-allowed' : 'pointer' }}
+              >
                 Proceed to Checkout
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </button>
@@ -149,17 +179,27 @@ const CartPage: React.FC = () => {
 
 interface CartItemRowProps {
   item: CartItem;
+  isSelected: boolean;
+  onToggleSelect: () => void;
   onRemove: () => void;
   onUpdate: (qty: number) => void;
 }
 
-const CartItemRow: React.FC<CartItemRowProps> = ({ item, onRemove, onUpdate }) => {
+const CartItemRow: React.FC<CartItemRowProps> = ({ item, isSelected, onToggleSelect, onRemove, onUpdate }) => {
   const addonsTotal = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
   const lineTotal = (item.unitPriceSnapshot * item.quantity) + addonsTotal;
 
   return (
-    <div className="cart-item">
-      <div className="cart-item__img-wrap">
+    <div className={`cart-item ${isSelected ? 'cart-item--selected' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="cart-item__select" style={{ display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
+        <input 
+          type="checkbox" 
+          checked={isSelected}
+          onChange={onToggleSelect}
+          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
+        />
+      </div>
+      <div className="cart-item__img-wrap" style={{ flexShrink: 0 }}>
         <img
           src={item.menu?.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80'}
           alt={item.menu?.name}
@@ -167,7 +207,7 @@ const CartItemRow: React.FC<CartItemRowProps> = ({ item, onRemove, onUpdate }) =
         />
       </div>
       
-      <div className="cart-item__body">
+      <div className="cart-item__body" style={{ flexGrow: 1 }}>
         <div className="cart-item__top">
           <div className="cart-item__row">
             <h4 className="cart-item__name">{item.menu?.name ?? 'Menu Item'}</h4>

@@ -2,24 +2,29 @@ import React, { useState, useEffect } from 'react';
 import type { Menu, MenuVariant, AddonGroup } from '../../types';
 import { AddonSelectionTypeEnum } from '../../types';
 import { menuApi } from '../../api/menu.api';
+import { addonGroupApi } from '../../api/addon.api';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './MenuDetailModal.css';
 
 interface Props {
   menu: Menu;
   onClose: () => void;
+  isOpen?: boolean;
+  addOns?: any[];
+  onAddToCart?: (item: any) => Promise<void>;
 }
 
-const MenuDetailModal: React.FC<Props> = ({ menu, onClose }) => {
+const MenuDetailModal: React.FC<Props> = ({ menu, onClose, isOpen = true, addOns = [], onAddToCart }) => {
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [variants, setVariants] = useState<MenuVariant[]>(menu.variants ?? []);
-  const [addonGroups] = useState<AddonGroup[]>(menu.addonGroups ?? []);
+  const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
   const [fetchingDetails, setFetchingDetails] = useState(false);
 
   const [selectedVariant, setSelectedVariant] = useState<MenuVariant | null>(
@@ -31,25 +36,36 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchVariants = async () => {
+    const fetchDetails = async () => {
       setFetchingDetails(true);
+
+      // Fetch variants — failure is non-fatal (item may have none)
       try {
-        const fetched = await menuApi.getVariants(menu.id);
-        const normalized: MenuVariant[] = (fetched as any[]).map(v => ({
+        const fetchedVariants = await menuApi.getVariants(menu.id);
+        const normalizedVariants: MenuVariant[] = (fetchedVariants as any[]).map(v => ({
           ...v,
           price: Number(v.price),
         }));
-        setVariants(normalized);
-        if (normalized.length > 0) {
-          setSelectedVariant(normalized[0]);
+        setVariants(normalizedVariants);
+        if (normalizedVariants.length > 0) {
+          setSelectedVariant(normalizedVariants[0]);
         }
-      } catch {
-        // Item may genuinely have no variants
-      } finally {
-        setFetchingDetails(false);
+      } catch (err) {
+        console.warn('No variants for this item:', err);
       }
+
+      // Fetch addon groups — independent of variants, failure is non-fatal
+      try {
+        const fetchedAddonGroups = await addonGroupApi.getByMenu(menu.id);
+        setAddonGroups(Array.isArray(fetchedAddonGroups) ? fetchedAddonGroups : []);
+      } catch (err) {
+        console.warn('No addon groups for this item:', err);
+        setAddonGroups([]);
+      }
+
+      setFetchingDetails(false);
     };
-    fetchVariants();
+    fetchDetails();
   }, [menu.id]);
 
   const toggleAddon = (group: AddonGroup, addonId: string) => {
@@ -86,7 +102,8 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose }) => {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      toast.error('Please log in first');
+      sessionStorage.setItem('post_login_redirect', location.pathname + location.search);
+      toast.error('Please sign in to add items');
       navigate('/login');
       return;
     }
@@ -128,6 +145,32 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose }) => {
     : Number(menu.price ?? 0);
   const totalPrice = (basePrice + addonTotal) * quantity;
 
+  const [openSectionId, setOpenSectionId] = useState<string | null>('size');
+
+  useEffect(() => {
+    if (variants.length === 0 && addonGroups.length > 0) {
+      setOpenSectionId(addonGroups[0].id);
+    }
+  }, [variants.length, addonGroups]);
+
+  const toggleSection = (id: string) => {
+    setOpenSectionId(prev => (prev === id ? null : id));
+  };
+
+  const getSelectedAddonsLabel = (group: AddonGroup) => {
+    const selectedIds = selectedAddons[group.id] || [];
+    if (selectedIds.length === 0) {
+      return group.isRequired ? 'Selection Required' : 'None selected';
+    }
+    const names = selectedIds
+      .map(id => {
+        const addon = group.addons.find(a => a.id === id);
+        return addon ? addon.name : '';
+      })
+      .filter(Boolean);
+    return names.join(', ');
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="menu-modal-box" onClick={e => e.stopPropagation()}>
@@ -155,62 +198,112 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose }) => {
             </div>
 
             {fetchingDetails ? (
-              <div style={{ color: 'var(--slate-gray)', fontSize: '14px' }}>Loading options...</div>
-            ) : variants.length > 0 ? (
-              <div className="menu-modal-section">
-                <div className="menu-modal-section-title">
-                  <span>Choose Size</span>
-                  <span className="menu-modal-req">Required</span>
-                </div>
-                <div className="menu-option-list">
-                  {variants.map(v => (
-                    <label key={v.id} className={`menu-option-label ${selectedVariant?.id === v.id ? 'menu-option-label--checked' : ''}`} style={{ opacity: v.isAvailable ? 1 : 0.5 }}>
-                      <input
-                        type="radio"
-                        className="menu-option-input"
-                        checked={selectedVariant?.id === v.id}
-                        onChange={() => v.isAvailable && setSelectedVariant(v)}
-                        disabled={!v.isAvailable}
-                      />
-                      <span className="menu-option-text">{v.name} {!v.isAvailable && '(Unavailable)'}</span>
-                      <span className="menu-option-price">NPR {Number(v.price).toFixed(2)}</span>
-                    </label>
-                  ))}
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--slate-gray)', fontSize: '14px', padding: '12px 0' }}>
+                <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span> Loading options...
               </div>
-            ) : null}
+            ) : (
+              <>
+                {/* Size variants */}
+                {variants.length > 0 && (
+                  <div>
+                    <button
+                      type="button"
+                      className={`dropdown-trigger ${openSectionId === 'size' ? 'dropdown-trigger--active' : ''}`}
+                      onClick={() => toggleSection('size')}
+                    >
+                      <div className="dropdown-trigger-title-wrap">
+                        <span className="dropdown-trigger-label">
+                          Choose Size <span className="menu-modal-req" style={{ marginLeft: 8 }}>Required</span>
+                        </span>
+                        <span className="dropdown-trigger-value">
+                          {selectedVariant ? `${selectedVariant.name} (NPR ${Number(selectedVariant.price).toFixed(2)})` : 'Select a size'}
+                        </span>
+                      </div>
+                      <span className="dropdown-arrow-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </button>
+                    {openSectionId === 'size' && (
+                      <div className="dropdown-content-panel">
+                        <div className="menu-option-list">
+                          {variants.map(v => (
+                            <label key={v.id} className={`menu-option-label ${selectedVariant?.id === v.id ? 'menu-option-label--checked' : ''}`} style={{ opacity: v.isAvailable ? 1 : 0.5 }}>
+                              <input
+                                type="radio"
+                                className="menu-option-input"
+                                checked={selectedVariant?.id === v.id}
+                                onChange={() => v.isAvailable && setSelectedVariant(v)}
+                                disabled={!v.isAvailable}
+                              />
+                              <span className="menu-option-text">{v.name} {!v.isAvailable && '(Unavailable)'}</span>
+                              <span className="menu-option-price">NPR {Number(v.price).toFixed(2)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {addonGroups.map(group => (
-              <div key={group.id} className="menu-modal-section">
-                <div className="menu-modal-section-title">
-                  <span>{group.name}</span>
-                  {group.isRequired ? (
-                    <span className="menu-modal-req">Required</span>
-                  ) : (
-                    <span className="menu-modal-opt">Optional</span>
-                  )}
-                </div>
-                <div className="menu-option-list">
-                  {group.addons.map(addon => {
-                    const isSelected = (selectedAddons[group.id] || []).includes(addon.id);
-                    const isSingle = group.selectionType === AddonSelectionTypeEnum.SINGLE;
-                    return (
-                      <label key={addon.id} className={`menu-option-label ${isSelected ? 'menu-option-label--checked' : ''}`} style={{ opacity: addon.isActive ? 1 : 0.5 }}>
-                        <input
-                          type={isSingle ? 'radio' : 'checkbox'}
-                          className="menu-option-input"
-                          checked={isSelected}
-                          onChange={() => addon.isActive && toggleAddon(group, addon.id)}
-                          disabled={!addon.isActive}
-                        />
-                        <span className="menu-option-text">{addon.name}</span>
-                        <span className="menu-option-price">{Number(addon.price) > 0 ? `+NPR ${Number(addon.price).toFixed(2)}` : 'Free'}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+                {/* Add-ons & extras groups */}
+                {addonGroups.length > 0 && (
+                  <div>
+                    {addonGroups.map(group => {
+                      const isOpen = openSectionId === group.id;
+                      return (
+                        <div key={group.id}>
+                          <button
+                            type="button"
+                            className={`dropdown-trigger ${isOpen ? 'dropdown-trigger--active' : ''}`}
+                            onClick={() => toggleSection(group.id)}
+                          >
+                            <div className="dropdown-trigger-title-wrap">
+                              <span className="dropdown-trigger-label">
+                                🍴 {group.name}
+                                {group.isRequired ? (
+                                  <span className="menu-modal-req" style={{ marginLeft: 8 }}>Required</span>
+                                ) : (
+                                  <span className="menu-modal-opt" style={{ marginLeft: 8 }}>Optional</span>
+                                )}
+                              </span>
+                              <span className="dropdown-trigger-value">
+                                {getSelectedAddonsLabel(group)}
+                              </span>
+                            </div>
+                            <span className="dropdown-arrow-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                          </button>
+                          {isOpen && (
+                            <div className="dropdown-content-panel">
+                              <div className="menu-option-list">
+                                {(group.addons || []).map(addon => {
+                                  const isSelected = (selectedAddons[group.id] || []).includes(addon.id);
+                                  const isSingle = group.selectionType === AddonSelectionTypeEnum.SINGLE;
+                                  return (
+                                    <label key={addon.id} className={`menu-option-label ${isSelected ? 'menu-option-label--checked' : ''}`} style={{ opacity: addon.isActive ? 1 : 0.5 }}>
+                                      <input
+                                        type={isSingle ? 'radio' : 'checkbox'}
+                                        className="menu-option-input"
+                                        checked={isSelected}
+                                        onChange={() => addon.isActive && toggleAddon(group, addon.id)}
+                                        disabled={!addon.isActive}
+                                      />
+                                      <span className="menu-option-text">{addon.name}</span>
+                                      <span className="menu-option-price">{Number(addon.price) > 0 ? `+NPR ${Number(addon.price).toFixed(2)}` : 'Free'}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
 
             <div className="menu-modal-section">
               <div className="menu-modal-section-title">Special Instructions</div>

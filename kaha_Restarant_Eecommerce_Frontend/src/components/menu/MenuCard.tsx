@@ -2,16 +2,22 @@ import React, { useState } from 'react';
 import type { Menu } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './MenuCard.css';
 
-interface Props { menu: Menu; onClick?: () => void; }
+interface Props { 
+  menu: Menu; 
+  onClick?: () => void;
+  onViewDetails?: (menuId: string) => void;
+  onAddToCart?: (item: any) => Promise<void>;
+}
 
-const MenuCard: React.FC<Props> = ({ menu, onClick }) => {
+const MenuCard: React.FC<Props> = ({ menu, onClick, onViewDetails, onAddToCart }) => {
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [qty, setQty] = useState(1);
 
   const displayPrice = menu.variants && menu.variants.length > 0
@@ -21,7 +27,13 @@ const MenuCard: React.FC<Props> = ({ menu, onClick }) => {
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated) { toast.error('Please log in to add items'); navigate('/login'); return; }
+    if (!isAuthenticated) {
+      // Allow browsing menu publicly; ask login only when needed.
+      sessionStorage.setItem('post_login_redirect', location.pathname + location.search);
+      toast.error('Please sign in to add items');
+      navigate('/login');
+      return;
+    }
     const hasMultipleVariants = menu.variants && menu.variants.length > 1;
     const hasRequiredAddons = menu.addonGroups?.some(g => g.isRequired);
     if (hasMultipleVariants || hasRequiredAddons) { onClick?.(); return; }

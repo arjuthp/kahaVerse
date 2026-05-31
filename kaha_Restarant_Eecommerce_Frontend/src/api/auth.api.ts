@@ -2,127 +2,71 @@ import axios from 'axios';
 import type { User } from '../types';
 import { UserRoleEnum } from '../types';
 
-export interface AuthResponse {
-  access_token: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: string;
-    kahaId?: string;
-  };
-}
+const BUSINESS_ID = import.meta.env.VITE_BUSINESS_ID || '7476ee15-1407-41fa-9a49-89e0caaf945d';
 
-// cspell:disable-next-line
-// Kaha Main V3 API base URL
-const KAHA_V3_URL = import.meta.env.VITE_KAHA_MAIN_V3_URL || 'https://api.kaha.com.np/main/api/v3';
-const BUSINESS_ID = import.meta.env.VITE_BUSINESS_ID || '00000000-0000-4000-a000-000000000100';
-
-// Create separate axios instance for auth (no interceptors)
-const authAxios = axios.create({
-  baseURL: KAHA_V3_URL,
+// All auth goes through the restaurant backend via Vite proxy (/api/v1 → localhost:3001)
+// No external Kaha Main V3 server needed for customer auth
+const localApi = axios.create({
+  baseURL: '/api/v1',
   timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
 /**
- * Map Kaha Main V3 user to frontend User type
- * Extracts businessId from JWT token
+ * Map restaurant backend user shape to frontend User type
  */
-function mapKahaUserToFrontendUser(kahaUser: Record<string, unknown>, token: string): User {
-  // Decode JWT to get businessId and other claims
+function mapUserToFrontend(userData: Record<string, unknown>, token: string): User {
   let businessId = BUSINESS_ID;
   try {
     const payload = JSON.parse(atob(token.split('.')[1])) as Record<string, unknown>;
-    businessId = (payload.businessId as string) || (payload.business_id as string) || BUSINESS_ID;
-  } catch (e) {
-    console.warn('Could not decode JWT token:', e);
-  }
+    businessId = (payload.businessId as string) || BUSINESS_ID;
+  } catch { /* use default */ }
 
-  // Map role (case-insensitive)
+  const rawRole = ((userData.role as string) || 'user').toLowerCase();
   let role = UserRoleEnum.USER;
-  const kahaRole = ((kahaUser.role as string) || '').toLowerCase();
-  if (kahaRole === 'admin' || kahaRole === 'super_admin') {
+  if (rawRole === 'admin' || rawRole === 'super_admin') {
     role = UserRoleEnum.ADMIN;
-  } else if (kahaRole === 'business_super_admin' || kahaRole === 'business_admin') {
+  } else if (rawRole === 'business_super_admin' || rawRole === 'business_admin') {
     role = UserRoleEnum.BUSINESS_SUPER_ADMIN;
   }
 
   return {
-    id: kahaUser.id as string,
-    name: (kahaUser.fullName as string) || (kahaUser.name as string) || (kahaUser.email as string),
-    email: kahaUser.email as string,
-    phone: (kahaUser.contactNumber as string) || (kahaUser.phone as string) || '',
-    role: role,
-    businessId: businessId,
+    id: userData.id as string,
+    name: (userData.fullName as string) || (userData.name as string) || (userData.email as string) || '',
+    email: (userData.email as string) || '',
+    phone: (userData.contactNumber as string) || (userData.phone as string) || '',
+    role,
+    businessId,
   };
 }
 
-export const authApi = {
+const authApi = {
   /**
-   * Customer/User Login
-   * Calls Kaha Main V3 login endpoint
+   * Customer Login — hits restaurant backend /api/v1/auth/login
+   * Stored in kaha_restaurant_db. No external server or OTP needed.
    */
-  login: async (email: string, password: string): Promise<{ accessToken: string; refreshToken: string; user: User }> => {
+  login: async (contactNumber: string, password: string): Promise<{ accessToken: string; refreshToken: string; user: User }> => {
     try {
-      const response = await authAxios.post<AuthResponse>('/auth/login', {
-        email,
-        password,
-      });
+      const response = await localApi.post('/auth/login', { contactNumber, password });
+      const data = response.data as Record<string, unknown>;
 
-      const { access_token, user: kahaUser } = response.data;
-      
-      // Map to frontend user format
-      const user = mapKahaUserToFrontendUser(kahaUser, access_token);
+      const token = (data.accessToken as string) || (data.access_token as string);
+      const user = mapUserToFrontend(data.user as Record<string, unknown>, token);
 
-      return {
-        accessToken: access_token,
-        refreshToken: access_token, // Kaha V3 doesn't return separate refresh token
-        user,
-      };
+      return { accessToken: token, refreshToken: token, user };
     } catch (error) {
       const axiosErr = error as { response?: { data?: { message?: string } } };
       console.error('Login error:', axiosErr.response?.data || error);
-      throw new Error((axiosErr.response?.data?.message as string) || 'Invalid email or password', { cause: error });
-    }
-  },
-
-  /**
-   * Admin Login
-   * Calls Restaurant Backend admin login endpoint
-   * Admin must be registered in Kaha Main V3 first (with admin role)
-   * Then backend validates against Kaha Main V3 and returns auth token
-   */
-  adminLogin: async (email: string, password: string): Promise<{ accessToken: string; refreshToken: string; user: User }> => {
-    try {
-      // Admin login calls Restaurant Backend /api/v1/auth/admin/login
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-      const response = await axios.post(
-        `${backendUrl}/api/v1/auth/admin/login`,
-        { email, password },
-        { headers: { 'Content-Type': 'application/json' } }
+      throw new Error(
+        (axiosErr.response?.data?.message as string) || 'Invalid contact number or password',
+        { cause: error }
       );
-
-      const { access_token, refreshToken, user: adminUser } = response.data;
-
-      return {
-        accessToken: access_token,
-        refreshToken: refreshToken,
-        user: adminUser,
-      };
-    } catch (error) {
-      const axiosErr = error as { response?: { data?: { message?: string } } };
-      console.error('Admin login error:', axiosErr.response?.data || error);
-      throw new Error((axiosErr.response?.data?.message as string) || 'Invalid administrator credentials', { cause: error });
     }
   },
 
   /**
-   * Register new user (Customer)
-   * Currently Kaha Main V3 does not support public registration
-   * Customers should use existing Kaha Main V3 accounts
+   * Customer Register — hits restaurant backend /api/v1/auth/register
+   * Stored in kaha_restaurant_db. No OTP. No external server needed.
    */
   register: async (payload: {
     name: string;
@@ -131,36 +75,64 @@ export const authApi = {
     phone?: string;
   }): Promise<{ accessToken: string; refreshToken: string; user: User }> => {
     try {
-      // Try to register with Kaha Main V3
-      const response = await authAxios.post<AuthResponse>('/auth/register', {
+      const response = await localApi.post('/auth/register', {
         fullName: payload.name,
         email: payload.email,
         password: payload.password,
         contactNumber: payload.phone,
       });
 
-      const { access_token, user: kahaUser } = response.data;
-      const user = mapKahaUserToFrontendUser(kahaUser, access_token);
+      const data = response.data as Record<string, unknown>;
+      const token = (data.access_token as string) || (data.accessToken as string);
+      const user = mapUserToFrontend(data.user as Record<string, unknown>, token);
 
-      return {
-        accessToken: access_token,
-        refreshToken: access_token,
-        user,
-      };
+      return { accessToken: token, refreshToken: token, user };
     } catch (error) {
-      const axiosErr = error as { response?: { status?: number; data?: { message?: string } } };
+      const axiosErr = error as { response?: { data?: { message?: string } } };
       console.error('Registration error:', axiosErr.response?.data || error);
-      
       throw new Error(
-        'Registration is not available. Please log in with your existing Kaha account or contact support.',
+        (axiosErr.response?.data?.message as string) || 'Registration failed',
         { cause: error }
       );
     }
   },
 
   /**
-   * Logout
-   * Clear local storage
+   * Admin Login — hits restaurant backend /api/v1/auth/admin-login
+   * Restaurant backend validates against production Kaha Main V3.
+   */
+  adminLogin: async (contactNumber: string, password: string): Promise<{ accessToken: string; refreshToken: string; user: User }> => {
+    try {
+      const response = await localApi.post('/auth/admin-login', { contactNumber, password });
+      const { access_token, refreshToken, user: adminUser } = response.data;
+
+      const mappedUser = {
+        id: adminUser.id,
+        name: adminUser.fullName || adminUser.name || adminUser.email || 'Administrator',
+        email: adminUser.email || '',
+        phone: adminUser.contactNumber || adminUser.phone || '',
+        role: adminUser.role || 'admin',
+        businessId: adminUser.businessId || BUSINESS_ID,
+        kahaId: adminUser.kahaId,
+      };
+
+      return {
+        accessToken: access_token,
+        refreshToken: refreshToken || access_token,
+        user: mappedUser,
+      };
+    } catch (error) {
+      const axiosErr = error as { response?: { data?: { message?: string } } };
+      console.error('Admin login error:', axiosErr.response?.data || error);
+      throw new Error(
+        (axiosErr.response?.data?.message as string) || 'Invalid administrator credentials',
+        { cause: error }
+      );
+    }
+  },
+
+  /**
+   * Logout — clears local storage
    */
   logout: async (): Promise<void> => {
     localStorage.removeItem('kaha_token');
@@ -169,25 +141,24 @@ export const authApi = {
   },
 
   /**
-   * Verify token is still valid
-   * Calls Kaha Main V3 to get current user info
+   * Verify token — decode JWT locally (no external call needed)
    */
   verifyToken: async (token: string): Promise<User | null> => {
     try {
-      // Decode token to get user ID
       const payload = JSON.parse(atob(token.split('.')[1])) as Record<string, unknown>;
-      const userId = payload.id as string;
-
-      const response = await authAxios.get(`/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      if (!payload.id) return null;
+      return mapUserToFrontend(
+        {
+          id: payload.id as string,
+          role: (payload.role as string) || 'user',
+          phone: (payload.phone as string) || '',
         },
-      });
-
-      return mapKahaUserToFrontendUser(response.data as Record<string, unknown>, token);
-    } catch (error) {
-      console.error('Token verification failed:', error);
+        token
+      );
+    } catch {
       return null;
     }
   },
 };
+
+export { authApi };

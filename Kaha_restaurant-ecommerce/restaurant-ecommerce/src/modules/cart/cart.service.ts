@@ -194,10 +194,16 @@ export class CartService {
   ): Promise<ISuccessReponse> {
     const checkCartItem = await this.cartItemRepository.findOne({
       where: { id: cartItemId, cart: { userId } },
+      relations: { addOns: true },
     });
 
     if (!checkCartItem) {
       throw new NotFoundException("The requested resource was not found");
+    }
+
+    // Delete associated addons first (FK safety belt, CASCADE also handles this at DB level)
+    if (checkCartItem.addOns?.length) {
+      await this.cartItemAddonsRepository.remove(checkCartItem.addOns);
     }
 
     await this.cartItemRepository.delete(cartItemId);
@@ -240,19 +246,21 @@ export class CartService {
 
     let addonsTotal = 0;
 
-    const itemAddons = addOns.map((addon) => {
-      const { name, description, coverImg } = addon?.menuAddOn;
+    const itemAddons = (addOns || []).map((addon) => {
+      const addonName = addon?.menuAddOn?.name || 'Addon';
+      const addonDescription = addon?.menuAddOn?.description || null;
+      const addonCoverImg = addon?.menuAddOn?.coverImg || null;
       const addonUnitPrice = Number(addon?.unitPriceSnapshot) || 0;
-      const { quantity } = addon;
-      const addonTotal = addonUnitPrice * quantity;
+      const addonQty = addon?.quantity || 1;
+      const addonTotal = addonUnitPrice * addonQty;
       addonsTotal += addonTotal;
 
       return {
-        name,
-        description,
-        coverImg,
+        name: addonName,
+        description: addonDescription,
+        coverImg: addonCoverImg,
         price: addonUnitPrice,
-        quantity,
+        quantity: addonQty,
         total: addonTotal,
       };
     });

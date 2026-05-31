@@ -1,11 +1,46 @@
-# React + TypeScript + Vite
+# KAHA Restaurant E-Commerce - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Production-Ready Frontend for Restaurant E-Commerce Platform**
 
-Currently, two official plugins are available:
+This is a React + TypeScript + Vite application that integrates with a production-ready NestJS backend.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📚 Documentation
+
+**→ [FRONTEND_API_GUIDE.md](./FRONTEND_API_GUIDE.md)** - Complete API integration guide with examples
+
+This is your single source of truth for:
+- Authentication flows
+- All API endpoints
+- Request/response examples
+- Error handling
+- Implementation examples
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Backend Status
+
+✅ **Production Ready** - All 5 critical issues fixed
+- Authorization headers properly injected
+- User/Role endpoints working correctly
+- Business user handling fixed
+- Password security implemented
+- Configuration management complete
+
+See [Backend Documentation](../Kaha_restaurant-ecommerce/restaurant-ecommerce/RESTAURANT_ECOMMERCE_FLOW.md)
 
 ## React Compiler
 

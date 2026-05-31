@@ -1,6 +1,9 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import { ServiceCommunicationService } from '../service-communication/service-communication.service';
+import { UserRepository } from 'src/repositories';
+import { UserType, AuthProvider } from '../../entities/user.entity';
 
 export interface AdminLoginResponse {
   access_token: string;
@@ -14,6 +17,18 @@ export interface AdminLoginResponse {
   };
 }
 
+export interface CustomerRegisterDto {
+  fullName: string;
+  contactNumber: string;
+  email?: string;
+  password: string;
+}
+
+export interface CustomerLoginDto {
+  contactNumber: string;
+  password: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -21,7 +36,108 @@ export class AuthService {
   constructor(
     private readonly serviceCommunicationService: ServiceCommunicationService,
     private readonly jwtService: JwtService,
+    private readonly userRepository: UserRepository,
   ) {}
+
+  /**
+   * Customer Register — stores user in local kaha_restaurant_db, no OTP needed
+   */
+  async customerRegister(dto: CustomerRegisterDto): Promise<any> {
+    const { fullName, contactNumber, email, password } = dto;
+
+    // Check if phone already exists
+    const existing = await this.userRepository.findByPhone(contactNumber);
+    if (existing) {
+      throw new ConflictException('Contact number already registered');
+    }
+
+    // Check email if provided
+    if (email) {
+      const existingEmail = await this.userRepository.findByEmail(email);
+      if (existingEmail) {
+        throw new ConflictException('Email address already registered');
+      }
+    }
+
+    if (!password || password.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const nameParts = fullName?.trim().split(' ') || [];
+    const firstName = nameParts[0] || fullName;
+    const lastName = nameParts.slice(1).join(' ') || undefined;
+
+    const user = await this.userRepository.save({
+      phone: contactNumber,
+      email: email || undefined,
+      firstName,
+      lastName,
+      password: hashedPassword,
+      userType: UserType.CUSTOMER,
+      authProvider: AuthProvider.LOCAL,
+      isActive: true,
+    });
+
+    const token = this.jwtService.sign({
+      id: user.id,
+      phone: user.phone,
+      role: 'user',
+    });
+
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        email: user.email || '',
+        fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        role: 'user',
+        contactNumber: user.phone,
+      },
+    };
+  }
+
+  /**
+   * Customer Login — validates against local kaha_restaurant_db, no OTP needed
+   */
+  async customerLogin(dto: CustomerLoginDto): Promise<any> {
+    const { contactNumber, password } = dto;
+
+    // Support login by email too
+    let user = await this.userRepository.findByPhone(contactNumber);
+    if (!user && contactNumber.includes('@')) {
+      user = await this.userRepository.findByEmail(contactNumber);
+    }
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid contact number or password');
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Invalid contact number or password');
+    }
+
+    const token = this.jwtService.sign({
+      id: user.id,
+      phone: user.phone,
+      role: 'user',
+    });
+
+    return {
+      accessToken: token,
+      role: 'user',
+      user: {
+        id: user.id,
+        email: user.email || '',
+        fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        role: 'user',
+        contactNumber: user.phone,
+      },
+    };
+  }
+
+
 
   /**
    * Admin Login - Validates credentials against Kaha Main V3

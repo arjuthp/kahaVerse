@@ -1,6 +1,80 @@
 /* ========== HomePage — Savor Modern ========== */
 .home-page { padding-top: var(--navbar-height); }
 
+/* Header */
+.home-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--gutter);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-container .logo h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.header-nav {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  color: var(--on-surface);
+}
+
+.nav-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.nav-btn--primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.nav-btn--primary:hover {
+  background: var(--primary-dark, #d9531a);
+}
+
+.nav-btn--admin {
+  background: rgba(99, 102, 241, 0.1);
+  color: rgb(99, 102, 241);
+  border-color: rgb(99, 102, 241);
+  font-size: 12px;
+}
+
+.nav-btn--admin:hover {
+  background: rgb(99, 102, 241);
+  color: white;
+}
+
 /* Hero */
 .hero-section {
   position: relative;

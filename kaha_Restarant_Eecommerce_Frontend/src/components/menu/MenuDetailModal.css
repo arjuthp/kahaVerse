@@ -99,3 +99,86 @@
 .menu-modal-add-btn:hover { background:var(--primary-container); transform:translateY(-1px); box-shadow:0 6px 20px rgba(177,36,1,0.3); }
 .menu-modal-add-btn:active { transform:scale(0.98); }
 .menu-modal-add-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+/* ========== Collapsible Dropdown UI ========== */
+.dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-sm);
+}
+
+.dropdown-trigger:hover {
+  background: var(--surface-low);
+  border-color: var(--primary);
+}
+
+.dropdown-trigger--active {
+  border-color: var(--primary);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: var(--surface-low);
+  margin-bottom: 0;
+}
+
+.dropdown-trigger-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-trigger-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--on-surface);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-trigger-value {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.dropdown-arrow-icon {
+  transition: transform 0.2s ease;
+  color: var(--slate-gray);
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-trigger--active .dropdown-arrow-icon {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+
+.dropdown-content-panel {
+  border: 1px solid var(--outline-variant);
+  border-top: none;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  padding: var(--space-md);
+  background: var(--surface-lowest);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

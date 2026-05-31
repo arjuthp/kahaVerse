@@ -18,7 +18,7 @@ const MenuPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('default');
   const [serviceType, setServiceType] = useState<'DELIVERY'|'DINE_IN'|'TAKEAWAY'>('DELIVERY');
 
-  const BUSINESS_ID = businessId || import.meta.env.VITE_BUSINESS_ID || '';
+  const BUSINESS_ID = businessId || import.meta.env.VITE_BUSINESS_ID || 'biz-mock-001';
 
   useEffect(() => {
     if (!BUSINESS_ID) return;

@@ -78,8 +78,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateItem = useCallback(async (cartItemId: string, quantity: number, specialInstructions?: string) => {
     try {
       setLoading(true);
-      const updated = await cartApi.updateItem(cartItemId, { quantity, specialInstructions });
-      setCart(updated);
+      await cartApi.updateItem(cartItemId, { quantity, specialInstructions });
+      await fetchCart();
     } catch (err) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       const message = (axiosErr?.response?.data?.message as string) || 'Failed to update item';
@@ -88,17 +88,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchCart]);
 
   const clearCart = useCallback(async () => {
-    if (!cart?.id) {
-      toast.error('No cart to clear');
-      return;
-    }
     try {
       setLoading(true);
-      await cartApi.clearCart(cart.id);
-      setCart(null);
+      await cartApi.clearCart();
+      await fetchCart();
       toast.success('Cart cleared');
     } catch (err) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
@@ -107,7 +103,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [cart?.id]);
+  }, [fetchCart]);
 
   // Calculate item count
   const itemCount = cart?.cartItems?.reduce((acc, item) => acc + item.quantity, 0) ?? 0;

@@ -2,18 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderApi } from '../../api/order.api';
 import { menuApi, categoryApi } from '../../api/menu.api';
+import { addonGroupApi, addonApi } from '../../api/addon.api';
 import { useAuth } from '../../context/AuthContext';
-import type { Order, Menu, Category } from '../../types';
-import { OrderStatusEnum } from '../../types';
+import type { Order, Menu, Category, AddonGroup, Addon } from '../../types';
+import { OrderStatusEnum, AddonSelectionTypeEnum } from '../../types';
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
 
-type AdminTab = 'overview' | 'orders' | 'menu' | 'categories' | 'users';
+type AdminTab = 'overview' | 'orders' | 'menu' | 'categories' | 'users' | 'addons';
 
 const STATUS_FLOW: OrderStatusEnum[] = [
-  OrderStatusEnum.CONFIRMED,
-  OrderStatusEnum.PREPARING,
-  OrderStatusEnum.READY,
+  OrderStatusEnum.PROCESSING,
+  OrderStatusEnum.SHIPPED,
   OrderStatusEnum.DELIVERED,
   OrderStatusEnum.CANCELLED,
 ];
@@ -28,6 +28,7 @@ const AdminDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -45,10 +46,35 @@ const AdminDashboard: React.FC = () => {
     categoryId: '',
     image: '',
     isAvailable: true,
-    isSignature: false
+    isSignature: false,
+    addonGroups: [] as string[]
   });
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Addon Groups & Addons CRUD States
+  const [isAddonGroupModalOpen, setIsAddonGroupModalOpen] = useState(false);
+  const [editingAddonGroup, setEditingAddonGroup] = useState<AddonGroup | null>(null);
+  const [addonGroupForm, setAddonGroupForm] = useState({
+    name: '',
+    isRequired: false,
+    minSelect: 0,
+    maxSelect: 0,
+    selectionType: AddonSelectionTypeEnum.MULTI as AddonSelectionTypeEnum,
+  });
+
+  const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
+  const [activeGroupIdForAddon, setActiveGroupIdForAddon] = useState<string>('');
+  const [editingAddon, setEditingAddon] = useState<Addon | null>(null);
+  const [addonForm, setAddonForm] = useState({
+    name: '',
+    price: 0,
+    description: '',
+    isActive: true,
+  });
+
+  const [hideEmptyGroups, setHideEmptyGroups] = useState(true);
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!BUSINESS_ID) return;
@@ -58,14 +84,16 @@ const AdminDashboard: React.FC = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [ordersData, menuData, catData] = await Promise.all([
+      const [ordersData, menuData, catData, addonGroupsData] = await Promise.all([
         orderApi.getBusinessOrders(BUSINESS_ID),
         menuApi.getByBusiness(BUSINESS_ID),
         categoryApi.getByBusiness(BUSINESS_ID),
+        addonGroupApi.getGroups(BUSINESS_ID).catch(() => []),
       ]);
       setOrders(Array.isArray(ordersData) ? ordersData : []);
       setMenus(Array.isArray(menuData) ? menuData : (menuData as any).data ?? []);
       setCategories(Array.isArray(catData) ? catData : []);
+      setAddonGroups(Array.isArray(addonGroupsData) ? addonGroupsData : []);
 
       // Load registered users (mock + local)
       const localUsers = JSON.parse(localStorage.getItem('kaha_local_users') || '[]');
@@ -145,7 +173,8 @@ const AdminDashboard: React.FC = () => {
       categoryId: categories[0]?.id || '',
       image: '',
       isAvailable: true,
-      isSignature: false
+      isSignature: false,
+      addonGroups: []
     });
     setIsMenuModalOpen(true);
   };
@@ -160,7 +189,8 @@ const AdminDashboard: React.FC = () => {
       categoryId: item.categoryId || item.category?.id || categories[0]?.id || '',
       image: item.images?.[0] || item.image || '',
       isAvailable: item.isAvailable,
-      isSignature: item.isSignature || false
+      isSignature: item.isSignature || false,
+      addonGroups: item.addonGroups?.map(g => g.id) || []
     });
     setIsMenuModalOpen(true);
   };
@@ -181,12 +211,30 @@ const AdminDashboard: React.FC = () => {
         businessId: BUSINESS_ID
       };
 
+      let savedMenu: Menu;
       if (editingMenu) {
-        await menuApi.update(editingMenu.id, payload);
+        savedMenu = await menuApi.update(editingMenu.id, payload);
         toast.success('Menu item updated!');
       } else {
-        await menuApi.create(payload);
+        savedMenu = await menuApi.create(payload);
         toast.success('New menu item added successfully!');
+      }
+
+      // Now sync Addon Groups
+      const currentAttachedIds = editingMenu?.addonGroups?.map(g => g.id) || [];
+      const selectedIds = menuForm.addonGroups;
+
+      const toAttach = selectedIds.filter(id => !currentAttachedIds.includes(id));
+      const toDetach = currentAttachedIds.filter(id => !selectedIds.includes(id));
+
+      const menuId = savedMenu.id || editingMenu?.id;
+      if (menuId) {
+        for (const groupId of toAttach) {
+          await menuApi.attachAddonGroup(menuId, groupId).catch(err => console.error(err));
+        }
+        for (const groupId of toDetach) {
+          await menuApi.detachAddonGroup(menuId, groupId).catch(err => console.error(err));
+        }
       }
 
       setIsMenuModalOpen(false);
@@ -207,6 +255,142 @@ const AdminDashboard: React.FC = () => {
       fetchAllData();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to delete menu item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Addon Groups CRUD handlers
+  const handleOpenAddAddonGroup = () => {
+    setEditingAddonGroup(null);
+    setAddonGroupForm({
+      name: '',
+      isRequired: false,
+      minSelect: 0,
+      maxSelect: 0,
+      selectionType: AddonSelectionTypeEnum.MULTI,
+    });
+    setIsAddonGroupModalOpen(true);
+  };
+
+  const handleOpenEditAddonGroup = (group: AddonGroup) => {
+    setEditingAddonGroup(group);
+    setAddonGroupForm({
+      name: group.name,
+      isRequired: group.isRequired || false,
+      minSelect: group.minSelect || 0,
+      maxSelect: group.maxSelect || 0,
+      selectionType: group.selectionType || AddonSelectionTypeEnum.MULTI,
+    });
+    setIsAddonGroupModalOpen(true);
+  };
+
+  const handleSaveAddonGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addonGroupForm.name) return;
+    try {
+      setLoading(true);
+      const payload = {
+        name: addonGroupForm.name,
+        businessId: BUSINESS_ID,
+        isRequired: addonGroupForm.isRequired,
+        minSelect: Number(addonGroupForm.minSelect),
+        maxSelect: addonGroupForm.maxSelect ? Number(addonGroupForm.maxSelect) : undefined,
+        selectionType: addonGroupForm.selectionType,
+      };
+
+      if (editingAddonGroup) {
+        await addonGroupApi.updateGroup(editingAddonGroup.id, payload);
+        toast.success('Addon group updated!');
+      } else {
+        await addonGroupApi.createGroup(payload);
+        toast.success('Addon group created!');
+      }
+      setIsAddonGroupModalOpen(false);
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to save addon group');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAddonGroup = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this addon group?')) return;
+    try {
+      setLoading(true);
+      await addonGroupApi.deleteGroup(id);
+      toast.success('Addon group deleted!');
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to delete addon group');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Addons CRUD handlers
+  const handleOpenAddAddon = (groupId: string) => {
+    setActiveGroupIdForAddon(groupId);
+    setEditingAddon(null);
+    setAddonForm({
+      name: '',
+      price: 0,
+      description: '',
+      isActive: true,
+    });
+    setIsAddonModalOpen(true);
+  };
+
+  const handleOpenEditAddon = (groupId: string, addon: Addon) => {
+    setActiveGroupIdForAddon(groupId);
+    setEditingAddon(addon);
+    setAddonForm({
+      name: addon.name,
+      price: Number(addon.price || 0),
+      description: addon.description || '',
+      isActive: addon.isActive ?? true,
+    });
+    setIsAddonModalOpen(true);
+  };
+
+  const handleSaveAddon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addonForm.name) return;
+    try {
+      setLoading(true);
+      const payload = {
+        name: addonForm.name,
+        price: Number(addonForm.price),
+        description: addonForm.description || undefined,
+        isActive: addonForm.isActive,
+      };
+
+      if (editingAddon) {
+        await addonApi.updateAddon(activeGroupIdForAddon, editingAddon.id, payload);
+        toast.success('Addon updated!');
+      } else {
+        await addonApi.addAddon(activeGroupIdForAddon, payload);
+        toast.success('Addon added successfully!');
+      }
+      setIsAddonModalOpen(false);
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to save addon');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAddon = async (groupId: string, addonId: string) => {
+    if (!window.confirm('Are you sure you want to delete this addon?')) return;
+    try {
+      setLoading(true);
+      await addonApi.deleteAddon(groupId, addonId);
+      toast.success('Addon deleted!');
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to delete addon');
     } finally {
       setLoading(false);
     }
@@ -243,8 +427,8 @@ const AdminDashboard: React.FC = () => {
 
   // Analytics helper fields
   const pendingOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.PENDING).length;
-  const preparingOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.PREPARING).length;
-  const readyOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.READY).length;
+  const preparingOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.PROCESSING).length;
+  const readyOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.SHIPPED).length;
   const deliveredOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.DELIVERED).length;
   const cancelledOrders = orders.filter(o => getOrderStatus(o) === OrderStatusEnum.CANCELLED).length;
 
@@ -253,6 +437,19 @@ const AdminDashboard: React.FC = () => {
     .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Deduplicate addon groups by name — backend returns one row per menu attachment,
+  // so many groups share the same name. Keep the representative with the most addons.
+  const deduplicatedAddonGroups = (() => {
+    const seen = new Map<string, AddonGroup>();
+    for (const group of addonGroups) {
+      const existing = seen.get(group.name);
+      if (!existing || (group.addons?.length || 0) > (existing.addons?.length || 0)) {
+        seen.set(group.name, group);
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) => (b.addons?.length || 0) - (a.addons?.length || 0));
+  })();
 
   return (
     <div className="admin-page">
@@ -280,6 +477,9 @@ const AdminDashboard: React.FC = () => {
           <button className={`admin-sidebar__link ${tab === 'users' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('users')}>
             <span className="admin-sidebar__icon">👥</span> Users Overview
           </button>
+          <button className={`admin-sidebar__link ${tab === 'addons' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('addons')}>
+            <span className="admin-sidebar__icon">🍕</span> Addon Customization
+          </button>
         </nav>
         
         <div className="admin-sidebar__bottom">
@@ -293,10 +493,19 @@ const AdminDashboard: React.FC = () => {
             </div>
             <button 
               onClick={() => { logout(); navigate('/'); }} 
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}
+              style={{ 
+                background: 'var(--error, #e74c3c)', 
+                color: 'white', 
+                border: 'none', 
+                padding: '6px 12px', 
+                borderRadius: '6px', 
+                cursor: 'pointer', 
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}
               title="Logout"
             >
-              🚪
+              Logout
             </button>
           </div>
         </div>
@@ -314,12 +523,37 @@ const AdminDashboard: React.FC = () => {
               {tab === 'menu' && 'Menu Operations'}
               {tab === 'categories' && 'Categories Control'}
               {tab === 'users' && 'Active Accounts'}
+              {tab === 'addons' && 'Addon Groups & Choices'}
             </h1>
             <p style={{ color: 'var(--slate-gray)' }}>Manage and monitor your restaurant's business statistics.</p>
           </div>
           <div>
             {tab === 'menu' && <button className="btn btn-primary" onClick={handleOpenAddMenu}>+ Add Menu Item</button>}
             {tab === 'categories' && <button className="btn btn-primary" onClick={() => setIsCategoryModalOpen(true)}>+ Add Category</button>}
+            {tab === 'addons' && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  className="btn" 
+                  onClick={() => setHideEmptyGroups(!hideEmptyGroups)}
+                  style={{ 
+                    border: '1px solid var(--outline-variant)', 
+                    background: hideEmptyGroups ? 'var(--surface-container-high)' : 'transparent',
+                    color: 'var(--on-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {hideEmptyGroups ? '👁️ Show All Groups' : '🙈 Hide Empty Groups'}
+                </button>
+                <button className="btn btn-primary" onClick={handleOpenAddAddonGroup}>+ Add Addon Group</button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -661,6 +895,140 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* ==================== ADDON CUSTOMIZATION TAB ==================== */}
+        {tab === 'addons' && (
+          <div style={{ background: 'var(--surface-lowest)', borderRadius: '16px', border: '1px solid var(--outline-variant)', overflow: 'hidden' }}>
+            {/* Legend */}
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)', display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--slate-gray)' }}>
+              <span>ℹ️ <strong>Single Select</strong> = customer picks 1 option (e.g. Size)</span>
+              <span>•</span>
+              <span><strong>Multi Select</strong> = customer picks multiple (e.g. Toppings)</span>
+              <span>•</span>
+              <span>Click a row to expand its addon choices</span>
+            </div>
+
+            {deduplicatedAddonGroups
+              .filter(group => !hideEmptyGroups || (group.addons && group.addons.length > 0))
+              .map((group, idx) => {
+                const isExpanded = expandedGroupId === group.id;
+                const addonCount = group.addons?.length || 0;
+                return (
+                  <div key={group.id} style={{ borderBottom: '1px solid var(--outline-variant)' }}>
+                    {/* --- GROUP ROW --- */}
+                    <div
+                      onClick={() => setExpandedGroupId(isExpanded ? null : group.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 20px',
+                        cursor: 'pointer',
+                        background: isExpanded ? 'var(--surface-container-low)' : (idx % 2 === 0 ? 'var(--surface-lowest)' : 'var(--surface-low)'),
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      {/* Expand chevron */}
+                      <span style={{ fontSize: '12px', color: 'var(--slate-gray)', minWidth: '14px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+
+                      {/* Group name */}
+                      <span style={{ fontWeight: 600, fontSize: '14px', flex: 1 }}>{group.name}</span>
+
+                      {/* Badges */}
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 'bold',
+                          background: group.selectionType === 'single' ? 'var(--primary-container)' : 'var(--secondary-container)',
+                          color: group.selectionType === 'single' ? 'var(--primary)' : 'var(--secondary)'
+                        }}>
+                          {group.selectionType === 'single' ? '● Single' : '☑ Multi'}
+                        </span>
+                        {group.isRequired && (
+                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'rgba(200,40,0,0.12)', color: 'var(--primary)', fontWeight: 'bold' }}>Required</span>
+                        )}
+                        {(group.minSelect !== undefined || group.maxSelect) && (
+                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--surface-container-high)', color: 'var(--on-surface)' }}>
+                            {group.minSelect || 0}–{group.maxSelect || '∞'} picks
+                          </span>
+                        )}
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: addonCount > 0 ? 'rgba(40,167,69,0.12)' : 'var(--surface-container-high)', color: addonCount > 0 ? '#28a745' : 'var(--slate-gray)', fontWeight: 'bold' }}>
+                          {addonCount} choice{addonCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      {/* Action buttons — stop propagation so they don't toggle expand */}
+                      <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ padding: '3px 8px', fontSize: '12px' }}
+                          onClick={() => handleOpenEditAddonGroup(group)}
+                          title="Edit group"
+                        >✏️</button>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ padding: '3px 8px', fontSize: '12px', color: 'red' }}
+                          onClick={() => handleDeleteAddonGroup(group.id)}
+                          title="Delete group"
+                        >🗑️</button>
+                      </div>
+                    </div>
+
+                    {/* --- EXPANDED ADDON LIST --- */}
+                    {isExpanded && (
+                      <div style={{ padding: '12px 20px 16px 46px', background: 'var(--surface-container-low)', borderTop: '1px dashed var(--outline-variant)' }}>
+                        {addonCount > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                            {group.addons?.map((addon: Addon) => (
+                              <div
+                                key={addon.id}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  background: 'var(--surface-lowest)',
+                                  border: '1px solid var(--outline-variant)',
+                                  borderRadius: '20px',
+                                  padding: '4px 10px',
+                                  fontSize: '13px',
+                                }}
+                              >
+                                <span style={{ fontWeight: 500 }}>{addon.name}</span>
+                                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '12px' }}>NPR {Number(addon.price || 0).toFixed(0)}</span>
+                                <button
+                                  className="btn btn-ghost"
+                                  style={{ padding: '1px 4px', fontSize: '11px', minWidth: 'unset' }}
+                                  onClick={() => handleOpenEditAddon(group.id, addon)}
+                                >✏️</button>
+                                <button
+                                  className="btn btn-ghost"
+                                  style={{ padding: '1px 4px', fontSize: '11px', color: 'red', minWidth: 'unset' }}
+                                  onClick={() => handleDeleteAddon(group.id, addon.id)}
+                                >✕</button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p style={{ fontSize: '13px', color: 'var(--slate-gray)', margin: '0 0 10px' }}>No addon choices yet.</p>
+                        )}
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '5px 14px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => handleOpenAddAddon(group.id)}
+                        >
+                          ➕ Add Choice
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+            {deduplicatedAddonGroups.filter(g => !hideEmptyGroups || (g.addons && g.addons.length > 0)).length === 0 && (
+              <div style={{ textAlign: 'center', padding: '48px', color: 'var(--slate-gray)' }}>
+                No addon groups found. Click <strong>+ Add Addon Group</strong> to create one.
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
 
       {/* ==================== CREATE CATEGORY MODAL ==================== */}
@@ -812,6 +1180,34 @@ const AdminDashboard: React.FC = () => {
                     Mark as Signature
                   </label>
                 </div>
+
+                <div className="input-group" style={{ marginTop: '16px', borderTop: '1px solid var(--outline-variant)', paddingTop: '16px' }}>
+                  <label className="input-label" style={{ fontWeight: 'bold' }}>Link Addon Groups</label>
+                  <p style={{ fontSize: '12px', color: 'var(--slate-gray)', marginTop: '-4px', marginBottom: '8px' }}>Select which customizable options apply to this menu item.</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                    {deduplicatedAddonGroups.map(group => {
+                      const isChecked = menuForm.addonGroups?.includes(group.id);
+                      return (
+                        <label key={group.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: 'var(--surface-container-low)', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${isChecked ? 'var(--primary)' : 'var(--outline-variant)'}` }}>
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked}
+                            onChange={e => {
+                              const updated = e.target.checked 
+                                ? [...(menuForm.addonGroups || []), group.id]
+                                : (menuForm.addonGroups || []).filter(id => id !== group.id);
+                              setMenuForm(mf => ({ ...mf, addonGroups: updated }));
+                            }}
+                          />
+                          <span style={{ fontSize: '13px', fontWeight: isChecked ? 'bold' : 'normal' }}>{group.name}</span>
+                        </label>
+                      );
+                    })}
+                    {deduplicatedAddonGroups.length === 0 && (
+                      <p style={{ fontSize: '12px', color: 'var(--slate-gray)', gridColumn: 'span 2' }}>No Addon Groups configured yet. Create one in the Addon tab!</p>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setIsMenuModalOpen(false)}>Cancel</button>
@@ -901,6 +1297,141 @@ const AdminDashboard: React.FC = () => {
               <button className="btn btn-primary" onClick={() => window.print()}>Print Receipt 🖨️</button>
               <button className="btn btn-secondary" onClick={() => setSelectedOrder(null)}>Close</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== CREATE / EDIT ADDON GROUP MODAL ==================== */}
+      {isAddonGroupModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2>{editingAddonGroup ? 'Edit Addon Group' : 'Add Addon Group'}</h2>
+              <button className="modal-close" onClick={() => setIsAddonGroupModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleSaveAddonGroup}>
+              <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
+                <div className="input-group">
+                  <label className="input-label">Group Name</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    required 
+                    placeholder="e.g. Toppings, Size Selection"
+                    value={addonGroupForm.name}
+                    onChange={e => setAddonGroupForm(ag => ({ ...ag, name: e.target.value }))}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="input-group">
+                    <label className="input-label">Selection Type</label>
+                    <select 
+                      className="input"
+                      style={{ padding: '0 12px' }}
+                      value={addonGroupForm.selectionType}
+                      onChange={e => setAddonGroupForm(ag => ({ ...ag, selectionType: e.target.value as AddonSelectionTypeEnum }))}
+                    >
+                      <option value={AddonSelectionTypeEnum.SINGLE}>Single (Radio)</option>
+                      <option value={AddonSelectionTypeEnum.MULTI}>Multiple (Checkbox)</option>
+                    </select>
+                  </div>
+                  <div className="input-group" style={{ display: 'flex', alignItems: 'center', marginTop: '30px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={addonGroupForm.isRequired}
+                        onChange={e => setAddonGroupForm(ag => ({ ...ag, isRequired: e.target.checked }))}
+                      />
+                      Selection Required
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="input-group">
+                    <label className="input-label">Min Selection Limit</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      min="0"
+                      value={addonGroupForm.minSelect}
+                      onChange={e => setAddonGroupForm(ag => ({ ...ag, minSelect: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Max Selection Limit</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      min="0"
+                      value={addonGroupForm.maxSelect}
+                      onChange={e => setAddonGroupForm(ag => ({ ...ag, maxSelect: Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsAddonGroupModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">{editingAddonGroup ? 'Save Changes' : 'Create Group'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== CREATE / EDIT ADDON CHOICE MODAL ==================== */}
+      {isAddonModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: '450px' }}>
+            <div className="modal-header">
+              <h2>{editingAddon ? 'Edit Addon Choice' : 'Add Addon Choice'}</h2>
+              <button className="modal-close" onClick={() => setIsAddonModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleSaveAddon}>
+              <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
+                <div className="input-group">
+                  <label className="input-label">Addon Option Name</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    required 
+                    placeholder="e.g. Extra Cheese, Mushrooms"
+                    value={addonForm.name}
+                    onChange={e => setAddonForm(af => ({ ...af, name: e.target.value }))}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Addon Price (NPR)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    required 
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={addonForm.price}
+                    onChange={e => setAddonForm(af => ({ ...af, price: Number(e.target.value) }))}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '12px' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={addonForm.isActive}
+                      onChange={e => setAddonForm(af => ({ ...af, isActive: e.target.checked }))}
+                    />
+                    Addon Choice is Active & Selectable
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsAddonModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">{editingAddon ? 'Save Choice' : 'Add Choice'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

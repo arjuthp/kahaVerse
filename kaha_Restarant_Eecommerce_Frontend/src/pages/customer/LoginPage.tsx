@@ -8,7 +8,7 @@ import './AuthPages.css';
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ contactNumber: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -16,13 +16,13 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { accessToken, refreshToken, user } = await authApi.login(form.email, form.password);
+      const { accessToken, refreshToken, user } = await authApi.login(form.contactNumber, form.password);
       localStorage.setItem('kaha_refresh_token', refreshToken);
       login(accessToken, user);
-      toast.success(`Welcome back, ${user.name}!`);
+      toast.success(`Welcome back, ${user.name || 'Customer'}!`);
       navigate('/');
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Invalid email or password';
+      const msg = err?.message || err?.response?.data?.message || 'Invalid contact number or password';
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-card">
-          
+
           <div className="auth-header">
             <div className="auth-logo">🍴</div>
             <h1>Welcome Back</h1>
@@ -42,13 +42,13 @@ const LoginPage: React.FC = () => {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="input-group">
-              <label className="input-label">Email Address</label>
+              <label className="input-label">Contact Number or Email</label>
               <input
-                type="email"
+                type="text"
                 className="input"
-                placeholder="you@example.com"
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                placeholder="98XXXXXXXX or you@example.com"
+                value={form.contactNumber}
+                onChange={e => setForm(f => ({ ...f, contactNumber: e.target.value }))}
                 required
               />
             </div>

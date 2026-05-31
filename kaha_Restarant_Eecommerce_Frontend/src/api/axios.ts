@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // Base URL for restaurant API
-// In development: proxied by Vite to http://localhost:3001
+// In development: uses Vite proxy at /api/v1
 // In production: direct API URL
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,

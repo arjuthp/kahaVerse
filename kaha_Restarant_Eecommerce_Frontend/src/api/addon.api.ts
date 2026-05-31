@@ -41,11 +41,23 @@ export const addonGroupApi = {
   deleteGroup: async (id: string): Promise<void> => {
     await api.delete(`/addon-groups/${id}`);
   },
+
+  // Get addon groups for a specific menu item
+  getByMenu: async (menuId: string): Promise<AddonGroup[]> => {
+    const { data } = await api.get(`/addon-groups/menu/${menuId}`);
+    return Array.isArray(data) ? data : data.data || [];
+  },
 };
 
 // ===== ADDON API =====
 
 export const addonApi = {
+  // Wrapper for getAddons to return {data: ...}
+  getAddOns: async ({businessId}: {businessId: string}): Promise<{data: Addon[]}> => {
+    const addons = await addonApi.getAddons(businessId);
+    return {data: addons};
+  },
+
   // Get all addons
   getAddons: async (businessId?: string): Promise<Addon[]> => {
     const params = businessId ? { businessId } : {};
