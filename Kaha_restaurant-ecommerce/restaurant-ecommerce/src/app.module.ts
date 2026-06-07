@@ -27,6 +27,7 @@ import { AddonGroupsModule } from "./modules/addon-groups/addon-groups.module";
 import { DatabaseMigrationModule } from "./modules/database-migration/database-migration.module";
 import { KahaSyncModule } from "./modules/kaha-sync/kaha-sync.module";
 import { AdminModule } from "./modules/admin/admin.module";
+import { LoyaltyModule } from "./modules/loyalty/loyalty.module";
 
 
 // ==================== SECTION 3: PURPOSE - Import Root Controllers and Services ====================
@@ -71,6 +72,7 @@ import { AppService } from "./app.service";
     DatabaseMigrationModule,
     KahaSyncModule,
     AdminModule,
+    LoyaltyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

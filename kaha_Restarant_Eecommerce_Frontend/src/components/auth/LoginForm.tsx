@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { Button } from '../common/Button';
 import '../../styles/components/auth/LoginForm.css';
@@ -29,8 +29,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const savedIdentifier = localStorage.getItem('kaha_remembered_identifier');
+    const savedPassword = localStorage.getItem('kaha_remembered_password');
+    const savedRemember = localStorage.getItem('kaha_remember_me') === 'true';
+    if (savedRemember) {
+      if (savedIdentifier) setIdentifier(savedIdentifier);
+      if (savedPassword) setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
@@ -63,6 +75,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
     setIsSubmitting(true);
     try {
+      if (rememberMe) {
+        localStorage.setItem('kaha_remembered_identifier', identifier);
+        localStorage.setItem('kaha_remembered_password', password);
+        localStorage.setItem('kaha_remember_me', 'true');
+      } else {
+        localStorage.removeItem('kaha_remembered_identifier');
+        localStorage.removeItem('kaha_remembered_password');
+        localStorage.setItem('kaha_remember_me', 'false');
+      }
       await onSubmit(identifier, password);
     } finally {
       setIsSubmitting(false);
@@ -121,6 +142,44 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {formErrors.password && (
           <span className="form-error-text">{formErrors.password}</span>
         )}
+      </div>
+
+      <div className="form-remember-wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 20px 0' }}>
+        <label className="remember-me" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#555' }}>
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+          />
+          Remember me
+        </label>
+      </div>
+
+      <div className="quick-fill-helper" style={{ margin: '15px 0', padding: '10px', background: '#f8f9fa', borderRadius: '6px', border: '1px dashed #ccc' }}>
+        <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#666', textAlign: 'center' }}>⚡ Quick Fill Test Accounts</p>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setIdentifier('9811111122');
+              setPassword('password123');
+            }}
+            style={{ padding: '6px 10px', fontSize: '11px', background: '#fff', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}
+          >
+            👤 Customer (9811111122)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIdentifier('admin@kahaeats.com');
+              setPassword('admin123');
+            }}
+            style={{ padding: '6px 10px', fontSize: '11px', background: '#fff', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}
+          >
+            🛡️ Admin (admin@kahaeats.com)
+          </button>
+        </div>
       </div>
 
       <Button

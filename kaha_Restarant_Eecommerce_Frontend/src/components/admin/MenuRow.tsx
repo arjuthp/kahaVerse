@@ -54,7 +54,7 @@ export const MenuRow: React.FC<MenuRowProps> = ({
           )}
           <div>
             <p className="menu-name">{menu.name}</p>
-            {menu.isSignature && <span className="signature-badge">⭐ Signature</span>}
+            {menu.isSignature && <span className="signature-badge">Signature</span>}
           </div>
         </div>
       </td>
@@ -75,7 +75,7 @@ export const MenuRow: React.FC<MenuRowProps> = ({
 
       <td className="cell-rating">
         <div className="rating-content">
-          {'⭐'.repeat(Math.round(menu.averageRating || 0))}
+          {'★'.repeat(Math.round(menu.averageRating || 0))}
           <span className="rating-count">({menu.category?.children?.length || 0})</span>
         </div>
       </td>

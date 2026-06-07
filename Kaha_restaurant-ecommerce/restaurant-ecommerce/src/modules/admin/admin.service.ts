@@ -103,4 +103,22 @@ export class AdminService {
       message: 'Service account deactivated successfully',
     };
   }
+
+  /** Return all customer users registered in the local database */
+  async listCustomers() {
+    const users = await this.userRepository.find({
+      where: { userType: UserType.CUSTOMER },
+      order: { createdAt: 'DESC' },
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Kaha Customer',
+      email: u.email || '',
+      phone: u.phone || '—',
+      role: u.userType,
+      isActive: u.isActive,
+      createdAt: u.createdAt,
+    }));
+  }
 }

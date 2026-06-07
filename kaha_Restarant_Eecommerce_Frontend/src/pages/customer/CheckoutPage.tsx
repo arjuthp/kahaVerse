@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { orderApi } from '../../api/order.api';
+import { loyaltyApi } from '../../api/loyalty.api';
+import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { ServiceTypeEnum, PaymentMethodEnum } from '../../types';
 import toast from 'react-hot-toast';
@@ -8,6 +10,7 @@ import './CheckoutPage.css';
 
 const CheckoutPage: React.FC = () => {
   const { cart, fetchCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,6 +22,21 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [placed, setPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
+
+  // Voucher state
+  const [voucherCode, setVoucherCode]         = useState('');
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherApplied, setVoucherApplied]   = useState(false);
+  const [voucherLoading, setVoucherLoading]   = useState(false);
+  const [activeVouchers, setActiveVouchers]   = useState<Array<{code: string; discountAmount: number}>>([]);
+
+  // Load the user's active vouchers so they can quick-pick one
+  useEffect(() => {
+    if (!user?.id) return;
+    loyaltyApi.getVouchers(user.id).then((vs: any[]) => {
+      setActiveVouchers((Array.isArray(vs) ? vs : []).filter((v: any) => v.status === 'active'));
+    }).catch(() => {});
+  }, [user?.id]);
 
   // Prefer businessId from the cart (most reliable), fall back to env
   const BUSINESS_ID = (cart as any)?.businessId || import.meta.env.VITE_BUSINESS_ID || '';
@@ -38,8 +56,32 @@ const CheckoutPage: React.FC = () => {
   const taxAmount = subtotal * 0.13;
   const deliveryFee = serviceType === ServiceTypeEnum.DELIVERY ? 50 : 0;
   const serviceCharge = 10;
-  const discountAmount = 0;
+  const discountAmount = voucherDiscount;
   const grandTotal = subtotal + taxAmount + deliveryFee + serviceCharge - discountAmount + tipAmount;
+
+  const handleValidateVoucher = async () => {
+    if (!voucherCode.trim()) { toast.error('Enter a voucher code'); return; }
+    if (!user?.id) { toast.error('Please log in first'); return; }
+    setVoucherLoading(true);
+    try {
+      const voucher = await loyaltyApi.validateVoucher(voucherCode.trim().toUpperCase(), user.id);
+      setVoucherDiscount(Number(voucher.discountAmount));
+      setVoucherApplied(true);
+      toast.success(`✅ Voucher applied! NPR ${voucher.discountAmount} off.`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Invalid voucher code');
+      setVoucherDiscount(0);
+      setVoucherApplied(false);
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode('');
+    setVoucherDiscount(0);
+    setVoucherApplied(false);
+  };
 
   const handlePlaceOrder = async () => {
     if (!cart?.id || !activeItems.length) { toast.error('Your checkout selection is empty'); return; }
@@ -55,7 +97,8 @@ const CheckoutPage: React.FC = () => {
         deliveryFee,
         serviceCharge,
         tipAmount,
-        discountAmount
+        discountAmount,
+        ...(voucherApplied ? { voucherCode: voucherCode.trim().toUpperCase() } : {}),
       });
       if (res.order?.id) {
         setOrderId(res.order.id);
@@ -83,9 +126,15 @@ const CheckoutPage: React.FC = () => {
             </div>
             <h2>Order Placed Successfully!</h2>
             <p>Your order is confirmed and is being prepared.</p>
-            <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+            {voucherDiscount > 0 && (
+              <p style={{ color: 'var(--status-delivered)', fontWeight: 700, fontSize: '15px' }}>
+                🎟️ NPR {voucherDiscount} discount was applied!
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button className="btn btn-primary" onClick={() => navigate(`/orders/${orderId}`)}>Track Order</button>
               <button className="btn btn-secondary" onClick={() => navigate('/orders')}>All Orders</button>
+              <button className="btn btn-ghost" onClick={() => navigate('/loyalty')}>🏆 My Rewards</button>
             </div>
           </div>
         </div>
@@ -94,9 +143,9 @@ const CheckoutPage: React.FC = () => {
   }
 
   const serviceOptions = [
-    { value: ServiceTypeEnum.DINE_IN, label: 'Dine In', icon: '🍽️', desc: 'Eat at the restaurant' },
-    { value: ServiceTypeEnum.TAKEAWAY, label: 'Takeaway', icon: '🛍️', desc: 'Pick up your order' },
-    { value: ServiceTypeEnum.DELIVERY, label: 'Delivery', icon: '🚚', desc: 'Delivered to your door' },
+    { value: ServiceTypeEnum.DINE_IN, label: 'Dine In', desc: 'Eat at the restaurant' },
+    { value: ServiceTypeEnum.TAKEAWAY, label: 'Takeaway', desc: 'Pick up your order' },
+    { value: ServiceTypeEnum.DELIVERY, label: 'Delivery', desc: 'Delivered to your door' },
   ];
 
   const paymentOptions = [
@@ -115,7 +164,7 @@ const CheckoutPage: React.FC = () => {
           Back to Cart
         </button>
 
-        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: '32px', marginBottom: '32px' }}>Secure Checkout</h1>
+        <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Secure Checkout</h1>
 
         <div className="checkout-grid">
           {/* Left Form Area */}
@@ -137,7 +186,6 @@ const CheckoutPage: React.FC = () => {
                       onChange={() => setServiceType(opt.value)} 
                     />
                     <div className="service-type-card__inner">
-                      <div className="service-type-card__icon">{opt.icon}</div>
                       <div className="service-type-card__label">{opt.label}</div>
                     </div>
                   </label>
@@ -191,11 +239,88 @@ const CheckoutPage: React.FC = () => {
             <section className="checkout-section">
               <div className="checkout-section-head">
                 <div className="checkout-step-num">3</div>
+                <h2>Voucher Code</h2>
+              </div>
+
+              {/* Quick-pick active vouchers */}
+              {activeVouchers.length > 0 && !voucherApplied && (
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Your active vouchers — click to apply:</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {activeVouchers.map(v => (
+                      <button
+                        key={v.code}
+                        onClick={() => { setVoucherCode(v.code); }}
+                        style={{
+                          border: '1.5px solid rgba(39,174,96,0.4)',
+                          background: voucherCode === v.code ? 'rgba(39,174,96,0.12)' : 'transparent',
+                          color: '#27ae60',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        🎟️ {v.code} <span style={{ opacity: 0.7 }}>— NPR {v.discountAmount} off</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!voucherApplied ? (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    id="checkout-voucher-input"
+                    className="input"
+                    placeholder="Enter code e.g. KAHA-AB12C"
+                    value={voucherCode}
+                    onChange={e => setVoucherCode(e.target.value.toUpperCase())}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    id="checkout-voucher-apply-btn"
+                    className="btn btn-primary"
+                    onClick={handleValidateVoucher}
+                    disabled={voucherLoading}
+                    style={{ flexShrink: 0 }}
+                  >
+                    {voucherLoading ? <div className="spinner" /> : 'Apply'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(39,174,96,0.08)', border: '1px solid rgba(39,174,96,0.3)', borderRadius: 'var(--radius)', padding: '12px 16px' }}>
+                  <span style={{ fontSize: '20px' }}>🎟️</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--on-surface)', fontSize: '15px' }}>{voucherCode}</div>
+                    <div style={{ fontSize: '13px', color: '#27ae60', fontWeight: 600 }}>NPR {voucherDiscount} discount applied! ✓</div>
+                  </div>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={handleRemoveVoucher}
+                    style={{ fontSize: '13px', padding: '6px 12px' }}
+                  >Remove</button>
+                </div>
+              )}
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                {activeVouchers.length === 0
+                  ? <>No active vouchers? <span style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 700 }} onClick={() => navigate('/loyalty')}>Earn points & redeem →</span></>
+                  : <>Select a voucher above or type the code manually.</>
+                }
+              </p>
+
+            </section>
+
+            <section className="checkout-section">
+              <div className="checkout-section-head">
+                <div className="checkout-step-num">4</div>
                 <h2>Payment Method</h2>
               </div>
               <div className="payment-method-list">
                 {paymentOptions.map(opt => (
-                  <label key={opt.value} className="payment-method-item" style={{ borderColor: paymentMethod === opt.value ? 'var(--primary)' : '', background: paymentMethod === opt.value ? 'rgba(177,36,1,0.04)' : '' }}>
+                  <label key={opt.value} className={`payment-method-item ${paymentMethod === opt.value ? 'payment-method-item--selected' : ''}`}>
                     <input 
                       type="radio" 
                       name="paymentMethod" 
@@ -259,6 +384,12 @@ const CheckoutPage: React.FC = () => {
               {tipAmount > 0 && (
                 <div className="checkout-breakdown-row">
                   <span>Tip</span><span>NPR {tipAmount.toFixed(2)}</span>
+                </div>
+              )}
+              {voucherDiscount > 0 && (
+                <div className="checkout-breakdown-row" style={{ color: '#27ae60' }}>
+                  <span>🎟️ Voucher ({voucherCode})</span>
+                  <span style={{ fontWeight: 800 }}>- NPR {voucherDiscount.toFixed(2)}</span>
                 </div>
               )}
             </div>

@@ -215,6 +215,12 @@ export interface Order {
   orderStatus: OrderStatusHistory[];
   createdAt: string;
   updatedAt: string;
+  userInfo?: {
+    name: string;
+    email: string;
+    contact: string;
+    avatar: string;
+  };
 }
 
 export interface CreateOrderDto {

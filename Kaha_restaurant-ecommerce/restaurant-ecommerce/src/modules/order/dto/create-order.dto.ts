@@ -144,4 +144,13 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderItem)
   orderItems: OrderItem[];
+
+  @ApiProperty({
+    example: 'KAHA-VOUCHER12',
+    description: 'Voucher code applied to the order',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  voucherCode?: string;
 }

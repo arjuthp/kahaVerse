@@ -4,6 +4,11 @@ import type { Order, CreateOrderDto, CreateOrderFromCartDto, OrderStatusEnum, Cr
 // Normalizer to map backend shape to frontend interface
 function normalizeOrder(order: any): Order {
   if (!order) return order;
+  
+  const sortedStatus = (order.orderStatus || [])
+    .map((s: any) => ({ ...s }))
+    .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   return {
     ...order,
     // Map orderItemsInfo → orderItems
@@ -33,7 +38,7 @@ function normalizeOrder(order: any): Order {
     discountAmount: Number(order.discountAmount || 0),
     tipAmount: Number(order.tipAmount || 0),
     totalAmount: Number(order.totalAmount || 0),
-    orderStatus: order.orderStatus || [],
+    orderStatus: sortedStatus,
   };
 }
 
@@ -113,7 +118,9 @@ export const orderApi = {
     payload: { status: OrderStatusEnum | string; remarks?: string },
   ): Promise<Order> => {
     const { data } = await api.post(`/order/${orderId}/change-status`, payload);
-    return normalizeOrder(data);
+    // Backend now returns { message, order } — extract the order sub-object
+    const orderData = data?.order ?? data;
+    return normalizeOrder(orderData);
   },
 };
 

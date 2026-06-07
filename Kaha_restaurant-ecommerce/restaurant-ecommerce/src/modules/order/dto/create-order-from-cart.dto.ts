@@ -92,4 +92,12 @@ export class CreateOrderFromCartDto {
   @Min(0)
   @IsOptional()
   discountAmount?: number;
+
+  @ApiPropertyOptional({
+    description: 'Voucher code applied to the order',
+    example: 'KAHA-VOUCHER12'
+  })
+  @IsString()
+  @IsOptional()
+  voucherCode?: string;
 }

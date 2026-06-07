@@ -48,7 +48,6 @@ const OrdersPage: React.FC = () => {
       <div className="orders-page">
         <div className="container">
           <div className="empty-state">
-            <div className="empty-icon">📦</div>
             <h2>No orders yet</h2>
             <p>You haven't placed any orders. Browse our menu to get started.</p>
             <Link to="/menu" className="btn btn-primary btn-lg mt-md">

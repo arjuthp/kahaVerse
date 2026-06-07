@@ -74,7 +74,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
         disabled={isLoading}
         aria-label="Remove item"
       >
-        🗑️
+        Remove
       </button>
     </div>
   );

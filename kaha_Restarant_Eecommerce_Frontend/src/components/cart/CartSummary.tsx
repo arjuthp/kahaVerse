@@ -29,7 +29,6 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   if (!cart || cart.cartItems.length === 0) {
     return (
       <div className="empty-cart">
-        <div className="empty-cart-icon">🛒</div>
         <h2>Your cart is empty</h2>
         <p>Add some delicious items to get started</p>
         <Button

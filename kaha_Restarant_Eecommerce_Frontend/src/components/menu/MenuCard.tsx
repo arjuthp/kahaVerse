@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Menu } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { getImageUrl } from '../../utils/helpers';
 import './MenuCard.css';
 
 interface Props { 
@@ -18,7 +19,6 @@ const MenuCard: React.FC<Props> = ({ menu, onClick, onViewDetails, onAddToCart }
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [qty, setQty] = useState(1);
 
   const displayPrice = menu.variants && menu.variants.length > 0
     ? Math.min(...menu.variants.map(v => Number(v.price)))
@@ -28,7 +28,6 @@ const MenuCard: React.FC<Props> = ({ menu, onClick, onViewDetails, onAddToCart }
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAuthenticated) {
-      // Allow browsing menu publicly; ask login only when needed.
       sessionStorage.setItem('post_login_redirect', location.pathname + location.search);
       toast.error('Please sign in to add items');
       navigate('/login');
@@ -38,20 +37,14 @@ const MenuCard: React.FC<Props> = ({ menu, onClick, onViewDetails, onAddToCart }
     const hasRequiredAddons = menu.addonGroups?.some(g => g.isRequired);
     if (hasMultipleVariants || hasRequiredAddons) { onClick?.(); return; }
     try {
-      await addItem({ menuId: menu.id, menuVariantId: menu.variants?.[0]?.id, quantity: qty });
+      await addItem({ menuId: menu.id, menuVariantId: menu.variants?.[0]?.id, quantity: 1 });
       toast.success(`${menu.name} added to cart!`);
     } catch {
       // error toast already handled in CartContext
     }
   };
 
-  const handleQtyChange = (e: React.MouseEvent, delta: number) => {
-    e.stopPropagation();
-    setQty(q => Math.max(1, q + delta));
-  };
-
-  const imgSrc = menu.images?.[0] || menu.image ||
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80';
+  const imgSrc = getImageUrl(menu.images, menu.image);
 
   return (
     <div className="menu-card" onClick={onClick}>
@@ -101,24 +94,20 @@ const MenuCard: React.FC<Props> = ({ menu, onClick, onViewDetails, onAddToCart }
 
         {menu.isAvailable && (
           <div className="menu-card__footer">
-            {/* Quantity selector */}
-            <div className="menu-card__qty" onClick={e => e.stopPropagation()}>
-              <button className="menu-card__qty-btn" onClick={e => handleQtyChange(e, -1)}>−</button>
-              <span className="menu-card__qty-count">{qty}</span>
-              <button className="menu-card__qty-btn" onClick={e => handleQtyChange(e, 1)}>+</button>
-            </div>
+            {(menu.variants?.length ?? 0) > 1 ? (
+              <span className="menu-card__customise-badge">Customisable</span>
+            ) : (
+              <span className="menu-card__customise-badge">Quick Add</span>
+            )}
+            
             {/* Add to cart */}
             <button className="menu-card__add-btn" onClick={handleQuickAdd} aria-label={`Add ${menu.name}`}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </button>
           </div>
-        )}
-
-        {(menu.variants?.length ?? 0) > 1 && (
-          <p className="menu-card__variants-hint">{menu.variants?.length} sizes available — tap to customise</p>
         )}
       </div>
     </div>

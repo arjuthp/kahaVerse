@@ -177,7 +177,67 @@ export const getPaymentStatusColor = (status: string): string => {
 // ===== IMAGE UTILITIES =====
 
 export const getImageUrl = (images?: string[], fallback?: string): string => {
-  if (images && images.length > 0) return images[0];
+  if (images && images.length > 0) {
+    const img = images[0];
+    if (img.includes('placehold.co') || img.includes('placeholder')) {
+      const lower = img.toLowerCase();
+      if (lower.includes('classic+burger') || lower.includes('beef')) {
+        return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80';
+      }
+      if (lower.includes('chicken+burger')) {
+        return 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=600&q=80';
+      }
+      if (lower.includes('veggie')) {
+        return 'https://images.unsplash.com/photo-1525059696034-4967a8e1dca2?w=600&q=80';
+      }
+      if (lower.includes('margherita')) {
+        return 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=600&q=80';
+      }
+      if (lower.includes('bbq+chicken+pizza')) {
+        return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80';
+      }
+      if (lower.includes('carbonara')) {
+        return 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=600&q=80';
+      }
+      if (lower.includes('arrabiata')) {
+        return 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&q=80';
+      }
+      if (lower.includes('espresso')) {
+        return 'https://images.unsplash.com/photo-151097252790b-af4f982c78a2?w=600&q=80';
+      }
+      if (lower.includes('cappuccino')) {
+        return 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&q=80';
+      }
+      if (lower.includes('iced+latte') || lower.includes('caramel')) {
+        return 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&q=80';
+      }
+      if (lower.includes('orange') || lower.includes('juice')) {
+        return 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=600&q=80';
+      }
+      if (lower.includes('cheesecake')) {
+        return 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=600&q=80';
+      }
+      if (lower.includes('tiramisu')) {
+        return 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&q=80';
+      }
+      if (lower.includes('salad')) {
+        return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80';
+      }
+      if (lower.includes('lasagna')) {
+        return 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600&q=80';
+      }
+      if (lower.includes('mocha')) {
+        return 'https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=600&q=80';
+      }
+      if (lower.includes('strawberry') || lower.includes('shake')) {
+        return 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=600&q=80';
+      }
+      if (lower.includes('lava') || lower.includes('chocolate')) {
+        return 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&q=80';
+      }
+    }
+    return img;
+  }
   return fallback || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80';
 };
 

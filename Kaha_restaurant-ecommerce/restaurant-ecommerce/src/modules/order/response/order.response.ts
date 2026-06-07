@@ -31,6 +31,13 @@ export class IOrderSummaryResponse {
   businessId: string;
   totalAmount: number;
   remarks?: string;
+  orderNumber?: string;
+  serviceType?: string;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  orderStatus?: any[];
   businessInfo?: IBusinessInfo;
   userInfo?: IUserInfo;
 }

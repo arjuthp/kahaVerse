@@ -18,6 +18,7 @@ import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import OrdersPage from './pages/customer/OrdersPage';
 import OrderDetailPage from './pages/customer/OrderDetailPage';
+import LoyaltyPage from './pages/customer/LoyaltyPage';
 
 // Admin Pages (require auth + role=admin)
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -49,10 +50,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }
         return <Navigate to="/admin-login" replace />;
       }
       if (requiredRole === 'customer' && !customerRoles.includes(role)) {
-        // Admin who visits customer page is fine — allow it (they test the store)
-        if (!adminRoles.includes(role)) {
-          return <Navigate to="/login" replace />;
+        if (adminRoles.includes(role)) {
+          return <Navigate to="/admin" replace />;
         }
+        return <Navigate to="/login" replace />;
       }
     } catch {
       return <Navigate to="/login" replace />;
@@ -116,6 +117,10 @@ function App() {
           <Route
             path="/orders/:orderId"
             element={<ProtectedRoute element={<OrderDetailPage />} requiredRole="customer" />}
+          />
+          <Route
+            path="/loyalty"
+            element={<ProtectedRoute element={<LoyaltyPage />} requiredRole="customer" />}
           />
         </Route>
 

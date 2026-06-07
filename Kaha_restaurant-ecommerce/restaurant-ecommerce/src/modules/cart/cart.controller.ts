@@ -74,7 +74,7 @@ export class CartController {
     return this.cartService.deleteCart(id, userId);
   }
 
-  @Delete("/:id")
+  @Delete("/item/:id")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async deleteCartItem(@Param("id") id: string, @Req() req: any) {

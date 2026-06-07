@@ -198,8 +198,8 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose, isOpen = true, addOns
             </div>
 
             {fetchingDetails ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--slate-gray)', fontSize: '14px', padding: '12px 0' }}>
-                <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span> Loading options...
+              <div style={{ display: 'flex', alignItems: 'center', color: 'var(--slate-gray)', fontSize: '14px', padding: '12px 0' }}>
+                Loading options...
               </div>
             ) : (
               <>
@@ -259,7 +259,7 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose, isOpen = true, addOns
                           >
                             <div className="dropdown-trigger-title-wrap">
                               <span className="dropdown-trigger-label">
-                                🍴 {group.name}
+                                {group.name}
                                 {group.isRequired ? (
                                   <span className="menu-modal-req" style={{ marginLeft: 8 }}>Required</span>
                                 ) : (
@@ -318,11 +318,11 @@ const MenuDetailModal: React.FC<Props> = ({ menu, onClose, isOpen = true, addOns
 
           <div className="menu-modal-footer">
             <div className="menu-modal-qty">
-              <button className="menu-modal-qty-btn" onClick={() => setQuantity(q => Math.max(1, q - 1))}>−</button>
+              <button type="button" className="menu-modal-qty-btn" onClick={() => setQuantity(q => Math.max(1, q - 1))}>−</button>
               <span className="menu-modal-qty-count">{quantity}</span>
-              <button className="menu-modal-qty-btn" onClick={() => setQuantity(q => q + 1)}>+</button>
+              <button type="button" className="menu-modal-qty-btn" onClick={() => setQuantity(q => q + 1)}>+</button>
             </div>
-            <button className="menu-modal-add-btn" onClick={handleAddToCart} disabled={loading || fetchingDetails}>
+            <button type="button" className="menu-modal-add-btn" onClick={handleAddToCart} disabled={loading || fetchingDetails}>
               {loading ? 'Adding...' : `Add to Cart — NPR ${totalPrice.toFixed(2)}`}
             </button>
           </div>

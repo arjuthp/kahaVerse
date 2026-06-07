@@ -63,4 +63,11 @@ export class AdminController {
   async deactivateServiceAccount(@Param('id') id: string) {
     return await this.adminService.deactivateServiceAccount(id);
   }
+
+  @Get('users')
+  @ApiOperation({ summary: 'List all registered customer users' })
+  @ApiResponse({ status: 200, description: 'List of customer accounts from local DB' })
+  async listCustomers() {
+    return await this.adminService.listCustomers();
+  }
 }

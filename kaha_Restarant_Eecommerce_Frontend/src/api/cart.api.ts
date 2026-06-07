@@ -89,7 +89,7 @@ export const cartApi = {
 
   // Remove item from cart
   removeItem: async (itemId: string): Promise<void> => {
-    await api.delete(`/cart/${itemId}`);
+    await api.delete(`/cart/item/${itemId}`);
   },
 
   // Clear cart by deleting cart items (backend has conflicting DELETE /cart/:id handlers)

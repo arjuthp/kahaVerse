@@ -11,9 +11,14 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated) fetchCart();
+    if (isAuthenticated) {
+      fetchCart().finally(() => setInitialLoading(false));
+    } else {
+      setInitialLoading(false);
+    }
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -33,7 +38,6 @@ const CartPage: React.FC = () => {
       <div className="cart-page">
         <div className="container">
           <div className="cart-empty">
-            <div className="cart-empty__icon">🔒</div>
             <h2>Please log in</h2>
             <p>You need to be logged in to view your cart.</p>
             <button className="cart-checkout-btn" onClick={() => navigate('/login')} style={{ maxWidth: '300px' }}>
@@ -45,7 +49,7 @@ const CartPage: React.FC = () => {
     );
   }
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="cart-page">
         <div className="container" style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>
@@ -87,7 +91,7 @@ const CartPage: React.FC = () => {
     }, 0);
 
   return (
-    <div className="cart-page">
+    <div className="cart-page" style={{ opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s' }}>
       <div className="container">
         
         <div className="cart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -95,7 +99,7 @@ const CartPage: React.FC = () => {
             <h1>Your Cart</h1>
             <p>Review your items before checkout.</p>
           </div>
-          <button className="btn btn-ghost text-error" onClick={clearCart}>
+          <button type="button" className="btn btn-ghost text-error" onClick={clearCart} disabled={loading}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             Clear Cart
           </button>
@@ -112,6 +116,7 @@ const CartPage: React.FC = () => {
                 onToggleSelect={() => toggleSelectItem(item.id)}
                 onRemove={() => removeItem(item.id)}
                 onUpdate={(qty) => updateItem(item.id, qty)}
+                parentLoading={loading}
               />
             ))}
           </div>
@@ -149,10 +154,11 @@ const CartPage: React.FC = () => {
               </div>
 
               <button 
+                type="button"
                 className="cart-checkout-btn" 
                 onClick={() => navigate('/checkout', { state: { selectedItemIds } })}
-                disabled={selectedItemIds.length === 0}
-                style={{ opacity: selectedItemIds.length === 0 ? 0.6 : 1, cursor: selectedItemIds.length === 0 ? 'not-allowed' : 'pointer' }}
+                disabled={selectedItemIds.length === 0 || loading}
+                style={{ opacity: selectedItemIds.length === 0 || loading ? 0.6 : 1, cursor: selectedItemIds.length === 0 ? 'not-allowed' : 'pointer' }}
               >
                 Proceed to Checkout
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -164,7 +170,6 @@ const CartPage: React.FC = () => {
             </div>
             
             <div className="cart-upsell">
-              <div className="cart-upsell-icon">💡</div>
               <p className="cart-upsell-text">
                 <strong>Pro tip:</strong> Add a refreshing drink to your order to complete your meal.
               </p>
@@ -183,9 +188,10 @@ interface CartItemRowProps {
   onToggleSelect: () => void;
   onRemove: () => void;
   onUpdate: (qty: number) => void;
+  parentLoading: boolean;
 }
 
-const CartItemRow: React.FC<CartItemRowProps> = ({ item, isSelected, onToggleSelect, onRemove, onUpdate }) => {
+const CartItemRow: React.FC<CartItemRowProps> = ({ item, isSelected, onToggleSelect, onRemove, onUpdate, parentLoading }) => {
   const addonsTotal = item.addOns?.reduce((a, addon) => a + (Number(addon.addon?.price) || 0) * (addon.quantity || 1), 0) ?? 0;
   const lineTotal = (item.unitPriceSnapshot * item.quantity) + addonsTotal;
 
@@ -196,6 +202,7 @@ const CartItemRow: React.FC<CartItemRowProps> = ({ item, isSelected, onToggleSel
           type="checkbox" 
           checked={isSelected}
           onChange={onToggleSelect}
+          disabled={parentLoading}
           style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
         />
       </div>
@@ -211,7 +218,7 @@ const CartItemRow: React.FC<CartItemRowProps> = ({ item, isSelected, onToggleSel
         <div className="cart-item__top">
           <div className="cart-item__row">
             <h4 className="cart-item__name">{item.menu?.name ?? 'Menu Item'}</h4>
-            <span className="cart-item__remove" onClick={onRemove}>Remove</span>
+            <span className="cart-item__remove" style={{ pointerEvents: parentLoading ? 'none' : 'auto', opacity: parentLoading ? 0.6 : 1 }} onClick={onRemove}>Remove</span>
           </div>
           {item.menuVariant && (
             <p className="cart-item__meta">Size: {item.menuVariant.name}</p>
@@ -225,9 +232,23 @@ const CartItemRow: React.FC<CartItemRowProps> = ({ item, isSelected, onToggleSel
 
         <div className="cart-item__actions">
           <div className="cart-item__qty">
-            <button className="cart-item__qty-btn" onClick={() => onUpdate(item.quantity - 1)} disabled={item.quantity <= 1}>−</button>
+            <button 
+              type="button" 
+              className="cart-item__qty-btn" 
+              onClick={() => onUpdate(item.quantity - 1)} 
+              disabled={item.quantity <= 1 || parentLoading}
+            >
+              −
+            </button>
             <span className="cart-item__qty-count">{item.quantity}</span>
-            <button className="cart-item__qty-btn" onClick={() => onUpdate(item.quantity + 1)}>+</button>
+            <button 
+              type="button" 
+              className="cart-item__qty-btn" 
+              onClick={() => onUpdate(item.quantity + 1)} 
+              disabled={parentLoading}
+            >
+              +
+            </button>
           </div>
           <span className="price">NPR {lineTotal.toFixed(2)}</span>
         </div>

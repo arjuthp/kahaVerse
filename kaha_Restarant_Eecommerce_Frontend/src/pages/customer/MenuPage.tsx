@@ -4,6 +4,8 @@ import { menuApi, categoryApi } from '../../api/menu.api';
 import type { Menu, Category } from '../../types';
 import MenuCard from '../../components/menu/MenuCard';
 import MenuDetailModal from '../../components/menu/MenuDetailModal';
+import { useScrollRestoration } from '../../hooks/useScrollRestoration';
+import { usePageState } from '../../hooks/usePageState';
 import './MenuPage.css';
 
 const MenuPage: React.FC = () => {
@@ -12,13 +14,25 @@ const MenuPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('default');
-  const [serviceType, setServiceType] = useState<'DELIVERY'|'DINE_IN'|'TAKEAWAY'>('DELIVERY');
+
+  // ── Scroll restoration (window-level) ──────────────────────────────────
+  useScrollRestoration();
+
+  // ── Persistent filter state (survives back-navigation) ──────────────────────
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParamQuery = searchParams.get('search') || '';
+
+  const [searchQuery, setSearchQuery] = usePageState<string>('searchQuery', searchParamQuery);
+  const [selectedCategory, setSelectedCategory] = usePageState<string>('selectedCategory', 'all');
+  const [sortBy, setSortBy] = usePageState<string>('sortBy', 'default');
+  const [serviceType, setServiceType] = usePageState<'DELIVERY' | 'DINE_IN' | 'TAKEAWAY'>('serviceType', 'DELIVERY');
 
   const BUSINESS_ID = businessId || import.meta.env.VITE_BUSINESS_ID || 'biz-mock-001';
+
+  // Sync state if URL search query changes
+  useEffect(() => {
+    setSearchQuery(searchParamQuery);
+  }, [searchParamQuery]);
 
   useEffect(() => {
     if (!BUSINESS_ID) return;
@@ -52,16 +66,14 @@ const MenuPage: React.FC = () => {
   };
 
   const filteredMenus = menus.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          m.description?.toLowerCase().includes(searchQuery.toLowerCase());
-                          
-    if (selectedCategory === 'all') return matchesSearch;
+    const matchesSearch = !searchQuery ||
+                          m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    const validCatIds = getCategoryDescendants(selectedCategory);
-    const itemCatId = m.categoryId || m.category?.id || '';
-    const matchesCategory = validCatIds.includes(itemCatId);
+    const matchesCategory = selectedCategory === 'all' ||
+                            getCategoryDescendants(selectedCategory).includes(m.categoryId || m.category?.id || '');
 
-    return matchesCategory && matchesSearch;
+    return matchesSearch && matchesCategory;
   });
 
   const sortedMenus = [...filteredMenus].sort((a, b) => {
@@ -70,6 +82,18 @@ const MenuPage: React.FC = () => {
     if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
     return 0;
   });
+
+  const handleLocalSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setSearchParams(prev => {
+      if (val) {
+        prev.set('search', val);
+      } else {
+        prev.delete('search');
+      }
+      return prev;
+    }, { replace: true });
+  };
 
   return (
     <div className="menu-page">
@@ -86,7 +110,7 @@ const MenuPage: React.FC = () => {
               className={`menu-sidebar__link ${selectedCategory === 'all' ? 'menu-sidebar__link--active' : ''}`}
               onClick={() => setSelectedCategory('all')}
             >
-              <span className="menu-sidebar__icon">🍽️</span> All Dishes
+              All Dishes
             </button>
             {categories.map(cat => (
               <button
@@ -94,7 +118,7 @@ const MenuPage: React.FC = () => {
                 className={`menu-sidebar__link ${selectedCategory === cat.id ? 'menu-sidebar__link--active' : ''}`}
                 onClick={() => setSelectedCategory(cat.id)}
               >
-                <span className="menu-sidebar__icon">{cat.icon || '🍲'}</span> {cat.name}
+                {cat.name}
               </button>
             ))}
           </nav>
@@ -142,7 +166,7 @@ const MenuPage: React.FC = () => {
                 className="menu-search-input"
                 placeholder="Search for dishes, ingredients..."
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => handleLocalSearchChange(e.target.value)}
               />
             </div>
             
@@ -176,7 +200,6 @@ const MenuPage: React.FC = () => {
             </div>
           ) : sortedMenus.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">🍽️</div>
               <h2>No dishes found</h2>
               <p>We couldn't find anything matching your search. Try adjusting your filters.</p>
             </div>

@@ -1,6 +1,5 @@
 /* ============================================================
-   CUSTOMER AUTH PAGES — Two-Panel Split Layout
-   Palette matching Kaha brand:
+   ADMIN LOGIN PAGE — Matching admin dashboard + customer aesthetic
    Green (Primary): #2D6A4F → #1B4332 gradient
    Yellow Accent:   #FED415
    Light canvas:    #F5F5F6
@@ -8,18 +7,17 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,900&display=swap');
 
-.auth-page {
+.admin-login-page {
   min-height: 100vh;
   display: flex;
   font-family: 'Urbanist', sans-serif;
   background: #F5F5F6;
   position: relative;
   overflow: hidden;
-  box-sizing: border-box;
 }
 
-/* Left decorative green panel (fixed sidebar style) */
-.auth-page::before {
+/* Left decorative green panel (like the sidebar) */
+.admin-login-page::before {
   content: '';
   position: fixed;
   left: 0; top: 0; bottom: 0;
@@ -28,21 +26,21 @@
   z-index: 0;
 }
 
-/* Decorative background circle blobs */
-.auth-page::after {
+/* Decorative circle blobs */
+.admin-login-page::after {
   content: '';
   position: fixed;
-  left: 6%;
+  left: 5%;
   top: -80px;
-  width: 320px;
-  height: 320px;
+  width: 340px;
+  height: 340px;
   border-radius: 50%;
-  background: rgba(95, 199, 86, 0.10);
+  background: rgba(95, 199, 86, 0.12);
   z-index: 1;
 }
 
-/* Left branding panel container */
-.auth-brand-panel {
+/* Left branding panel */
+.admin-login__brand {
   position: relative;
   z-index: 2;
   width: 36%;
@@ -51,66 +49,64 @@
   justify-content: center;
   padding: 60px 40px;
   min-height: 100vh;
-  box-sizing: border-box;
 }
 
-.auth-brand__logo {
-  font-size: 46px;
+.admin-login__brand-logo {
+  font-size: 48px;
   font-weight: 900;
   font-style: italic;
   color: #FED415;
   letter-spacing: 0.02em;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   line-height: 1;
-  text-decoration: none;
-}
-.auth-brand__logo span {
-  color: #FFFFFF;
-  font-style: normal;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-left: 8px;
-  opacity: 0.7;
 }
 
-.auth-brand__tagline {
+.admin-login__brand-sub {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 48px;
+}
+
+.admin-login__brand-tagline {
   font-size: 32px;
   font-weight: 800;
   color: #FFFFFF;
   line-height: 1.25;
-  margin: 24px 0 16px;
+  margin-bottom: 20px;
   max-width: 320px;
 }
-.auth-brand__tagline span {
+
+.admin-login__brand-tagline span {
   color: #5FC756;
 }
 
-.auth-brand__desc {
+.admin-login__brand-desc {
   font-size: 15px;
-  color: rgba(255,255,255,0.7);
-  line-height: 1.6;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.65;
   max-width: 300px;
   font-weight: 500;
-  margin-bottom: 32px;
 }
 
 /* Feature pills */
-.auth-brand__features {
+.admin-login__features {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 40px;
 }
-.auth-brand__feature {
+.admin-login__feature {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.80);
 }
-.auth-brand__feature-dot {
+.admin-login__feature-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -118,24 +114,8 @@
   flex-shrink: 0;
 }
 
-/* Back helper link */
-.auth-brand__back-link {
-  margin-top: 48px;
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.6);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.2s;
-}
-.auth-brand__back-link:hover {
-  color: #FED415;
-}
-
 /* Right form panel */
-.auth-form-panel {
+.admin-login__form-panel {
   flex: 1;
   display: flex;
   align-items: center;
@@ -143,19 +123,17 @@
   padding: 40px 32px;
   position: relative;
   z-index: 2;
-  box-sizing: border-box;
 }
 
-.auth-card {
+.admin-login__card {
   width: 100%;
   max-width: 420px;
   background: #FFFFFF;
   border-radius: 20px;
   padding: 40px 36px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10);
   border: 1px solid #EFEFF0;
   animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards;
-  box-sizing: border-box;
 }
 
 @keyframes slideUp {
@@ -163,38 +141,77 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-.auth-header {
+/* Card header */
+.admin-login__card-header {
   margin-bottom: 28px;
 }
 
-.auth-header h1 {
-  font-size: 26px;
+.admin-login__card-icon {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #2D6A4F, #1B4332);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.admin-login__card-icon svg {
+  width: 26px;
+  height: 26px;
+  color: #FED415;
+  fill: none;
+  stroke: #FED415;
+  stroke-width: 2;
+}
+
+.admin-login__card-title {
+  font-size: 24px;
   font-weight: 900;
   color: #1B4332;
   margin: 0 0 6px;
   letter-spacing: -0.02em;
 }
-
-.auth-header p {
+.admin-login__card-subtitle {
   font-size: 14px;
   color: #929397;
   margin: 0;
   font-weight: 500;
-  line-height: 1.5;
 }
 
-.auth-form {
+/* Credentials hint box */
+.admin-login__hint {
+  background: #EDFAEB;
+  border: 1px dashed #5FC756;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #1B4332;
+  margin-bottom: 24px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.admin-login__hint strong {
+  font-weight: 800;
+  color: #1B4332;
+}
+.admin-login__hint code {
+  background: rgba(95,199,86,0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+/* Form fields */
+.admin-login__form {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.input-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.input-label {
+.admin-login__field label {
   display: block;
   font-size: 13px;
   font-weight: 700;
@@ -203,7 +220,7 @@
   letter-spacing: 0.02em;
 }
 
-.input {
+.admin-login__input {
   width: 100%;
   height: 46px;
   padding: 0 14px;
@@ -218,17 +235,34 @@
   transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
   box-sizing: border-box;
 }
-.input:focus {
+.admin-login__input:focus {
   border-color: #5FC756;
   background: #FFFFFF;
   box-shadow: 0 0 0 3px rgba(95,199,86,0.15);
 }
-.input::placeholder {
-  color: #B8B9C1;
+.admin-login__input::placeholder { color: #B8B9C1; }
+
+.admin-login__input-wrap {
+  position: relative;
 }
+.admin-login__show-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #929397;
+  font-family: 'Urbanist', sans-serif;
+  transition: color 0.18s;
+}
+.admin-login__show-btn:hover { color: #2D6A4F; }
 
 /* Submit button */
-.auth-submit {
+.admin-login__submit {
   width: 100%;
   height: 50px;
   background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
@@ -246,52 +280,38 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 14px rgba(45,106,79,0.3);
+  box-shadow: 0 4px 14px rgba(45,106,79,0.35);
 }
-.auth-submit:hover:not(:disabled) {
+.admin-login__submit:hover:not(:disabled) {
   opacity: 0.92;
   transform: translateY(-1px);
 }
-.auth-submit:disabled {
+.admin-login__submit:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
 
-.auth-footer {
-  margin-top: 24px;
-  text-align: center;
-  font-size: 14px;
-  color: #929397;
-  font-weight: 600;
+/* Spinner */
+.admin-login__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.auth-footer a {
-  font-weight: 800;
-  color: #5FC756;
-  text-decoration: none;
-  margin-left: 6px;
-  transition: color 0.15s;
-}
-.auth-footer a:hover {
-  color: #2D6A4F;
-  text-decoration: underline;
-}
-
-/* Responsive Styles */
+/* Responsive: stack on small screens */
 @media (max-width: 768px) {
-  .auth-page::before {
-    display: none;
-  }
-  .auth-brand-panel {
-    display: none;
-  }
-  .auth-form-panel {
+  .admin-login-page::before { display: none; }
+  .admin-login__brand { display: none; }
+  .admin-login__form-panel {
     width: 100%;
     background: linear-gradient(160deg, #2D6A4F 0%, #1B4332 100%);
     min-height: 100vh;
   }
-  .auth-card {
+  .admin-login__card {
     max-width: 380px;
-    padding: 36px 28px;
   }
 }

@@ -19,6 +19,7 @@ import {
   MenuVariantRepository,
   CartRepository,
   CartItemRepository,
+  UserRepository,
 } from "src/repositories/index";
 
 import { CreateOrderDto, FilterOrderDto } from "./dto";
@@ -34,6 +35,7 @@ import {
 import { OrderStatusEnum, ServiceTypeEnum } from "common/enums";
 import { Injectable } from "@nestjs/common";
 import { ServiceCommunicationService } from "src/modules/service-communication/service-communication.service";
+import { LoyaltyService } from '../loyalty/loyalty.service';
 
 @Injectable()
 export class OrderService {
@@ -47,7 +49,9 @@ export class OrderService {
     private readonly menuVariantRepository: MenuVariantRepository,
     private readonly cartRepository: CartRepository,
     private readonly cartItemRepository: CartItemRepository,
-    private readonly serviceCommunicationService: ServiceCommunicationService
+    private readonly serviceCommunicationService: ServiceCommunicationService,
+    private readonly loyaltyService: LoyaltyService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async createOrder(
@@ -149,6 +153,20 @@ export class OrderService {
 
     await this.orderRepository.save(order);
 
+    // Apply/consume voucher if provided
+    if (body.voucherCode) {
+      try {
+        const discount = await this.loyaltyService.applyVoucher(body.voucherCode, order.id);
+        if (discount) {
+          order.discountAmount = Number(discount);
+          // Recalculate totalAmount after applying discount
+          order.totalAmount = order.subtotal + order.taxAmount + order.deliveryFee + Number(order.serviceCharge) - Number(order.discountAmount) + Number(order.tipAmount);
+        }
+      } catch (err) {
+        console.error('[OrderService] applyVoucher failed:', err?.message);
+      }
+    }
+
     await this.orderStatusRepository.save({
       order: order,
       status: OrderStatusEnum.PENDING,
@@ -176,7 +194,7 @@ export class OrderService {
     body: CreateOrderFromCartDto,
     userId: string
   ): Promise<any> {
-    const { businessId, cartItemIds, serviceType, tableNumber, remarks, paymentMethod, deliveryFee, serviceCharge, tipAmount, discountAmount } = body;
+    const { businessId, cartItemIds, serviceType, tableNumber, remarks, paymentMethod, deliveryFee, serviceCharge, tipAmount, discountAmount, voucherCode } = body;
 
     // Find user's cart
     const cart = await this.cartRepository.findOne({
@@ -337,6 +355,20 @@ export class OrderService {
 
     await this.orderRepository.save(order);
 
+    // Apply/consume voucher if provided
+    if (voucherCode) {
+        try {
+          const discount = await this.loyaltyService.applyVoucher(voucherCode, order.id);
+          if (discount) {
+            order.discountAmount = Number(discount);
+            // Recalculate totalAmount after discount
+            order.totalAmount = order.subtotal + order.taxAmount + finalDeliveryFee + finalServiceCharge - Number(order.discountAmount) + finalTipAmount;
+          }
+        } catch (err) {
+          console.error('[OrderService] applyVoucher failed:', err?.message);
+        }
+      }
+
     // Create initial order status
     await this.orderStatusRepository.save({
       order: order,
@@ -481,10 +513,12 @@ export class OrderService {
     orderId: string,
     userId: string,
     newStatus: OrderStatusEnum
-  ): Promise<ISuccessReponse> {
+  ): Promise<any> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
     });
+
+    if (!order) throw new NotFoundException(`Order ${orderId} not found`);
 
     await this.orderStatusRepository.save({
       order: order,
@@ -492,7 +526,44 @@ export class OrderService {
       updatedBy: userId,
     });
 
-    return { message: "Order status updated successfully." };
+    // ── AUTO-EARN LOYALTY POINTS on delivery/completion ────────────
+    const completionStatuses: OrderStatusEnum[] = [OrderStatusEnum.DELIVERED];
+    if (completionStatuses.includes(newStatus) && order.userId && order.businessId) {
+      try {
+        await this.loyaltyService.earnPoints(
+          order.userId,
+          order.businessId,
+          order.id,
+          Number(order.totalAmount),
+        );
+      } catch (err) {
+        // Non-blocking: loyalty failure must never break the status update
+        console.error('[LoyaltyService] earnPoints failed:', err?.message);
+      }
+    }
+
+    // ── Reload the order with fresh status history so the frontend can
+    //    surgically update exactly this one order without re-fetching all orders.
+    const updatedOrder = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: { orderStatus: true },
+    });
+
+    const orderResponse = this.transformToAllOrderResponse(updatedOrder);
+
+    // Enrich with user info
+    if (updatedOrder.userId) {
+      orderResponse.userInfo = await this.getUserInfo(updatedOrder.userId);
+    }
+    // Enrich with business info
+    if (updatedOrder.businessId) {
+      orderResponse.businessInfo = await this.getBusinessInfo(updatedOrder.businessId);
+    }
+
+    return {
+      message: 'Order status updated successfully.',
+      order: orderResponse,
+    };
   }
 
   getDailyStartAndEndDates(inputStartDate: Date, inputEndDate: Date) {
@@ -562,14 +633,21 @@ export class OrderService {
   private transformToAllOrderResponse(
     orders: OrderEntity
   ): IOrderSummaryResponse {
-    const { id, userId, businessId, totalAmount, remarks } = orders;
+    const { id, userId, businessId, totalAmount, remarks, orderNumber, serviceType, paymentMethod, paymentStatus, orderStatus, createdAt, updatedAt } = orders;
 
     return {
       id,
       userId,
       businessId,
-      totalAmount,
+      totalAmount: Number(totalAmount),
       remarks,
+      orderNumber,
+      serviceType,
+      paymentMethod,
+      paymentStatus,
+      orderStatus: orderStatus as any,
+      createdAt: createdAt as any,
+      updatedAt: updatedAt as any,
     };
   }
 
@@ -591,17 +669,33 @@ export class OrderService {
 
   private async getUserInfo(userId: string): Promise<IUserInfo> {
     try {
+      // First try to find user in our local database (for customers registered directly)
+      const localUser = await this.userRepository.findOne({ where: { id: userId } });
+      if (localUser) {
+        return {
+          name: `${localUser.firstName || ''} ${localUser.lastName || ''}`.trim() || 'Kaha Customer',
+          email: localUser.email || '',
+          contact: localUser.phone || '',
+          avatar: '',
+        };
+      }
+
+      // Fallback to Kaha Main V3 API for external/kaha users
       const userData = await this.serviceCommunicationService.getUser(userId);
-      
       return {
-        name: userData.fullName,
-        email: userData.email,
-        contact: userData.contactNumber,
-        avatar: userData.avatar || '',
+        name: userData?.fullName || 'Kaha Customer',
+        email: userData?.email || '',
+        contact: userData?.contactNumber || '',
+        avatar: userData?.avatar || '',
       };
     } catch (error) {
       console.error('Failed to fetch user info:', error);
-      return null;
+      return {
+        name: 'Kaha Customer',
+        email: '',
+        contact: '',
+        avatar: '',
+      };
     }
   }
 }
