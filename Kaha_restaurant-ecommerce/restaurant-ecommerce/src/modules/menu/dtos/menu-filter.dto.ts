@@ -28,4 +28,7 @@ export class FilterMenuDto extends PaginationDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  @IsOptional()
+  includeHidden?: string | boolean;
 }

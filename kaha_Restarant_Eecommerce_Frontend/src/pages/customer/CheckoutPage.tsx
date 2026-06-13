@@ -4,7 +4,7 @@ import { orderApi } from '../../api/order.api';
 import { loyaltyApi } from '../../api/loyalty.api';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { ServiceTypeEnum, PaymentMethodEnum } from '../../types';
+import { ServiceTypeEnum, PaymentMethodEnum, RestaurantTable } from '../../types';
 import toast from 'react-hot-toast';
 import './CheckoutPage.css';
 
@@ -25,10 +25,10 @@ const CheckoutPage: React.FC = () => {
 
   // Voucher state
   const [voucherCode, setVoucherCode]         = useState('');
-  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [voucherApplied, setVoucherApplied]   = useState(false);
   const [voucherLoading, setVoucherLoading]   = useState(false);
-  const [activeVouchers, setActiveVouchers]   = useState<Array<{code: string; discountAmount: number}>>([]);
+  const [activeVouchers, setActiveVouchers]   = useState<any[]>([]);
 
   // Load the user's active vouchers so they can quick-pick one
   useEffect(() => {
@@ -40,6 +40,28 @@ const CheckoutPage: React.FC = () => {
 
   // Prefer businessId from the cart (most reliable), fall back to env
   const BUSINESS_ID = (cart as any)?.businessId || import.meta.env.VITE_BUSINESS_ID || '';
+
+  const [availableTables, setAvailableTables] = useState<RestaurantTable[]>([]);
+  const [tablesLoading, setTablesLoading] = useState(false);
+
+  const fetchTables = async () => {
+    if (!BUSINESS_ID) return;
+    setTablesLoading(true);
+    try {
+      const tables = await orderApi.getAvailableTables(BUSINESS_ID);
+      setAvailableTables(tables);
+    } catch {
+      setAvailableTables([]);
+    } finally {
+      setTablesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (serviceType === ServiceTypeEnum.DINE_IN) {
+      fetchTables();
+    }
+  }, [serviceType, BUSINESS_ID]);
 
   const selectedItemIds = (location.state as any)?.selectedItemIds as string[] | undefined;
 
@@ -56,7 +78,7 @@ const CheckoutPage: React.FC = () => {
   const taxAmount = subtotal * 0.13;
   const deliveryFee = serviceType === ServiceTypeEnum.DELIVERY ? 50 : 0;
   const serviceCharge = 10;
-  const discountAmount = voucherDiscount;
+  const discountAmount = appliedDiscount;
   const grandTotal = subtotal + taxAmount + deliveryFee + serviceCharge - discountAmount + tipAmount;
 
   const handleValidateVoucher = async () => {
@@ -64,13 +86,13 @@ const CheckoutPage: React.FC = () => {
     if (!user?.id) { toast.error('Please log in first'); return; }
     setVoucherLoading(true);
     try {
-      const voucher = await loyaltyApi.validateVoucher(voucherCode.trim().toUpperCase(), user.id);
-      setVoucherDiscount(Number(voucher.discountAmount));
+      const response = await loyaltyApi.validateVoucher(voucherCode.trim().toUpperCase(), user.id, subtotal);
+      setAppliedDiscount(Number(response.calculatedDiscount));
       setVoucherApplied(true);
-      toast.success(`✅ Voucher applied! NPR ${voucher.discountAmount} off.`);
+      toast.success(`✅ Voucher applied! NPR ${response.calculatedDiscount} off.`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Invalid voucher code');
-      setVoucherDiscount(0);
+      setAppliedDiscount(0);
       setVoucherApplied(false);
     } finally {
       setVoucherLoading(false);
@@ -79,7 +101,7 @@ const CheckoutPage: React.FC = () => {
 
   const handleRemoveVoucher = () => {
     setVoucherCode('');
-    setVoucherDiscount(0);
+    setAppliedDiscount(0);
     setVoucherApplied(false);
   };
 
@@ -97,16 +119,23 @@ const CheckoutPage: React.FC = () => {
         deliveryFee,
         serviceCharge,
         tipAmount,
-        discountAmount,
-        ...(voucherApplied ? { voucherCode: voucherCode.trim().toUpperCase() } : {}),
+        ...(voucherApplied 
+          ? { voucherCode: voucherCode.trim().toUpperCase() } 
+          : { discountAmount }),
       });
       if (res.order?.id) {
         setOrderId(res.order.id);
         setPlaced(true);
+        setVoucherCode('');
+        setAppliedDiscount(0);
+        setVoucherApplied(false);
         await fetchCart();
       } else {
         toast.error('Order placed, but could not retrieve ID.');
         setPlaced(true);
+        setVoucherCode('');
+        setAppliedDiscount(0);
+        setVoucherApplied(false);
         await fetchCart();
       }
     } catch (err: any) {
@@ -126,9 +155,9 @@ const CheckoutPage: React.FC = () => {
             </div>
             <h2>Order Placed Successfully!</h2>
             <p>Your order is confirmed and is being prepared.</p>
-            {voucherDiscount > 0 && (
+            {appliedDiscount > 0 && (
               <p style={{ color: 'var(--status-delivered)', fontWeight: 700, fontSize: '15px' }}>
-                🎟️ NPR {voucherDiscount} discount was applied!
+                🎟️ NPR {appliedDiscount} discount was applied!
               </p>
             )}
             <div style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -194,13 +223,27 @@ const CheckoutPage: React.FC = () => {
 
               {serviceType === ServiceTypeEnum.DINE_IN && (
                 <div className="checkout-context-fields">
-                  <label className="input-label">Table Number *</label>
-                  <input
-                    className="input"
-                    placeholder="e.g., Table 5"
-                    value={tableNumber}
-                    onChange={e => setTableNumber(e.target.value)}
-                  />
+                  <label className="input-label">Select Table *</label>
+                  {tablesLoading ? (
+                    <div style={{ padding: '8px 0', color: 'var(--text-muted)' }}>Loading tables...</div>
+                  ) : availableTables.length === 0 ? (
+                    <div style={{ padding: '8px 0', color: 'var(--error, #e14535)', fontSize: '0.9rem' }}>
+                      No tables available. Please contact staff.
+                    </div>
+                  ) : (
+                    <select
+                      className="input"
+                      value={tableNumber}
+                      onChange={e => setTableNumber(e.target.value)}
+                    >
+                      <option value="">-- Select a table --</option>
+                      {availableTables.map(t => (
+                        <option key={t.id} value={t.tableNumber}>
+                          {t.tableNumber} · {t.capacity} seats · {t.section}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
             </section>
@@ -263,7 +306,9 @@ const CheckoutPage: React.FC = () => {
                           transition: 'all 0.15s',
                         }}
                       >
-                        🎟️ {v.code} <span style={{ opacity: 0.7 }}>— NPR {v.discountAmount} off</span>
+                        🎟️ {v.code} <span style={{ opacity: 0.7 }}>
+                          — {v.discountType === 'PERCENTAGE' ? `${v.discountValue}%` : `NPR ${v.discountValue}`} off
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -295,7 +340,7 @@ const CheckoutPage: React.FC = () => {
                   <span style={{ fontSize: '20px' }}>🎟️</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, color: 'var(--on-surface)', fontSize: '15px' }}>{voucherCode}</div>
-                    <div style={{ fontSize: '13px', color: '#27ae60', fontWeight: 600 }}>NPR {voucherDiscount} discount applied! ✓</div>
+                    <div style={{ fontSize: '13px', color: '#27ae60', fontWeight: 600 }}>NPR {appliedDiscount} discount applied! ✓</div>
                   </div>
                   <button
                     className="btn btn-ghost"
@@ -386,10 +431,10 @@ const CheckoutPage: React.FC = () => {
                   <span>Tip</span><span>NPR {tipAmount.toFixed(2)}</span>
                 </div>
               )}
-              {voucherDiscount > 0 && (
+              {appliedDiscount > 0 && (
                 <div className="checkout-breakdown-row" style={{ color: '#27ae60' }}>
                   <span>🎟️ Voucher ({voucherCode})</span>
-                  <span style={{ fontWeight: 800 }}>- NPR {voucherDiscount.toFixed(2)}</span>
+                  <span style={{ fontWeight: 800 }}>- NPR {appliedDiscount.toFixed(2)}</span>
                 </div>
               )}
             </div>

@@ -92,6 +92,30 @@ export class MenuController {
     return this.menuService.deleteMenu(id, businessId);
   }
 
+  @Patch(":id/hidden")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
+  async toggleHidden(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body("isHidden") isHidden: boolean,
+    @Req() req
+  ) {
+    const businessId = req.user.businessId;
+    return this.menuService.toggleHidden(id, businessId, isHidden);
+  }
+
+  @Patch(":id/availability")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
+  async toggleAvailability(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body("isAvailable") isAvailable: boolean,
+    @Req() req
+  ) {
+    const businessId = req.user.businessId;
+    return this.menuService.toggleAvailability(id, businessId, isAvailable);
+  }
+
   @Post(":id/variants")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)

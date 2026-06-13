@@ -5,10 +5,11 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { User } from '../../entities/user.entity';
 import { UserRepository } from '../../repositories/user.repository';
+import { RestaurantTableEntity } from '../../entities/restaurant-table.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, RestaurantTableEntity]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '365d' },

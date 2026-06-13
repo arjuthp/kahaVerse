@@ -7,7 +7,10 @@ import {
   UseGuards,
   Query,
   Param,
+  ParseUUIDPipe,
 } from "@nestjs/common";
+import { AdminService } from "../admin/admin.service";
+
 import { JwtAuthGuard } from "auth/guards";
 import { ApiBearerAuth } from "@nestjs/swagger";
 
@@ -20,7 +23,10 @@ import { Roles } from "common/decorator";
 
 @Controller("order")
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly adminService: AdminService,
+  ) {}
 
   @Post()
   @ApiBearerAuth()
@@ -73,5 +79,10 @@ export class OrderController {
   ) {
     const userId = req?.user?.id.toString();
     return this.orderService.changeOrderStatus(orderId, userId, body.status);
+  }
+
+  @Get("tables/:businessId")
+  async getAvailableTables(@Param("businessId") businessId: string) {
+    return this.adminService.getActiveTables(businessId);
   }
 }

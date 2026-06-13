@@ -11,3 +11,5 @@ export * from "./order.entity";
 export * from "./orderitem.entity";
 export * from "./orderitem-addons.entity";
 export * from "./order.status.entity";
+export { RestaurantTableEntity } from "./restaurant-table.entity";
+

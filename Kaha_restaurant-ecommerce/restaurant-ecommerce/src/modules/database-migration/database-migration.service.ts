@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { MenuRepository, MenuVariantRepository, AddonGroupRepository, AddonsRepository } from 'src/repositories';
 import { AddonSelectionTypeEnum } from 'common/enums';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class DatabaseMigrationService implements OnModuleInit {
@@ -11,6 +12,7 @@ export class DatabaseMigrationService implements OnModuleInit {
     private readonly menuVariantRepository: MenuVariantRepository,
     private readonly addonGroupRepository: AddonGroupRepository,
     private readonly addonsRepository: AddonsRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit() {
@@ -67,8 +69,30 @@ export class DatabaseMigrationService implements OnModuleInit {
         this.logger.log(`Successfully migrated ${orphanedAddons.length} addons into V2 AddonGroups.`);
       }
 
+      // 3. Backfill discountValue = discountAmount for all existing vouchers
+      const cols = await this.dataSource.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='vouchers' AND column_name='discountType'
+      `);
+      if (cols.length > 0) {
+        const checkUnmigrated = await this.dataSource.query(`
+          SELECT COUNT(*) as count FROM vouchers WHERE "discountValue" = 0 AND "discountAmount" > 0
+        `);
+        const count = Number(checkUnmigrated[0]?.count || 0);
+        if (count > 0) {
+          await this.dataSource.query(`
+            UPDATE vouchers 
+            SET "discountValue" = "discountAmount" 
+            WHERE "discountValue" = 0 AND "discountAmount" > 0
+          `);
+          this.logger.log('Migration: voucher discountValue backfill complete');
+        }
+      }
+
     } catch (error) {
       this.logger.error('Failed during V1 to V2 data migration', error);
     }
   }
 }
+

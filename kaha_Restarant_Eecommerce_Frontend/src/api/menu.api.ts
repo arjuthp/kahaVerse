@@ -83,7 +83,7 @@ const categoryMap: Record<string, string> = {
 
 export const menuApi = {
   // Wrapper for getByBusiness to return {data: ...}
-  getMenus: async (params: {businessId: string; categoryId?: string; isSignature?: boolean; isAvailable?: boolean; search?: string; minPrice?: number; maxPrice?: number; page?: number; limit?: number;}): Promise<{data: Menu[]}> => {
+  getMenus: async (params: {businessId: string; categoryId?: string; isSignature?: boolean; isAvailable?: boolean; search?: string; minPrice?: number; maxPrice?: number; page?: number; limit?: number; includeHidden?: boolean;}): Promise<{data: Menu[]}> => {
     const menus = await menuApi.getByBusiness(params.businessId, params);
     return {data: menus};
   },
@@ -105,6 +105,14 @@ export const menuApi = {
     return await menuApi.delete(id);
   },
 
+  toggleHidden: async (id: string, isHidden: boolean): Promise<void> => {
+    await api.patch(`/menu/${id}/hidden`, { isHidden });
+  },
+
+  toggleAvailability: async (id: string, isAvailable: boolean): Promise<void> => {
+    await api.patch(`/menu/${id}/availability`, { isAvailable });
+  },
+
   getByBusiness: async (
     businessId: string,
     params?: {
@@ -116,6 +124,7 @@ export const menuApi = {
       maxPrice?: number;
       page?: number;
       limit?: number;
+      includeHidden?: boolean;
     },
   ): Promise<Menu[]> => {
     try {

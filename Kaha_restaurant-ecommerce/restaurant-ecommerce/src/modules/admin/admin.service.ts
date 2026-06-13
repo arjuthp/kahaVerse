@@ -1,8 +1,13 @@
-import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from '../../repositories/user.repository';
 import { CreateServiceAccountDto } from './dto/create-service-account.dto';
 import { User, UserType } from '../../entities/user.entity';
+import { RestaurantTableEntity } from '../../entities/restaurant-table.entity';
+import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
 
 @Injectable()
 export class AdminService {
@@ -11,6 +16,8 @@ export class AdminService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
+    @InjectRepository(RestaurantTableEntity)
+    private readonly tableRepository: Repository<RestaurantTableEntity>,
   ) {}
 
   async createServiceAccount(dto: CreateServiceAccountDto) {
@@ -104,14 +111,17 @@ export class AdminService {
     };
   }
 
-  /** Return all customer users registered in the local database */
-  async listCustomers() {
-    const users = await this.userRepository.find({
+  async listCustomers(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+
+    const [users, totalCount] = await this.userRepository.findAndCount({
       where: { userType: UserType.CUSTOMER },
       order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
     });
 
-    return users.map((u) => ({
+    const data = users.map((u) => ({
       id: u.id,
       name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Kaha Customer',
       email: u.email || '',
@@ -120,5 +130,64 @@ export class AdminService {
       isActive: u.isActive,
       createdAt: u.createdAt,
     }));
+
+    return {
+      data,
+      metaData: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        perPage: limit,
+      },
+    };
+  }
+
+  async createTable(businessId: string, dto: CreateTableDto) {
+    const existing = await this.tableRepository.findOne({
+      where: { businessId, tableNumber: dto.tableNumber },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        `Table "${dto.tableNumber}" already exists for this business.`
+      );
+    }
+    const table = this.tableRepository.create({ ...dto, businessId });
+    return this.tableRepository.save(table);
+  }
+
+  async getTables(businessId: string) {
+    return this.tableRepository.find({
+      where: { businessId },
+      order: { tableNumber: "ASC" },
+    });
+  }
+
+  async getActiveTables(businessId: string) {
+    return this.tableRepository.find({
+      where: { businessId, isActive: true },
+      order: { tableNumber: "ASC" },
+    });
+  }
+
+  async updateTable(businessId: string, tableId: string, dto: UpdateTableDto) {
+    const table = await this.tableRepository.findOne({
+      where: { id: tableId, businessId },
+    });
+    if (!table) {
+      throw new NotFoundException("Table not found.");
+    }
+    Object.assign(table, dto);
+    return this.tableRepository.save(table);
+  }
+
+  async deleteTable(businessId: string, tableId: string) {
+    const table = await this.tableRepository.findOne({
+      where: { id: tableId, businessId },
+    });
+    if (!table) {
+      throw new NotFoundException("Table not found.");
+    }
+    await this.tableRepository.remove(table);
+    return { message: "Table deleted successfully." };
   }
 }

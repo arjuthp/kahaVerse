@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { orderApi } from '../../api/order.api';
+import { orderApi, tableApi } from '../../api/order.api';
 import { menuApi, categoryApi } from '../../api/menu.api';
 import { addonGroupApi, addonApi } from '../../api/addon.api';
 import { loyaltyApi } from '../../api/loyalty.api';
 import { useAuth } from '../../context/AuthContext';
-import type { Order, Menu, Category, AddonGroup, Addon } from '../../types';
-import { OrderStatusEnum, AddonSelectionTypeEnum } from '../../types';
+import type { Order, Menu, Category, AddonGroup, Addon, RestaurantTable } from '../../types';
+import { OrderStatusEnum, AddonSelectionTypeEnum, TableSection, TableStatus } from '../../types';
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
 
-type AdminTab = 'overview' | 'orders' | 'menu' | 'categories' | 'users' | 'addons' | 'customers' | 'loyalty_settings';
+type AdminTab = 'overview' | 'orders' | 'menu' | 'categories' | 'users' | 'addons' | 'customers' | 'loyalty_settings' | 'tables' | 'award-voucher';
 
 const STATUS_FLOW: OrderStatusEnum[] = [
   OrderStatusEnum.PROCESSING,
@@ -46,9 +46,44 @@ const AdminDashboard: React.FC = () => {
     pointsPerNpr: 0.1,
     pointsToNprRate: 0.5,
     minRedeemPoints: 100,
-    voucherExpiryDays: 30
+    voucherExpiryDays: 30,
+    accrualMode: 'SPEND' as 'SPEND' | 'VISIT' | 'BOTH',
+    pointsPerVisit: 5,
+    minSpendForVisit: 0,
+    bonusMultiplier: 1.0,
+    pointsExpiryDays: null as number | null,
   });
   const [isConfigSaving, setIsConfigSaving] = useState(false);
+
+  // Table Management state
+  const [tablesList, setTablesList] = useState<RestaurantTable[]>([]);
+  const [tablesLoading, setTablesLoading] = useState(false);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+  const [editingTable, setEditingTable] = useState<RestaurantTable | null>(null);
+  const [tableForm, setTableForm] = useState({
+    tableNumber: '',
+    capacity: 2,
+    section: TableSection.INDOOR,
+    notes: '',
+    isActive: true,
+  });
+
+  // Award Voucher state
+  const [awardedVouchers, setAwardedVouchers] = useState<any[]>([]);
+  const [awardLoading, setAwardLoading] = useState(false);
+  const [awardSuccess, setAwardSuccess] = useState<string | null>(null);
+  const [awardError, setAwardError] = useState<string | null>(null);
+  const [awardForm, setAwardForm] = useState({
+    userId: '',
+    code: '',
+    discountType: 'PERCENTAGE' as 'FIXED' | 'PERCENTAGE',
+    discountValue: 10,
+    maxDiscountAmount: 0,
+    minOrderAmount: 0,
+    maxUses: 1,
+    maxUsesPerUser: 1,
+    expiresAt: '',
+  });
 
   // Orders Tab filters & pagination state
   const [orderSearch, setOrderSearch] = useState('');
@@ -74,6 +109,7 @@ const AdminDashboard: React.FC = () => {
     image: '',
     isAvailable: true,
     isSignature: false,
+    isHidden: false,
     addonGroups: [] as string[]
   });
 
@@ -112,17 +148,144 @@ const AdminDashboard: React.FC = () => {
     fetchAllData();
     fetchCustomerInsights();
     fetchLoyaltyConfig();
+    fetchTables();
+    fetchAwardedVouchers();
   }, [BUSINESS_ID]);
+
+  const fetchTables = async () => {
+    setTablesLoading(true);
+    try {
+      const data = await tableApi.getTables();
+      setTablesList(data);
+    } catch (err) {
+      console.error('Fetch tables error:', err);
+    } finally {
+      setTablesLoading(false);
+    }
+  };
+
+  const handleSaveTable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingTable) {
+        await tableApi.updateTable(editingTable.id, tableForm);
+        toast.success('Table updated successfully!');
+      } else {
+        await tableApi.createTable(tableForm);
+        toast.success('Table created successfully!');
+      }
+      setIsTableModalOpen(false);
+      setEditingTable(null);
+      setTableForm({
+        tableNumber: '',
+        capacity: 2,
+        section: TableSection.INDOOR,
+        notes: '',
+        isActive: true,
+      });
+      fetchTables();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to save table');
+    }
+  };
+
+  const handleToggleTableStatus = async (table: any) => {
+    try {
+      const nextStatus = table.status === TableStatus.AVAILABLE ? TableStatus.OCCUPIED : TableStatus.AVAILABLE;
+      await tableApi.updateTable(table.id, { status: nextStatus });
+      toast.success(`Table ${table.tableNumber} status updated to ${nextStatus}`);
+      fetchTables();
+    } catch (err: any) {
+      toast.error('Failed to update table status');
+    }
+  };
+
+  const handleToggleTableActive = async (table: any) => {
+    try {
+      await tableApi.updateTable(table.id, { isActive: !table.isActive });
+      toast.success(`Table ${table.tableNumber} is now ${!table.isActive ? 'active' : 'inactive'}`);
+      fetchTables();
+    } catch (err: any) {
+      toast.error('Failed to update active state');
+    }
+  };
+
+  const handleDeleteTable = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this table?')) return;
+    try {
+      await tableApi.deleteTable(id);
+      toast.success('Table deleted successfully');
+      fetchTables();
+    } catch (err: any) {
+      toast.error('Failed to delete table');
+    }
+  };
+
+  const fetchAwardedVouchers = async () => {
+    try {
+      const data = await loyaltyApi.getAdminVouchers();
+      setAwardedVouchers(Array.isArray(data) ? data : data.data || []);
+    } catch (err) {
+      console.error('Fetch awarded vouchers error:', err);
+    }
+  };
+
+  const handleAwardVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAwardLoading(true);
+    setAwardSuccess(null);
+    setAwardError(null);
+    try {
+      const payload = {
+        userId: awardForm.userId,
+        code: awardForm.code.trim().toUpperCase() || undefined,
+        discountType: awardForm.discountType,
+        discountValue: Number(awardForm.discountValue),
+        maxDiscountAmount: awardForm.maxDiscountAmount ? Number(awardForm.maxDiscountAmount) : undefined,
+        minOrderAmount: awardForm.minOrderAmount ? Number(awardForm.minOrderAmount) : undefined,
+        maxUses: awardForm.maxUses ? Number(awardForm.maxUses) : undefined,
+        maxUsesPerUser: awardForm.maxUsesPerUser ? Number(awardForm.maxUsesPerUser) : undefined,
+        expiresAt: awardForm.expiresAt || undefined,
+      };
+
+      const res = await loyaltyApi.createAdminVoucher(payload);
+      toast.success('Voucher awarded successfully!');
+      setAwardSuccess(`Voucher successfully issued! Code: ${res.code || awardForm.code}`);
+      setAwardForm({
+        userId: '',
+        code: '',
+        discountType: 'PERCENTAGE',
+        discountValue: 10,
+        maxDiscountAmount: 0,
+        minOrderAmount: 0,
+        maxUses: 1,
+        maxUsesPerUser: 1,
+        expiresAt: '',
+      });
+      fetchAwardedVouchers();
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || 'Failed to award voucher';
+      setAwardError(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setAwardLoading(false);
+    }
+  };
 
   const fetchLoyaltyConfig = async () => {
     try {
       const data = await loyaltyApi.getLoyaltyConfig();
       if (data) {
         setLoyaltyConfig({
-          pointsPerNpr: Number(data.pointsPerNpr || 0.1),
-          pointsToNprRate: Number(data.pointsToNprRate || 0.5),
-          minRedeemPoints: Number(data.minRedeemPoints || 100),
-          voucherExpiryDays: Number(data.voucherExpiryDays || 30)
+          pointsPerNpr: Number(data.pointsPerNpr !== undefined ? data.pointsPerNpr : 0.1),
+          pointsToNprRate: Number(data.pointsToNprRate !== undefined ? data.pointsToNprRate : 0.5),
+          minRedeemPoints: Number(data.minRedeemPoints !== undefined ? data.minRedeemPoints : 100),
+          voucherExpiryDays: Number(data.voucherExpiryDays !== undefined ? data.voucherExpiryDays : 30),
+          accrualMode: data.accrualMode || 'SPEND',
+          pointsPerVisit: Number(data.pointsPerVisit !== undefined ? data.pointsPerVisit : 5),
+          minSpendForVisit: Number(data.minSpendForVisit !== undefined ? data.minSpendForVisit : 0),
+          bonusMultiplier: Number(data.bonusMultiplier !== undefined ? data.bonusMultiplier : 1.0),
+          pointsExpiryDays: data.pointsExpiryDays !== null && data.pointsExpiryDays !== undefined ? Number(data.pointsExpiryDays) : null,
         });
       }
     } catch (err) {
@@ -165,7 +328,7 @@ const AdminDashboard: React.FC = () => {
     try {
       const [ordersData, menuData, catData, addonGroupsData] = await Promise.all([
         orderApi.getBusinessOrders(BUSINESS_ID),
-        menuApi.getByBusiness(BUSINESS_ID),
+        menuApi.getByBusiness(BUSINESS_ID, { includeHidden: true }),
         categoryApi.getByBusiness(BUSINESS_ID),
         addonGroupApi.getGroups(BUSINESS_ID).catch(() => []),
       ]);
@@ -179,7 +342,7 @@ const AdminDashboard: React.FC = () => {
         const usersData = await import('@/api/axios').then(m =>
           m.default.get('/admin/users').then(r => r.data)
         );
-        setUsersList(Array.isArray(usersData) ? usersData : []);
+        setUsersList(usersData && Array.isArray(usersData.data) ? usersData.data : Array.isArray(usersData) ? usersData : []);
       } catch {
         // fallback: keep empty or use localStorage cache
         const localUsers = JSON.parse(localStorage.getItem('kaha_local_users') || '[]');
@@ -271,6 +434,7 @@ const AdminDashboard: React.FC = () => {
       image: '',
       isAvailable: true,
       isSignature: false,
+      isHidden: false,
       addonGroups: []
     });
     setIsMenuModalOpen(true);
@@ -287,6 +451,7 @@ const AdminDashboard: React.FC = () => {
       image: item.images?.[0] || item.image || '',
       isAvailable: item.isAvailable,
       isSignature: item.isSignature || false,
+      isHidden: item.isHidden || false,
       addonGroups: item.addonGroups?.map(g => g.id) || []
     });
     setIsMenuModalOpen(true);
@@ -305,6 +470,7 @@ const AdminDashboard: React.FC = () => {
         images: menuForm.image ? [menuForm.image] : [],
         isAvailable: menuForm.isAvailable,
         isSignature: menuForm.isSignature,
+        isHidden: menuForm.isHidden,
         businessId: BUSINESS_ID
       };
 
@@ -352,6 +518,32 @@ const AdminDashboard: React.FC = () => {
       fetchAllData();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to delete menu item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleMenuHidden = async (id: string, currentHidden: boolean) => {
+    try {
+      setLoading(true);
+      await menuApi.toggleHidden(id, !currentHidden);
+      toast.success(currentHidden ? 'Menu item is now visible' : 'Menu item is now hidden');
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to toggle visibility');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleMenuAvailability = async (id: string, currentAvailable: boolean) => {
+    try {
+      setLoading(true);
+      await menuApi.toggleAvailability(id, !currentAvailable);
+      toast.success(!currentAvailable ? 'Menu item is now available' : 'Menu item is now marked out of stock');
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to toggle availability');
     } finally {
       setLoading(false);
     }
@@ -677,6 +869,14 @@ const AdminDashboard: React.FC = () => {
             <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Loyalty Settings
           </button>
+          <button className={`admin-sidebar__link ${tab === 'tables' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('tables'); fetchTables(); }}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            Table Management
+          </button>
+          <button className={`admin-sidebar__link ${tab === 'award-voucher' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('award-voucher'); fetchAwardedVouchers(); }}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            Award Voucher
+          </button>
         </nav>
         
         <div className="admin-sidebar__bottom">
@@ -714,12 +914,19 @@ const AdminDashboard: React.FC = () => {
               {tab === 'addons' && 'Addon Groups & Choices'}
               {tab === 'customers' && '🏆 Customer Insights & Loyalty'}
               {tab === 'loyalty_settings' && '⚙️ Loyalty Rules & Custom Criteria'}
+              {tab === 'tables' && '🪑 Dine-in Table Setup'}
+              {tab === 'award-voucher' && '🎟️ Award Voucher Manual Issuance'}
             </h1>
-            <p style={{ color: '#929397' }}>Manage and monitor your restaurant's business statistics.</p>
+            <p style={{ color: '#929397' }}>
+              {tab === 'tables' ? 'Define table capacities, sections, and track availability.' :
+               tab === 'award-voucher' ? 'Directly award loyalty vouchers to customers.' :
+               "Manage and monitor your restaurant's business statistics."}
+            </p>
           </div>
           <div>
             {tab === 'menu' && <button className="btn btn-primary" onClick={handleOpenAddMenu}>+ Add Menu Item</button>}
             {tab === 'categories' && <button className="btn btn-primary" onClick={() => setIsCategoryModalOpen(true)}>+ Add Category</button>}
+            {tab === 'tables' && <button className="btn btn-primary" onClick={() => { setEditingTable(null); setTableForm({ tableNumber: '', capacity: 2, section: TableSection.INDOOR, notes: '', isActive: true }); setIsTableModalOpen(true); }}>+ Add Table</button>}
             {tab === 'addons' && (
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
@@ -1113,12 +1320,24 @@ const AdminDashboard: React.FC = () => {
                 const imgSrc = m.images?.[0] || m.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80';
 
                 return (
-                  <div key={m.id} className="admin-item-card">
+                  <div key={m.id} className="admin-item-card" style={{ opacity: m.isHidden || !m.isAvailable ? 0.75 : 1 }}>
                     <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
                       <img src={imgSrc} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <span className="admin-card-badge">
                         {m.category?.name || 'Dish'}
                       </span>
+                      <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {!m.isAvailable && (
+                          <span style={{ background: '#e74c3c', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '800' }}>
+                            OUT OF STOCK
+                          </span>
+                        )}
+                        {m.isHidden && (
+                          <span style={{ background: '#7f8c8d', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '800' }}>
+                            HIDDEN
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -1131,6 +1350,25 @@ const AdminDashboard: React.FC = () => {
                       </div>
 
                       <p style={{ fontSize: '13px', color: '#929397', margin: '0 0 16px', flex: 1 }}>{m.description || 'No description provided.'}</p>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '12px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#55617A', fontWeight: '600' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={m.isAvailable} 
+                            onChange={() => handleToggleMenuAvailability(m.id, m.isAvailable)} 
+                          />
+                          Available
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#55617A', fontWeight: '600' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={m.isHidden} 
+                            onChange={() => handleToggleMenuHidden(m.id, m.isHidden)} 
+                          />
+                          Hidden
+                        </label>
+                      </div>
 
                       <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #EFEFF0', paddingTop: '16px' }}>
                         <button 
@@ -1777,6 +2015,123 @@ const AdminDashboard: React.FC = () => {
                         The validity period of a generated loyalty voucher before it automatically expires.
                       </p>
                     </div>
+
+                    {/* Accrual Mode */}
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
+                        Accrual Mode
+                      </label>
+                      <select 
+                        className="input"
+                        style={{ height: '40px', fontSize: '13px', padding: '0 12px' }}
+                        value={loyaltyConfig.accrualMode || 'SPEND'}
+                        onChange={e => setLoyaltyConfig(c => ({ ...c, accrualMode: e.target.value as any }))}
+                      >
+                        <option value="SPEND">Spend-based only (Points per NPR)</option>
+                        <option value="VISIT">Visit-based only (Points per Order/Visit)</option>
+                        <option value="BOTH">Both (Spend and Visit points combined)</option>
+                      </select>
+                      <p style={{ fontSize: '11px', color: '#929397', marginTop: '6px', lineHeight: '1.4' }}>
+                        Choose whether customers earn points based on order amount (Spend), frequency (Visit), or both.
+                      </p>
+                    </div>
+
+                    {/* Points Per Visit */}
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
+                        Points Per Visit / Order
+                      </label>
+                      <input 
+                        type="number" 
+                        step="1"
+                        min="0"
+                        className="input" 
+                        required 
+                        disabled={loyaltyConfig.accrualMode === 'SPEND'}
+                        style={{ height: '40px', fontSize: '13px' }}
+                        value={loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5}
+                        onChange={e => setLoyaltyConfig(c => ({ ...c, pointsPerVisit: Number(e.target.value) }))}
+                        placeholder="e.g. 5"
+                      />
+                      <p style={{ fontSize: '11px', color: '#929397', marginTop: '6px', lineHeight: '1.4' }}>
+                        Points awarded per qualifying visit (order). Enabled only when using Visit or Both mode.
+                      </p>
+                    </div>
+
+                    {/* Min Spend For Visit */}
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
+                        Min Order Amount for Visit (NPR)
+                      </label>
+                      <input 
+                        type="number" 
+                        step="1"
+                        min="0"
+                        className="input" 
+                        required 
+                        disabled={loyaltyConfig.accrualMode === 'SPEND'}
+                        style={{ height: '40px', fontSize: '13px' }}
+                        value={loyaltyConfig.minSpendForVisit !== undefined ? loyaltyConfig.minSpendForVisit : 0}
+                        onChange={e => setLoyaltyConfig(c => ({ ...c, minSpendForVisit: Number(e.target.value) }))}
+                        placeholder="e.g. 200"
+                      />
+                      <p style={{ fontSize: '11px', color: '#929397', marginTop: '6px', lineHeight: '1.4' }}>
+                        Minimum order subtotal to qualify as a visit. E.g., 200 means orders below NPR 200 earn 0 visit points.
+                      </p>
+                    </div>
+
+                    {/* Bonus Multiplier */}
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
+                        Campaign Bonus Multiplier
+                      </label>
+                      <input 
+                        type="number" 
+                        step="0.1"
+                        min="1"
+                        max="10"
+                        className="input" 
+                        required 
+                        style={{ height: '40px', fontSize: '13px' }}
+                        value={loyaltyConfig.bonusMultiplier !== undefined ? loyaltyConfig.bonusMultiplier : 1.0}
+                        onChange={e => setLoyaltyConfig(c => ({ ...c, bonusMultiplier: Number(e.target.value) }))}
+                        placeholder="e.g. 1.0 (No Bonus), 2.0 (Double Points)"
+                      />
+                      <p style={{ fontSize: '11px', color: '#929397', marginTop: '6px', lineHeight: '1.4' }}>
+                        Global multiplier applied on points earned. E.g. <strong>2.0</strong> for double points events.
+                      </p>
+                    </div>
+
+                    {/* Points Expiry Days */}
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
+                        Points Expiry Duration (Days)
+                      </label>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <input 
+                          type="number" 
+                          step="1"
+                          min="1"
+                          className="input" 
+                          disabled={loyaltyConfig.pointsExpiryDays === null}
+                          style={{ height: '40px', fontSize: '13px', flex: 1 }}
+                          value={loyaltyConfig.pointsExpiryDays || ''}
+                          onChange={e => setLoyaltyConfig(c => ({ ...c, pointsExpiryDays: e.target.value ? Number(e.target.value) : null }))}
+                          placeholder="Never expires"
+                        />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={loyaltyConfig.pointsExpiryDays === null}
+                            onChange={e => setLoyaltyConfig(c => ({ ...c, pointsExpiryDays: e.target.checked ? null : 365 }))}
+                          />
+                          Never Expire
+                        </label>
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#929397', marginTop: '6px', lineHeight: '1.4' }}>
+                        How many days earned points remain valid. E.g., 365 for 1 year expiry, or check "Never Expire".
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1801,7 +2156,13 @@ const AdminDashboard: React.FC = () => {
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', borderBottom: '1px solid #E1EAF7', paddingBottom: '6px' }}>
                         <span style={{ color: '#55617A', fontWeight: '500' }}>Points Accrued</span>
-                        <strong style={{ color: '#5FC756' }}>+{Math.floor(1000 * loyaltyConfig.pointsPerNpr)} pts</strong>
+                        <strong style={{ color: '#5FC756' }}>
+                          +{Math.floor(
+                            ((loyaltyConfig.accrualMode === 'SPEND' || loyaltyConfig.accrualMode === 'BOTH' ? 1000 * loyaltyConfig.pointsPerNpr : 0) +
+                             (loyaltyConfig.accrualMode === 'VISIT' || loyaltyConfig.accrualMode === 'BOTH' ? (loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5) : 0)) *
+                            (loyaltyConfig.bonusMultiplier || 1.0)
+                          )} pts
+                        </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', borderBottom: '1px solid #E1EAF7', paddingBottom: '6px' }}>
                         <span style={{ color: '#55617A', fontWeight: '500' }}>Min. Redemptions</span>
@@ -1818,7 +2179,9 @@ const AdminDashboard: React.FC = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', paddingTop: '2px' }}>
                         <span style={{ color: '#3A86C8', fontWeight: '800' }}>Cashback Yield</span>
                         <strong style={{ color: '#3A86C8', fontWeight: '800' }}>
-                          {(loyaltyConfig.pointsPerNpr * loyaltyConfig.pointsToNprRate * 100).toFixed(2)}%
+                          {(((loyaltyConfig.accrualMode === 'SPEND' || loyaltyConfig.accrualMode === 'BOTH' ? 1000 * loyaltyConfig.pointsPerNpr : 0) +
+                             (loyaltyConfig.accrualMode === 'VISIT' || loyaltyConfig.accrualMode === 'BOTH' ? (loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5) : 0)) *
+                            (loyaltyConfig.bonusMultiplier || 1.0) * loyaltyConfig.pointsToNprRate / 10).toFixed(2)}%
                         </strong>
                       </div>
                     </div>
@@ -1857,6 +2220,276 @@ const AdminDashboard: React.FC = () => {
 
               </div>
             </form>
+          </div>
+        )}
+
+        {/* ==================== TABLE MANAGEMENT TAB ==================== */}
+        {tab === 'tables' && (
+          <div>
+            {tablesLoading ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: '#929397' }}>Loading tables data...</div>
+            ) : (
+              <div className="admin-table-container">
+                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left' }}>
+                      <th style={{ padding: '16px' }}>Table Number</th>
+                      <th>Capacity</th>
+                      <th>Section</th>
+                      <th>Status</th>
+                      <th>Active</th>
+                      <th>Notes</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tablesList.map(t => (
+                      <tr key={t.id} style={{ borderBottom: '1px solid #EFEFF0' }}>
+                        <td style={{ padding: '16px', fontWeight: 'bold' }}>{t.tableNumber}</td>
+                        <td>{t.capacity} seats</td>
+                        <td style={{ textTransform: 'capitalize' }}>{t.section}</td>
+                        <td>
+                          <button
+                            onClick={() => handleToggleTableStatus(t)}
+                            className="btn btn-sm"
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              border: 'none',
+                              cursor: 'pointer',
+                              background: t.status === TableStatus.AVAILABLE ? '#EDFAEB' : '#FDEBEB',
+                              color: t.status === TableStatus.AVAILABLE ? '#1B4332' : '#E14535',
+                            }}
+                          >
+                            {t.status === TableStatus.AVAILABLE ? 'Available' : 'Occupied'}
+                          </button>
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => handleToggleTableActive(t)}
+                            className={`admin-status-btn admin-status-btn--${t.isActive ? 'active' : 'inactive'}`}
+                          >
+                            {t.isActive ? 'Active' : 'Inactive'}
+                          </button>
+                        </td>
+                        <td style={{ color: '#929397', fontSize: '13px' }}>{t.notes || '—'}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setEditingTable(t);
+                                setTableForm({
+                                  tableNumber: t.tableNumber,
+                                  capacity: t.capacity,
+                                  section: t.section,
+                                  notes: t.notes || '',
+                                  isActive: t.isActive,
+                                });
+                                setIsTableModalOpen(true);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteTable(t.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {tablesList.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: '#929397' }}>
+                          No tables configured. Click "+ Add Table" to create one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== AWARD VOUCHER TAB ==================== */}
+        {tab === 'award-voucher' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '24px', alignItems: 'start' }}>
+            {/* Award Form */}
+            <div className="admin-stat-card" style={{ padding: '24px', borderRadius: '16px', background: '#ffffff', border: '1px solid #EFEFF0' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '800', color: '#272831' }}>Award New Voucher</h3>
+              
+              {awardSuccess && (
+                <div style={{ padding: '12px', background: '#EDFAEB', color: '#1B4332', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: '700' }}>
+                  {awardSuccess}
+                </div>
+              )}
+              {awardError && (
+                <div style={{ padding: '12px', background: '#FDEBEB', color: '#E14535', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: '700' }}>
+                  {awardError}
+                </div>
+              )}
+
+              <form onSubmit={handleAwardVoucher} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="input-group">
+                  <label className="input-label">Select Customer *</label>
+                  <select
+                    className="input"
+                    value={awardForm.userId}
+                    onChange={e => setAwardForm(prev => ({ ...prev, userId: e.target.value }))}
+                    required
+                  >
+                    <option value="">-- Choose Customer --</option>
+                    {customerInsights.map(c => (
+                      <option key={c.userId} value={c.userId}>
+                        {c.customerName || 'Kaha User'} ({c.customerPhone || 'No contact'}) · {c.totalPoints || 0} pts
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Voucher Code (Optional)</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. SPECIAL50 (leave blank to auto-generate)"
+                    value={awardForm.code}
+                    onChange={e => setAwardForm(prev => ({ ...prev, code: e.target.value }))}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="input-group">
+                    <label className="input-label">Discount Type *</label>
+                    <select
+                      className="input"
+                      value={awardForm.discountType}
+                      onChange={e => setAwardForm(prev => ({ ...prev, discountType: e.target.value as any }))}
+                    >
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FIXED">Fixed Amount (NPR)</option>
+                    </select>
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Discount Value *</label>
+                    <input
+                      type="number"
+                      className="input"
+                      required
+                      min="1"
+                      value={awardForm.discountValue}
+                      onChange={e => setAwardForm(prev => ({ ...prev, discountValue: Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="input-group">
+                    <label className="input-label">Min Order (NPR)</label>
+                    <input
+                      type="number"
+                      className="input"
+                      min="0"
+                      value={awardForm.minOrderAmount}
+                      onChange={e => setAwardForm(prev => ({ ...prev, minOrderAmount: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Max Discount (NPR)</label>
+                    <input
+                      type="number"
+                      className="input"
+                      min="0"
+                      value={awardForm.maxDiscountAmount}
+                      placeholder="e.g. 200 (optional)"
+                      disabled={awardForm.discountType === 'FIXED'}
+                      onChange={e => setAwardForm(prev => ({ ...prev, maxDiscountAmount: Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Expiry Date</label>
+                  <input
+                    type="date"
+                    className="input"
+                    value={awardForm.expiresAt}
+                    onChange={e => setAwardForm(prev => ({ ...prev, expiresAt: e.target.value }))}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={awardLoading}
+                  style={{ marginTop: '8px', background: '#5FC756', border: 'none', height: '42px', fontWeight: 'bold' }}
+                >
+                  {awardLoading ? 'Awarding...' : 'Award Voucher 🎟️'}
+                </button>
+              </form>
+            </div>
+
+            {/* Awarded History */}
+            <div className="admin-stat-card" style={{ padding: '24px', borderRadius: '16px', background: '#ffffff', border: '1px solid #EFEFF0', overflowX: 'auto' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '800', color: '#272831' }}>Awarded Vouchers Log</h3>
+              
+              <div className="admin-table-container" style={{ maxHeight: '550px', overflowY: 'auto' }}>
+                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left' }}>
+                      <th style={{ padding: '12px' }}>Code</th>
+                      <th>Customer ID</th>
+                      <th>Value</th>
+                      <th>Uses</th>
+                      <th>Expiry</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {awardedVouchers.map((v, idx) => (
+                      <tr key={v.id || idx} style={{ borderBottom: '1px solid #EFEFF0' }}>
+                        <td style={{ padding: '12px', fontWeight: '800', color: '#272831' }}>{v.code}</td>
+                        <td style={{ fontSize: '12px', color: '#929397' }}>
+                          {v.userId ? `...${v.userId.slice(-8)}` : '—'}
+                        </td>
+                        <td style={{ fontWeight: '700', color: '#5FC756' }}>
+                          {v.discountType === 'PERCENTAGE' ? `${v.discountValue}%` : `NPR ${v.discountValue}`}
+                        </td>
+                        <td>{v.usesCount || 0} / {v.maxUses || 1}</td>
+                        <td style={{ fontSize: '12px' }}>
+                          {v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'Never'}
+                        </td>
+                        <td>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            background: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '#EDFAEB' : '#FDEBEB',
+                            color: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '#1B4332' : '#E14535',
+                          }}>
+                            {v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? 'Active' : 'Expired/Inactive'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {awardedVouchers.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#929397' }}>
+                          No vouchers issued yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -2044,6 +2677,14 @@ const AdminDashboard: React.FC = () => {
                       onChange={e => setMenuForm(mf => ({ ...mf, isAvailable: e.target.checked }))}
                     />
                     Available for Order
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={menuForm.isHidden}
+                      onChange={e => setMenuForm(mf => ({ ...mf, isHidden: e.target.checked }))}
+                    />
+                    Hide from Customers
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                     <input 
@@ -2308,6 +2949,84 @@ const AdminDashboard: React.FC = () => {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setIsAddonModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">{editingAddon ? 'Save Choice' : 'Add Choice'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {isTableModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2>{editingTable ? 'Edit Table Info' : 'Add New Table'}</h2>
+              <button className="modal-close" onClick={() => { setIsTableModalOpen(false); setEditingTable(null); }}>×</button>
+            </div>
+            <form onSubmit={handleSaveTable}>
+              <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
+                <div className="input-group">
+                  <label className="input-label">Table Number / Label *</label>
+                  <input
+                    type="text"
+                    className="input"
+                    required
+                    placeholder="e.g. Table 1, Table 4B"
+                    value={tableForm.tableNumber}
+                    onChange={e => setTableForm(prev => ({ ...prev, tableNumber: e.target.value }))}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Capacity (seats) *</label>
+                  <input
+                    type="number"
+                    className="input"
+                    required
+                    min="1"
+                    value={tableForm.capacity}
+                    onChange={e => setTableForm(prev => ({ ...prev, capacity: Number(e.target.value) }))}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Section / Location *</label>
+                  <select
+                    className="input"
+                    value={tableForm.section}
+                    onChange={e => setTableForm(prev => ({ ...prev, section: e.target.value as any }))}
+                  >
+                    <option value={TableSection.INDOOR}>Indoor</option>
+                    <option value={TableSection.OUTDOOR}>Outdoor</option>
+                    <option value={TableSection.ROOFTOP}>Rooftop</option>
+                    <option value={TableSection.BAR}>Bar</option>
+                    <option value={TableSection.PRIVATE}>Private</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Notes / Description</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. Window side, quiet corner"
+                    value={tableForm.notes}
+                    onChange={e => setTableForm(prev => ({ ...prev, notes: e.target.value }))}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '12px' }}>
+                    <input
+                      type="checkbox"
+                      checked={tableForm.isActive}
+                      onChange={e => setTableForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                    />
+                    Table is Active & Available for Orders
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => { setIsTableModalOpen(false); setEditingTable(null); }}>Cancel</button>
+                <button type="submit" className="btn btn-primary">{editingTable ? 'Save Changes' : 'Create Table'}</button>
               </div>
             </form>
           </div>

@@ -156,11 +156,12 @@ export class OrderService {
     // Apply/consume voucher if provided
     if (body.voucherCode) {
       try {
-        const discount = await this.loyaltyService.applyVoucher(body.voucherCode, order.id);
+        const discount = await this.loyaltyService.applyVoucher(body.voucherCode, order.id, subtotal);
         if (discount) {
           order.discountAmount = Number(discount);
           // Recalculate totalAmount after applying discount
           order.totalAmount = order.subtotal + order.taxAmount + order.deliveryFee + Number(order.serviceCharge) - Number(order.discountAmount) + Number(order.tipAmount);
+          await this.orderRepository.save(order);
         }
       } catch (err) {
         console.error('[OrderService] applyVoucher failed:', err?.message);
@@ -358,11 +359,12 @@ export class OrderService {
     // Apply/consume voucher if provided
     if (voucherCode) {
         try {
-          const discount = await this.loyaltyService.applyVoucher(voucherCode, order.id);
+          const discount = await this.loyaltyService.applyVoucher(voucherCode, order.id, subtotal);
           if (discount) {
             order.discountAmount = Number(discount);
             // Recalculate totalAmount after discount
             order.totalAmount = order.subtotal + order.taxAmount + finalDeliveryFee + finalServiceCharge - Number(order.discountAmount) + finalTipAmount;
+            await this.orderRepository.save(order);
           }
         } catch (err) {
           console.error('[OrderService] applyVoucher failed:', err?.message);
@@ -534,7 +536,8 @@ export class OrderService {
           order.userId,
           order.businessId,
           order.id,
-          Number(order.totalAmount),
+          Number(order.totalAmount),  // orderAmount (full amount for spend calculation)
+          Number(order.subtotal),     // subtotal (pre-tip for visit qualification)
         );
       } catch (err) {
         // Non-blocking: loyalty failure must never break the status update

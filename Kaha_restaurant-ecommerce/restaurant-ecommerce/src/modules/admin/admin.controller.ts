@@ -1,7 +1,14 @@
-import { Controller, Post, Get, Patch, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, HttpCode, HttpStatus, Query, Req, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { CreateServiceAccountDto } from './dto/create-service-account.dto';
+import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
+import { JwtAuthGuard } from 'auth/guards';
+import { RolesGuard } from 'auth/guards/roles.guard';
+import { Roles } from 'common/decorator';
+import { UserRoleEnum } from 'common/enums';
+
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -65,9 +72,50 @@ export class AdminController {
   }
 
   @Get('users')
-  @ApiOperation({ summary: 'List all registered customer users' })
-  @ApiResponse({ status: 200, description: 'List of customer accounts from local DB' })
-  async listCustomers() {
-    return await this.adminService.listCustomers();
+  @ApiOperation({ summary: 'List all registered customer users with pagination' })
+  @ApiResponse({ status: 200, description: 'Paginated list of customer accounts' })
+  async listCustomers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit || '10', 10) || 10));
+    return this.adminService.listCustomers(pageNum, limitNum);
+  }
+
+  @Post("tables")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create a new table' })
+  async createTable(@Body() dto: CreateTableDto, @Req() req) {
+    return this.adminService.createTable(req.user.businessId, dto);
+  }
+
+  @Get("tables")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all tables for business' })
+  async getTables(@Req() req) {
+    return this.adminService.getTables(req.user.businessId);
+  }
+
+  @Patch("tables/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update table details' })
+  async updateTable(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTableDto,
+    @Req() req
+  ) {
+    return this.adminService.updateTable(req.user.businessId, id, dto);
+  }
+
+  @Delete("tables/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.BUSINESS_SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete table' })
+  async deleteTable(@Param("id", ParseUUIDPipe) id: string, @Req() req) {
+    return this.adminService.deleteTable(req.user.businessId, id);
   }
 }

@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Order, CreateOrderDto, CreateOrderFromCartDto, OrderStatusEnum, CreateRatingDto, MenuRating } from '../types';
+import type { Order, CreateOrderDto, CreateOrderFromCartDto, OrderStatusEnum, CreateRatingDto, MenuRating, RestaurantTable, TableSection, TableStatus } from '../types';
 
 // Normalizer to map backend shape to frontend interface
 function normalizeOrder(order: any): Order {
@@ -121,6 +121,44 @@ export const orderApi = {
     // Backend now returns { message, order } — extract the order sub-object
     const orderData = data?.order ?? data;
     return normalizeOrder(orderData);
+  },
+
+  getAvailableTables: async (businessId: string): Promise<RestaurantTable[]> => {
+    const { data } = await api.get(`/order/tables/${businessId}`);
+    return Array.isArray(data) ? data : [];
+  },
+};
+
+export const tableApi = {
+  getTables: async (): Promise<RestaurantTable[]> => {
+    const { data } = await api.get("/admin/tables");
+    return Array.isArray(data) ? data : [];
+  },
+
+  createTable: async (payload: {
+    tableNumber: string;
+    capacity: number;
+    section: TableSection;
+    notes?: string;
+  }): Promise<RestaurantTable> => {
+    const { data } = await api.post("/admin/tables", payload);
+    return data;
+  },
+
+  updateTable: async (id: string, payload: Partial<{
+    tableNumber: string;
+    capacity: number;
+    section: TableSection;
+    status: TableStatus;
+    isActive: boolean;
+    notes?: string;
+  }>): Promise<RestaurantTable> => {
+    const { data } = await api.patch(`/admin/tables/${id}`, payload);
+    return data;
+  },
+
+  deleteTable: async (id: string): Promise<void> => {
+    await api.delete(`/admin/tables/${id}`);
   },
 };
 

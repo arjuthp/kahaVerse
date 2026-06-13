@@ -1,4 +1,4 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from './base.entity';
 
 export enum LoyaltyTxType {
@@ -8,6 +8,10 @@ export enum LoyaltyTxType {
   MANUAL_ADJUST = 'manual_adjust',
 }
 
+@Index('UQ_loyalty_tx_order_earn', ['orderId', 'type'], {
+  unique: true,
+  where: `"orderId" IS NOT NULL AND type = 'earn'`,
+})
 @Entity('loyalty_transactions')
 export class LoyaltyTransactionEntity extends BaseEntity {
   @Column({ type: 'varchar' })

@@ -387,11 +387,11 @@ textarea.input {
   font-weight: 700;
 }
 
-.status-badge--PENDING    { border-color: var(--status-pending); color: var(--status-pending); }
-.status-badge--PROCESSING { border-color: var(--status-processing); color: var(--status-processing); }
-.status-badge--SHIPPED    { border-color: var(--status-shipped); color: var(--status-shipped); }
-.status-badge--DELIVERED  { border-color: var(--status-delivered); color: var(--status-delivered); }
-.status-badge--CANCELLED  { border-color: var(--status-cancelled); color: var(--status-cancelled); }
+.status-badge--PENDING, .status-badge--pending, .status-badge--warning { border-color: var(--status-pending); color: var(--status-pending); }
+.status-badge--PROCESSING, .status-badge--processing, .status-badge--primary { border-color: var(--status-processing); color: var(--status-processing); }
+.status-badge--SHIPPED, .status-badge--shipped, .status-badge--info { border-color: var(--status-shipped); color: var(--status-shipped); }
+.status-badge--DELIVERED, .status-badge--delivered, .status-badge--success { border-color: var(--status-delivered); color: var(--status-delivered); }
+.status-badge--CANCELLED, .status-badge--cancelled, .status-badge--error { border-color: var(--status-cancelled); color: var(--status-cancelled); }
 
 /* ---------- Prices ---------- */
 .price {

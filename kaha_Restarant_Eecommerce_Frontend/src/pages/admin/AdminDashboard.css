@@ -192,6 +192,7 @@
    ============================================================ */
 .admin-main {
   flex: 1;
+  min-width: 0;
   margin-left: 0;
   padding: 36px 40px;
   background: #F5F5F6;

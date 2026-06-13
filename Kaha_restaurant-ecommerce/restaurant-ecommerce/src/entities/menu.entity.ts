@@ -40,6 +40,9 @@ export class MenuEntity extends BaseEntity {
   @Column({ default: true })
   isAvailable: boolean;
 
+  @Column("boolean", { default: false })
+  isHidden: boolean;
+
   @Column("enum", {
     enum: MenuServiceEnum,
     default: [MenuServiceEnum.DINE_IN],

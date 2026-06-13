@@ -16,9 +16,10 @@ import {
 import { OrderController } from "order/order.controller";
 import { OrderService } from "order/order.service";
 import { LoyaltyModule } from '../loyalty/loyalty.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
-  imports: [LoyaltyModule],
+  imports: [LoyaltyModule, AdminModule],
   controllers: [OrderController],
   providers: [
     OrderService,

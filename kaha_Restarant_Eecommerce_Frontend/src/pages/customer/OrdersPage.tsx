@@ -6,17 +6,17 @@ import { OrderStatusEnum } from '../../types';
 import './OrdersPage.css';
 
 const statusColors: Record<string, string> = {
-  PENDING: 'warning',
-  CONFIRMED: 'info',
-  PREPARING: 'primary',
-  READY: 'success',
-  DELIVERED: 'success',
-  CANCELLED: 'error',
+  pending: 'warning',
+  processing: 'primary',
+  shipped: 'info',
+  delivered: 'success',
+  cancelled: 'error',
 };
 
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,26 +35,25 @@ const OrdersPage: React.FC = () => {
     }
   };
 
+  const getOrderStatus = (order: Order): string => {
+    if (order.orderStatus && order.orderStatus.length > 0) {
+      return order.orderStatus[order.orderStatus.length - 1].status.toLowerCase();
+    }
+    return 'pending';
+  };
+
+  const activeOrders = orders.filter(order =>
+    ['pending', 'processing'].includes(getOrderStatus(order))
+  );
+
+  const historyOrders = orders.filter(order =>
+    ['delivered', 'cancelled', 'shipped'].includes(getOrderStatus(order))
+  );
+
   if (loading) {
     return (
       <div className="orders-page" style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>
         <div className="spinner spinner-lg"></div>
-      </div>
-    );
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="orders-page">
-        <div className="container">
-          <div className="empty-state">
-            <h2>No orders yet</h2>
-            <p>You haven't placed any orders. Browse our menu to get started.</p>
-            <Link to="/menu" className="btn btn-primary btn-lg mt-md">
-              Browse Menu
-            </Link>
-          </div>
-        </div>
       </div>
     );
   }
@@ -67,10 +66,56 @@ const OrdersPage: React.FC = () => {
           <p>Track, manage, and review your past orders.</p>
         </div>
 
+        {/* Tab Buttons */}
+        <div className="orders-tabs">
+          <button
+            className={`orders-tab-btn ${activeTab === 'active' ? 'orders-tab-btn--active' : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Active Orders
+            {activeOrders.length > 0 && (
+              <span className="orders-tab-badge">{activeOrders.length}</span>
+            )}
+          </button>
+          <button
+            className={`orders-tab-btn ${activeTab === 'history' ? 'orders-tab-btn--active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            Order History
+          </button>
+        </div>
+
+        {/* Tab Content */}
         <div className="orders-list">
-          {orders.map(order => (
-            <OrderCard key={order.id} order={order} onClick={() => navigate(`/orders/${order.id}`)} />
-          ))}
+          {activeTab === 'active' ? (
+            activeOrders.length === 0 ? (
+              <div className="orders-empty">
+                <h2>No active orders</h2>
+                <p>No active orders right now. Browse our menu to place an order.</p>
+                <Link to="/menu" className="btn btn-primary btn-md mt-md">
+                  Browse Menu
+                </Link>
+              </div>
+            ) : (
+              activeOrders.map(order => (
+                <OrderCard key={order.id} order={order} onClick={() => navigate(`/orders/${order.id}`)} />
+              ))
+            )
+          ) : (
+            historyOrders.length === 0 ? (
+              <div className="orders-empty">
+                <h2>No past orders</h2>
+                <p>No past orders found. Browse our menu to get started.</p>
+                <Link to="/menu" className="btn btn-primary btn-md mt-md">
+                  Browse Menu
+                </Link>
+              </div>
+            ) : (
+              historyOrders.map(order => (
+                <OrderCard key={order.id} order={order} onClick={() => navigate(`/orders/${order.id}`)} />
+              ))
+            )
+          )}
         </div>
       </div>
     </div>
@@ -83,8 +128,8 @@ interface OrderCardProps {
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
-  const currentStatus = order.orderStatus?.length ? order.orderStatus[order.orderStatus.length - 1].status : 'PENDING';
-  const colorKey = statusColors[currentStatus] || 'primary';
+  const currentStatus = order.orderStatus?.length ? order.orderStatus[order.orderStatus.length - 1].status : 'pending';
+  const colorKey = statusColors[currentStatus.toLowerCase()] || 'primary';
   const date = new Date(order.createdAt).toLocaleDateString('en-US', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
@@ -119,10 +164,10 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
       </div>
 
       <div className="order-card__footer">
-        <span className={`status-badge status-badge--${currentStatus}`}>{currentStatus.replace('_', ' ')}</span>
+        <span className={`status-badge status-badge--${colorKey}`}>{currentStatus.replace('_', ' ')}</span>
         <span style={{ margin: '0 8px', color: 'var(--outline-variant)' }}>|</span>
         <span>{order.serviceType.replace('_', ' ')}</span>
-        {currentStatus === OrderStatusEnum.DELIVERED && (
+        {currentStatus.toLowerCase() === OrderStatusEnum.DELIVERED && (
           <span style={{ marginLeft: 'auto', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             Leave Review

@@ -74,6 +74,7 @@ import { OrderEntity } from "../entities/order.entity";
 import { OrderItemEntity } from "../entities/orderitem.entity";
 import { OrderItemAddonEntity } from "../entities/orderitem-addons.entity";
 import { OrderStatusEntity } from "../entities/order.status.entity";
+import { RestaurantTableEntity, TableSection, TableStatus } from "../entities/restaurant-table.entity";
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 import { MenuServiceEnum } from "../common/enums/menu.service.enum";
@@ -113,6 +114,7 @@ const AppDataSource = new DataSource({
     OrderItemEntity,
     OrderItemAddonEntity,
     OrderStatusEntity,
+    RestaurantTableEntity,
   ],
 });
 
@@ -166,6 +168,7 @@ async function seed() {
   const variantRepo = AppDataSource.getRepository(MenuVariantEntity);
   const addonGroupRepo = AppDataSource.getRepository(AddonGroupEntity);
   const addonRepo = AppDataSource.getRepository(AddOnEntity);
+  const tableRepo = AppDataSource.getRepository(RestaurantTableEntity);
 
   // ── 1. Categories ──────────────────────────────────────────────────────────
   log("Seeding categories...");
@@ -818,6 +821,24 @@ async function seed() {
     log(`Menu items seeded: ${savedMenus.length} items with variants`);
   }
 
+  // ── 5. Tables ──────────────────────────────────────────────────────────────
+  log("Seeding restaurant tables...");
+  const existingTables = await tableRepo.find({
+    where: { businessId: MOCK_BUSINESS_ID },
+  });
+  if (existingTables.length > 0) {
+    log(`Tables already seeded (${existingTables.length} found). Skipping.`);
+  } else {
+    await tableRepo.save([
+      tableRepo.create({ businessId: MOCK_BUSINESS_ID, tableNumber: "1", capacity: 4, section: TableSection.INDOOR, status: TableStatus.AVAILABLE, isActive: true }),
+      tableRepo.create({ businessId: MOCK_BUSINESS_ID, tableNumber: "2", capacity: 2, section: TableSection.INDOOR, status: TableStatus.AVAILABLE, isActive: true }),
+      tableRepo.create({ businessId: MOCK_BUSINESS_ID, tableNumber: "3", capacity: 6, section: TableSection.OUTDOOR, status: TableStatus.AVAILABLE, isActive: true }),
+      tableRepo.create({ businessId: MOCK_BUSINESS_ID, tableNumber: "4", capacity: 4, section: TableSection.ROOFTOP, status: TableStatus.AVAILABLE, isActive: true }),
+      tableRepo.create({ businessId: MOCK_BUSINESS_ID, tableNumber: "5", capacity: 2, section: TableSection.BAR, status: TableStatus.AVAILABLE, isActive: true }),
+    ]);
+    log("Tables seeded successfully.");
+  }
+
   // ── Summary ────────────────────────────────────────────────────────────────
   // ==================== SECTION 4: PURPOSE - Display Seed Summary ====================
   // PURPOSE: Query database and display final statistics
@@ -831,13 +852,14 @@ async function seed() {
   //   6. Log summary to console
   // CHECKS: All counts match expected values
   // OUTPUT: Summary statistics displayed and data ready for use
-  const [totalCats, totalGroups, totalMenus, totalVariants, totalAddons] =
+  const [totalCats, totalGroups, totalMenus, totalVariants, totalAddons, totalTables] =
     await Promise.all([
       categoryRepo.count(),
       addonGroupRepo.count(),
       menuRepo.count(),
       variantRepo.count(),
       addonRepo.count(),
+      tableRepo.count(),
     ]);
 
   log("─────────────────────────────────────────");
@@ -847,6 +869,7 @@ async function seed() {
   log(`  Addons:       ${totalAddons}`);
   log(`  Menu Items:   ${totalMenus}`);
   log(`  Variants:     ${totalVariants}`);
+  log(`  Tables:       ${totalTables}`);
   log("─────────────────────────────────────────");
   log(`Mock Business ID used: ${MOCK_BUSINESS_ID}`);
   log("Set this as {{businessId}} in your Postman environment.");

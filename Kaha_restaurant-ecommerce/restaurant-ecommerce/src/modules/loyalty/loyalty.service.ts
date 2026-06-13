@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { LoyaltyPointsEntity } from '../../entities/loyalty-points.entity';
 import { LoyaltyTransactionEntity, LoyaltyTxType } from '../../entities/loyalty-transaction.entity';
 import { VoucherEntity, VoucherStatus } from '../../entities/voucher.entity';
-import { LoyaltyConfigEntity } from '../../entities/loyalty-config.entity';
+import { LoyaltyConfigEntity, AccrualMode } from '../../entities/loyalty-config.entity';
 import { User } from '../../entities/user.entity';
+import { calculateDiscount } from './voucher-calculator';
+import { CreateVoucherDto } from './dto/create-voucher.dto';
 
 @Injectable()
 export class LoyaltyService {
@@ -33,6 +35,11 @@ export class LoyaltyService {
         pointsToNprRate: 0.5,
         minRedeemPoints: 100,
         voucherExpiryDays: 30,
+        accrualMode: AccrualMode.SPEND,
+        pointsPerVisit: 5,
+        minSpendForVisit: 0,
+        bonusMultiplier: 1.0,
+        pointsExpiryDays: null,
       });
       await this.configRepo.save(config);
     }
@@ -41,19 +48,72 @@ export class LoyaltyService {
 
   async updateConfig(businessId: string, update: Partial<LoyaltyConfigEntity>): Promise<LoyaltyConfigEntity> {
     const config = await this.getOrCreateConfig(businessId);
-    if (update.pointsPerNpr !== undefined) config.pointsPerNpr = Number(update.pointsPerNpr);
-    if (update.pointsToNprRate !== undefined) config.pointsToNprRate = Number(update.pointsToNprRate);
-    if (update.minRedeemPoints !== undefined) config.minRedeemPoints = Number(update.minRedeemPoints);
+    if (update.pointsPerNpr !== undefined)      config.pointsPerNpr      = Number(update.pointsPerNpr);
+    if (update.pointsToNprRate !== undefined)   config.pointsToNprRate   = Number(update.pointsToNprRate);
+    if (update.minRedeemPoints !== undefined)   config.minRedeemPoints   = Number(update.minRedeemPoints);
     if (update.voucherExpiryDays !== undefined) config.voucherExpiryDays = Number(update.voucherExpiryDays);
+    if (update.accrualMode !== undefined)       config.accrualMode       = update.accrualMode;
+    if (update.pointsPerVisit !== undefined)    config.pointsPerVisit    = Number(update.pointsPerVisit);
+    if (update.minSpendForVisit !== undefined)  config.minSpendForVisit  = Number(update.minSpendForVisit);
+    if (update.bonusMultiplier !== undefined)   config.bonusMultiplier   = Number(update.bonusMultiplier);
+    if (update.pointsExpiryDays !== undefined)  config.pointsExpiryDays  =
+      update.pointsExpiryDays === null ? null : Number(update.pointsExpiryDays);
     return this.configRepo.save(config);
   }
 
   // ──────────────────────────────────────────────────────────────
   //  EARN POINTS (called when an order is completed/delivered)
   // ──────────────────────────────────────────────────────────────
-  async earnPoints(userId: string, businessId: string, orderId: string, orderAmount: number): Promise<LoyaltyPointsEntity> {
+  async earnPoints(
+    userId: string,
+    businessId: string,
+    orderId: string,
+    orderAmount: number,
+    subtotal?: number,
+  ): Promise<LoyaltyPointsEntity> {
     const config = await this.getOrCreateConfig(businessId);
-    const pointsEarned = Math.floor(orderAmount * Number(config.pointsPerNpr));
+    const baseAmount = subtotal ?? orderAmount;
+    const multiplier = Number(config.bonusMultiplier) || 1;
+
+    // Duplicate order guard — reject if this orderId already has an EARN transaction
+    const existing = await this.txRepo.findOne({
+      where: { orderId, type: LoyaltyTxType.EARN },
+    });
+    if (existing) {
+      throw new ConflictException(`Points already earned for order ${orderId}`);
+    }
+
+    let spendPoints = 0;
+    let visitPoints = 0;
+
+    if (config.accrualMode === AccrualMode.SPEND || config.accrualMode === AccrualMode.BOTH) {
+      spendPoints = Math.floor(Number(orderAmount) * Number(config.pointsPerNpr));
+    }
+
+    if (config.accrualMode === AccrualMode.VISIT || config.accrualMode === AccrualMode.BOTH) {
+      const qualifies = Number(baseAmount) >= Number(config.minSpendForVisit);
+      if (qualifies) {
+        // Once per day per customer rule for visit-based points
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const hasEarnedToday = await this.txRepo
+          .createQueryBuilder("tx")
+          .where("tx.userId = :userId", { userId })
+          .andWhere("tx.businessId = :businessId", { businessId })
+          .andWhere("tx.type = :type", { type: LoyaltyTxType.EARN })
+          .andWhere("tx.createdAt >= :startOfDay", { startOfDay })
+          .getOne();
+
+        if (!hasEarnedToday) {
+          visitPoints = Number(config.pointsPerVisit);
+        }
+      }
+    }
+
+    const basePoints = spendPoints + visitPoints;
+    const pointsEarned = Math.floor(basePoints * multiplier);
+
     if (pointsEarned <= 0) return this.getOrCreateLedger(userId, businessId);
 
     return this.dataSource.transaction(async (em) => {
@@ -76,7 +136,7 @@ export class LoyaltyService {
         type: LoyaltyTxType.EARN,
         points: pointsEarned,
         balanceAfter: ledger.totalPoints,
-        description: `Earned ${pointsEarned} pts from Order #${orderId.slice(-6).toUpperCase()}`,
+        description: `Earned ${pointsEarned} pts (${config.accrualMode}) from Order #${orderId.slice(-6).toUpperCase()}`,
       });
       await em.save(LoyaltyTransactionEntity, tx);
 
@@ -152,26 +212,104 @@ export class LoyaltyService {
       await this.voucherRepo.save(voucher);
       throw new BadRequestException('Voucher has expired');
     }
+    if (!voucher.isActive) throw new BadRequestException('Voucher is inactive');
+    if (voucher.maxUses !== null && voucher.maxUses !== undefined && voucher.usageCount >= voucher.maxUses) {
+      throw new BadRequestException('Voucher usage limit reached');
+    }
+    return voucher;
+  }
+
+  async validateVoucherForCart(code: string, userId: string, cartTotal: number): Promise<VoucherEntity> {
+    const voucher = await this.validateVoucher(code, userId);
+    if (voucher.minOrderAmount && cartTotal < Number(voucher.minOrderAmount)) {
+      throw new BadRequestException(
+        `Minimum order amount of NPR ${voucher.minOrderAmount} required`
+      );
+    }
     return voucher;
   }
 
   // ──────────────────────────────────────────────────────────────
   //  APPLY VOUCHER on order completion
   // ──────────────────────────────────────────────────────────────
-  async applyVoucher(code: string, orderId: string): Promise<number> {
-    const voucher = await this.voucherRepo.findOne({ where: { code } });
-    if (!voucher || voucher.status !== VoucherStatus.ACTIVE) throw new BadRequestException('Invalid voucher');
-    voucher.status = VoucherStatus.USED;
-    voucher.usedOnOrderId = orderId;
-    await this.voucherRepo.save(voucher);
-    return Number(voucher.discountAmount);
+  async applyVoucher(code: string, orderId: string, cartTotal: number): Promise<number> {
+    return await this.dataSource.transaction(async (manager) => {
+
+      const result = await manager
+        .createQueryBuilder()
+        .update(VoucherEntity)
+        .set({
+          usageCount: () => '"usageCount" + 1',
+          status: VoucherStatus.USED,
+          usedOnOrderId: orderId,
+        })
+        .where('code = :code', { code })
+        .andWhere('status = :status', { status: VoucherStatus.ACTIVE })
+        .andWhere('"isActive" = true')
+        .andWhere('("maxUses" IS NULL OR "usageCount" < "maxUses")')
+        .returning('*')
+        .execute();
+
+      if (!result.affected || result.affected === 0) {
+        const voucher = await manager.findOne(VoucherEntity, { where: { code } });
+        if (!voucher) throw new NotFoundException('Voucher not found');
+        if (voucher.status !== VoucherStatus.ACTIVE) {
+          throw new BadRequestException(`Voucher is ${voucher.status}`);
+        }
+        if (voucher.maxUses && voucher.usageCount >= voucher.maxUses) {
+          throw new BadRequestException('Voucher usage limit reached');
+        }
+        throw new BadRequestException('Voucher could not be applied');
+      }
+
+      const voucher = result.raw[0] as VoucherEntity;
+
+      return calculateDiscount(
+        voucher.discountType,
+        Number(voucher.discountValue),
+        cartTotal,
+        voucher.maxDiscountAmount ? Number(voucher.maxDiscountAmount) : undefined,
+      );
+    });
   }
 
   // ──────────────────────────────────────────────────────────────
   //  GET CUSTOMER LEDGER
   // ──────────────────────────────────────────────────────────────
-  async getLedger(userId: string, businessId: string): Promise<LoyaltyPointsEntity> {
-    return this.getOrCreateLedger(userId, businessId);
+  async getLedger(userId: string, businessId: string): Promise<LoyaltyPointsEntity & {
+    pointsExpireAt: string | null;
+    accrualMode: string;
+    pointsPerNpr: number;
+    pointsPerVisit: number;
+    minSpendForVisit: number;
+    bonusMultiplier: number;
+    minRedeemPoints: number;
+    pointsToNprRate: number;
+  }> {
+    const [ledger, config] = await Promise.all([
+      this.getOrCreateLedger(userId, businessId),
+      this.getOrCreateConfig(businessId),
+    ]);
+
+    let pointsExpireAt: string | null = null;
+
+    if (config.pointsExpiryDays != null && ledger.totalPoints > 0) {
+      const expireAt = new Date(ledger.updatedAt);
+      expireAt.setDate(expireAt.getDate() + Number(config.pointsExpiryDays));
+      pointsExpireAt = expireAt.toISOString();
+    }
+
+    return {
+      ...ledger,
+      pointsExpireAt,
+      accrualMode: config.accrualMode,
+      pointsPerNpr: Number(config.pointsPerNpr),
+      pointsPerVisit: Number(config.pointsPerVisit),
+      minSpendForVisit: Number(config.minSpendForVisit),
+      bonusMultiplier: Number(config.bonusMultiplier),
+      minRedeemPoints: Number(config.minRedeemPoints),
+      pointsToNprRate: Number(config.pointsToNprRate),
+    };
   }
 
   async getTransactions(userId: string, businessId: string): Promise<LoyaltyTransactionEntity[]> {
@@ -245,6 +383,77 @@ export class LoyaltyService {
       totalVouchersIssued,
       totalRevenue,
       retentionRate: totalCustomers > 0 ? ((returningCustomers / totalCustomers) * 100).toFixed(1) : '0',
+    };
+  }
+
+  async createVoucher(dto: CreateVoucherDto): Promise<VoucherEntity> {
+    let code = dto.code;
+    if (!code) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let randomPart = '';
+      for (let i = 0; i < 6; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      code = `KAHA-${randomPart}`;
+    } else {
+      code = code.trim().toUpperCase();
+    }
+
+    const existing = await this.voucherRepo.findOne({ where: { code } });
+    if (existing) {
+      throw new ConflictException(`Voucher with code ${code} already exists`);
+    }
+
+    const expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+
+    const voucher = this.voucherRepo.create({
+      userId: dto.userId,
+      businessId: dto.businessId,
+      code,
+      discountAmount: dto.discountType === 'FIXED' ? dto.discountValue : 0,
+      discountType: dto.discountType as any,
+      discountValue: dto.discountValue,
+      maxDiscountAmount: dto.maxDiscountAmount ?? null,
+      minOrderAmount: dto.minOrderAmount ?? null,
+      maxUses: dto.maxUses ?? null,
+      maxUsesPerUser: dto.maxUsesPerUser ?? 1,
+      pointsUsed: 0,
+      status: VoucherStatus.ACTIVE,
+      isActive: true,
+      expiresAt,
+    });
+
+    return this.voucherRepo.save(voucher);
+  }
+
+  async getAllVouchers(
+    businessId?: string,
+    status?: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{ data: VoucherEntity[]; total: number; page: number; limit: number }> {
+    const where: any = {};
+    if (businessId) {
+      where.businessId = businessId;
+    }
+    if (status) {
+      where.status = status;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.voucherRepo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
     };
   }
 

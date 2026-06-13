@@ -12,6 +12,15 @@ interface Ledger {
   lifetimePointsRedeemed: number;
   totalOrders: number;
   totalSpent: number;
+  updatedAt?: string;
+  pointsExpireAt: string | null;
+  accrualMode?: 'SPEND' | 'VISIT' | 'BOTH';
+  pointsPerNpr?: number;
+  pointsPerVisit?: number;
+  minSpendForVisit?: number;
+  bonusMultiplier?: number;
+  minRedeemPoints?: number;
+  pointsToNprRate?: number;
 }
 
 interface Transaction {
@@ -52,8 +61,6 @@ const LoyaltyPage: React.FC = () => {
   const [vouchers, setVouchers]     = useState<Voucher[]>([]);
   const [loading, setLoading]       = useState(true);
   const [activeTab, setActiveTab]   = useState<'overview' | 'history' | 'vouchers'>('overview');
-  const [redeemPoints, setRedeem]   = useState(100);
-  const [redeeming, setRedeeming]   = useState(false);
   const [copiedCode, setCopied]     = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,24 +86,6 @@ const LoyaltyPage: React.FC = () => {
     }
   };
 
-  const handleRedeem = async () => {
-    if (!user?.id) return;
-    if ((ledger?.totalPoints ?? 0) < redeemPoints) {
-      toast.error(`You need at least ${redeemPoints} points`);
-      return;
-    }
-    setRedeeming(true);
-    try {
-      const voucher = await loyaltyApi.redeemPoints(user.id, redeemPoints);
-      toast.success(`🎟️ Voucher ${voucher.code} created! NPR ${voucher.discountAmount} off.`);
-      await fetchAll();
-      setActiveTab('vouchers');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Redemption failed');
-    } finally {
-      setRedeeming(false);
-    }
-  };
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -163,7 +152,35 @@ const LoyaltyPage: React.FC = () => {
               <div className="loyalty-points-value">{ledger?.totalPoints ?? 0}</div>
               <div className="loyalty-points-unit">POINTS</div>
             </div>
-            <p className="loyalty-points-hint">≈ NPR {((ledger?.totalPoints ?? 0) * 0.5).toFixed(0)} in vouchers</p>
+            <p className="loyalty-points-hint">Unlock tiers & rewards with your points</p>
+            {ledger?.pointsExpireAt && ledger.totalPoints > 0 && (() => {
+              const daysLeft = Math.ceil(
+                (new Date(ledger.pointsExpireAt!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+              );
+              const isUrgent = daysLeft <= 7;
+              return (
+                <div style={{
+                  marginTop: '10px',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  background: isUrgent ? '#FFF3CD' : '#FFF8E1',
+                  color: isUrgent ? '#856404' : '#5D4E00',
+                  border: `1px solid ${isUrgent ? '#FFEAA7' : '#FFE082'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  {isUrgent ? '🚨' : '⏳'}
+                  {daysLeft <= 0
+                    ? 'Your points have expired'
+                    : daysLeft === 1
+                    ? 'Your points expire tomorrow!'
+                    : `Your points expire in ${daysLeft} days`}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -207,12 +224,33 @@ const LoyaltyPage: React.FC = () => {
             <div className="loyalty-card loyalty-how">
               <h3>How It Works</h3>
               <div className="loyalty-steps">
-                {[
-                  { step: '1', icon: '🛒', title: 'Place an Order', desc: 'Earn 1 point for every NPR 10 spent' },
-                  { step: '2', icon: '📦', title: 'Order Delivered', desc: 'Points credited automatically on delivery' },
-                  { step: '3', icon: '🎟️', title: 'Redeem for Voucher', desc: '100 pts = NPR 50 discount voucher' },
-                  { step: '4', icon: '💸', title: 'Save at Checkout', desc: 'Apply your voucher code at checkout' },
-                ].map(s => (
+                {(() => {
+                  const mode = ledger?.accrualMode ?? 'SPEND';
+                  const ptsPerNpr = ledger?.pointsPerNpr ?? 0.1;
+                  const ptsPerVisit = ledger?.pointsPerVisit ?? 5;
+                  const minSpend = ledger?.minSpendForVisit ?? 0;
+                  const multiplier = ledger?.bonusMultiplier ?? 1;
+
+                  const earnDesc = (() => {
+                    const nprPer1Pt = ptsPerNpr > 0 ? Math.round(1 / ptsPerNpr) : 10;
+                    const spendLine = `${ptsPerNpr} pt per NPR spent (1 pt per NPR ${nprPer1Pt})`;
+                    const visitLine = minSpend > 0
+                      ? `${ptsPerVisit} pts per order (min NPR ${minSpend})`
+                      : `${ptsPerVisit} pts per order`;
+                    if (mode === 'SPEND') return spendLine;
+                    if (mode === 'VISIT') return visitLine;
+                    return `${spendLine} + ${visitLine}`;
+                  })();
+
+                  const multiplierNote = multiplier > 1 ? ` 🎉 ${multiplier}× bonus active!` : '';
+
+                  return [
+                    { step: '1', icon: '🛒', title: 'Place an Order', desc: `Earn points: ${earnDesc}${multiplierNote}` },
+                    { step: '2', icon: '📦', title: 'Order Delivered', desc: 'Points credited automatically' },
+                    { step: '3', icon: '🎟️', title: 'Get Vouchers', desc: 'Business rewards you with discount vouchers' },
+                    { step: '4', icon: '💸', title: 'Save at Checkout', desc: 'Apply your voucher code at checkout' },
+                  ];
+                })().map(s => (
                   <div key={s.step} className="loyalty-step">
                     <div className="loyalty-step-num">{s.step}</div>
                     <div className="loyalty-step-icon">{s.icon}</div>
@@ -221,53 +259,6 @@ const LoyaltyPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Redeem section */}
-            <div className="loyalty-card loyalty-redeem-card">
-              <h3>Redeem Your Points</h3>
-              <p className="loyalty-redeem-sub">Choose how many points to convert into a discount voucher</p>
-
-              <div className="loyalty-redeem-options">
-                {[100, 200, 500].map(pts => (
-                  <button
-                    key={pts}
-                    id={`loyalty-redeem-${pts}`}
-                    className={`loyalty-redeem-opt ${redeemPoints === pts ? 'loyalty-redeem-opt--active' : ''}`}
-                    onClick={() => setRedeem(pts)}
-                    disabled={(ledger?.totalPoints ?? 0) < pts}
-                  >
-                    <div className="loyalty-redeem-pts">{pts} pts</div>
-                    <div className="loyalty-redeem-val">= NPR {pts * 0.5}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="loyalty-redeem-summary">
-                <div className="loyalty-redeem-eq">
-                  <span>{redeemPoints} pts</span>
-                  <span className="loyalty-redeem-arrow">→</span>
-                  <span className="loyalty-redeem-result">NPR {(redeemPoints * 0.5).toFixed(0)} voucher</span>
-                </div>
-                <div className="loyalty-redeem-balance">
-                  Available: <strong>{ledger?.totalPoints ?? 0} pts</strong>
-                </div>
-              </div>
-
-              <button
-                id="loyalty-redeem-btn"
-                className="loyalty-redeem-btn"
-                onClick={handleRedeem}
-                disabled={redeeming || (ledger?.totalPoints ?? 0) < redeemPoints}
-              >
-                {redeeming ? <div className="spinner" /> : `🎟️ Generate Voucher for NPR ${(redeemPoints * 0.5).toFixed(0)}`}
-              </button>
-
-              {(ledger?.totalPoints ?? 0) < 100 && (
-                <p className="loyalty-redeem-notice">
-                  You need at least <strong>100 points</strong> to redeem. Keep ordering! 🚀
-                </p>
-              )}
             </div>
 
             {/* Tier ladder */}
@@ -393,7 +384,7 @@ const LoyaltyPage: React.FC = () => {
               <div className="loyalty-card">
                 <div className="loyalty-empty">
                   <div className="loyalty-empty-icon">🎟️</div>
-                  <p>No vouchers yet. Accumulate 100 points and redeem your first voucher!</p>
+                  <p>No vouchers yet. Vouchers given by the business/admin will appear here.</p>
                   <button className="btn btn-primary" onClick={() => setActiveTab('overview')}>View Overview</button>
                 </div>
               </div>

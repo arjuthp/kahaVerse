@@ -7,7 +7,8 @@ interface MenuRowProps {
   menu: Menu;
   onEdit: (menu: Menu) => void;
   onDelete: (menuId: string) => Promise<void>;
-  onToggleAvailability: (menuId: string, isAvailable: boolean) => Promise<void>;
+  onToggleHidden: (id: string, isHidden: boolean) => Promise<void>;
+  onToggleAvailability: (id: string, isAvailable: boolean) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -15,6 +16,7 @@ export const MenuRow: React.FC<MenuRowProps> = ({
   menu,
   onEdit,
   onDelete,
+  onToggleHidden,
   onToggleAvailability,
   isLoading = false,
 }) => {
@@ -101,14 +103,42 @@ export const MenuRow: React.FC<MenuRowProps> = ({
         >
           Edit
         </Button>
-        <Button
-          variant="danger"
-          size="small"
-          onClick={handleDelete}
-          disabled={isLoading}
-        >
-          Delete
-        </Button>
+        <div className="menu-row__actions" style={{ display: 'inline-flex', gap: '6px', marginLeft: '6px' }}>
+          {/* Hidden Toggle */}
+          <button
+            className={`btn btn-small ${menu.isHidden ? 'btn-warning' : 'btn-outline'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleHidden(menu.id, !menu.isHidden);
+            }}
+            disabled={isLoading}
+            title={menu.isHidden ? 'Click to make visible' : 'Click to hide from customers'}
+          >
+            {menu.isHidden ? '👁️ Hidden' : '👁️ Visible'}
+          </button>
+
+          {/* Out of Stock Toggle */}
+          <button
+            className={`btn btn-small ${!menu.isAvailable ? 'btn-warning' : 'btn-outline'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleAvailability(menu.id, !menu.isAvailable);
+            }}
+            disabled={isLoading}
+            title={menu.isAvailable ? 'Mark as out of stock' : 'Mark as available'}
+          >
+            {menu.isAvailable ? '✅ In Stock' : '⚠️ Out of Stock'}
+          </button>
+
+          {/* Delete */}
+          <button
+            className="btn btn-small btn-danger"
+            onClick={handleDelete}
+            disabled={isLoading}
+          >
+            Delete
+          </button>
+        </div>
       </td>
     </tr>
   );

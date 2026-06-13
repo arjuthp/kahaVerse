@@ -106,6 +106,7 @@ export interface Menu {
   images?: string[];
   details?: Record<string, string>;
   isAvailable: boolean;
+  isHidden: boolean;
   isSignature: boolean;
   isBarItem?: boolean;
   allowAddOns?: boolean;
@@ -316,3 +317,31 @@ export interface ApiError {
   statusCode: number;
   error?: string;
 }
+
+export enum TableSection {
+  INDOOR = "indoor",
+  OUTDOOR = "outdoor",
+  ROOFTOP = "rooftop",
+  BAR = "bar",
+  PRIVATE = "private",
+}
+
+export enum TableStatus {
+  AVAILABLE = "available",
+  OCCUPIED = "occupied",
+  RESERVED = "reserved",
+}
+
+export interface RestaurantTable {
+  id: string;
+  tableNumber: string;
+  capacity: number;
+  section: TableSection;
+  status: TableStatus;
+  isActive: boolean;
+  notes?: string;
+  businessId: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+

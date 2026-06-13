@@ -22,8 +22,8 @@ export const loyaltyApi = {
     axiosInstance.post('/loyalty/redeem', { userId, businessId: BUSINESS_ID, points }).then(r => r.data),
 
   /** Validate a voucher code at checkout */
-  validateVoucher: (code: string, userId: string) =>
-    axiosInstance.post('/loyalty/voucher/validate', { code, userId }).then(r => r.data),
+  validateVoucher: (code: string, userId: string, cartTotal?: number) =>
+    axiosInstance.post('/loyalty/voucher/validate', { code, userId, cartTotal }).then(r => r.data),
 
   // ── Admin ────────────────────────────────────────────────────
 
@@ -44,6 +44,24 @@ export const loyaltyApi = {
     axiosInstance.get('/loyalty/admin/config', { params: { businessId: BUSINESS_ID } }).then(r => r.data),
 
   /** Update loyalty settings config */
-  updateLoyaltyConfig: (payload: { pointsPerNpr?: number; pointsToNprRate?: number; minRedeemPoints?: number; voucherExpiryDays?: number }) =>
+  updateLoyaltyConfig: (payload: {
+    pointsPerNpr?: number;
+    pointsToNprRate?: number;
+    minRedeemPoints?: number;
+    voucherExpiryDays?: number;
+    accrualMode?: 'SPEND' | 'VISIT' | 'BOTH';
+    pointsPerVisit?: number;
+    minSpendForVisit?: number;
+    bonusMultiplier?: number;
+    pointsExpiryDays?: number | null;
+  }) =>
     axiosInstance.post('/loyalty/admin/config', payload, { params: { businessId: BUSINESS_ID } }).then(r => r.data),
+
+  /** Get admin vouchers (paginated and filtered) */
+  getAdminVouchers: (params?: { status?: string; page?: number; limit?: number }) =>
+    axiosInstance.get('/loyalty/admin/vouchers', { params: { businessId: BUSINESS_ID, ...params } }).then(r => r.data),
+
+  /** Create admin voucher */
+  createAdminVoucher: (payload: { userId: string; code?: string; discountType: 'FIXED' | 'PERCENTAGE'; discountValue: number; maxDiscountAmount?: number; minOrderAmount?: number; maxUses?: number; maxUsesPerUser?: number; expiresAt?: string }) =>
+    axiosInstance.post('/loyalty/admin/voucher', { ...payload, businessId: BUSINESS_ID }).then(r => r.data),
 };

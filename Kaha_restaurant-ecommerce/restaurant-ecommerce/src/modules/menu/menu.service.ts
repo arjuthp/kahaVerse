@@ -7,13 +7,15 @@ import {
 import { Between, ILike, In, Like } from "typeorm";
 
 import { ISuccessReponse } from "common/responses";
-import { AddOnEntity, MenuEntity } from "entities/index.entity";
+import { AddOnEntity, MenuEntity, OrderStatusEntity } from "entities/index.entity";
+import { OrderStatusEnum } from "common/enums";
 import {
   AddonsRepository,
   CategoryRepository,
   MenuRepository,
   MenuVariantRepository,
   AddonGroupRepository,
+  OrderItemRepository,
 } from "src/repositories/index";
 
 import {
@@ -34,6 +36,7 @@ export class MenuService {
     private readonly categoryRepository: CategoryRepository,
     private readonly menuVariantRepository: MenuVariantRepository,
     private readonly addonGroupRepository: AddonGroupRepository,
+    private readonly orderItemRepository: OrderItemRepository,
   ) {}
 
   async createMenu(
@@ -87,6 +90,7 @@ export class MenuService {
       minPrice,
       maxPrice,
       groupBy,
+      includeHidden,
     } = query;
 
     const limit = parseInt(take);
@@ -94,6 +98,11 @@ export class MenuService {
     const skip = (currentPage - 1) * limit;
 
     const whereClause: any = { businessId };
+
+    const shouldIncludeHidden = includeHidden === "true" || includeHidden === true;
+    if (!shouldIncludeHidden) {
+      whereClause["isHidden"] = false;
+    }
 
     if (categoryId) {
       whereClause["category.id"] = categoryId;
@@ -236,9 +245,67 @@ export class MenuService {
     menuId: string,
     businessId: string
   ): Promise<ISuccessReponse> {
-    await this.menuRepository.delete({ id: menuId, businessId });
+    // Check for active orders containing this menu item
+    const activeOrderItem = await this.orderItemRepository
+      .createQueryBuilder("orderItem")
+      .innerJoin("orderItem.order", "order")
+      .innerJoin("order.orderStatus", "orderStatus")
+      .where("orderItem.menu = :menuId", { menuId })
+      .andWhere(
+        "orderStatus.status NOT IN (:...safeStatuses)",
+        { safeStatuses: [OrderStatusEnum.DELIVERED, OrderStatusEnum.CANCELLED] }
+      )
+      .andWhere(qb => {
+        const subQuery = qb
+          .subQuery()
+          .select("MAX(os2.createdAt)")
+          .from(OrderStatusEntity, "os2")
+          .where("os2.order = order.id")
+          .getQuery();
+        return "orderStatus.createdAt = " + subQuery;
+      })
+      .getOne();
 
+    if (activeOrderItem) {
+      throw new BadRequestException(
+        "Cannot delete this menu item — it is part of one or more active orders. Set it as Hidden or Out of Stock instead."
+      );
+    }
+
+    await this.menuRepository.delete({ id: menuId, businessId });
     return { message: "The menu item was successfully deleted." };
+  }
+
+  async toggleHidden(
+    menuId: string,
+    businessId: string,
+    isHidden: boolean
+  ): Promise<ISuccessReponse> {
+    await this.menuRepository.update(
+      { id: menuId, businessId },
+      { isHidden }
+    );
+    return {
+      message: isHidden
+        ? "Menu item is now hidden from customers."
+        : "Menu item is now visible to customers.",
+    };
+  }
+
+  async toggleAvailability(
+    menuId: string,
+    businessId: string,
+    isAvailable: boolean
+  ): Promise<ISuccessReponse> {
+    await this.menuRepository.update(
+      { id: menuId, businessId },
+      { isAvailable }
+    );
+    return {
+      message: isAvailable
+        ? "Menu item is now marked as available."
+        : "Menu item is now marked as out of stock.",
+    };
   }
 
   async addVariant(menuId: string, businessId: string, body: CreateMenuVariantDto) {
@@ -311,6 +378,7 @@ export class MenuService {
       isSignature,
       allowAddOns,
       isAvailable,
+      isHidden,
       price,
       discountedPrice,
       category,
@@ -327,6 +395,7 @@ export class MenuService {
       isBarItem,
       isSignature,
       isAvailable,
+      isHidden,
       price,
       discountedPrice,
       addonsInfo,

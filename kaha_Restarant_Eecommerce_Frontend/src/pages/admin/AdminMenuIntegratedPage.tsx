@@ -40,7 +40,7 @@ export const AdminMenuIntegratedPage: React.FC = () => {
       try {
         setLoading(true);
         const [menusRes, catsRes, addOnsRes] = await Promise.all([
-          menuApi.getMenus({ businessId }),
+          menuApi.getMenus({ businessId, includeHidden: true }),
           categoryApi.getCategories({ businessId }),
           addonApi.getAddOns({ businessId }),
         ]);
@@ -85,6 +85,32 @@ export const AdminMenuIntegratedPage: React.FC = () => {
     }
   };
 
+  const handleToggleHidden = async (id: string, isHidden: boolean) => {
+    try {
+      await menuApi.toggleHidden(id, isHidden);
+      setMenus(menus.map(m => m.id === id ? { ...m, isHidden } : m));
+      showToast(
+        isHidden ? 'Menu item hidden from customers' : 'Menu item is now visible',
+        'success'
+      );
+    } catch {
+      showToast('Failed to update visibility', 'error');
+    }
+  };
+
+  const handleToggleAvailability = async (id: string, isAvailable: boolean) => {
+    try {
+      await menuApi.toggleAvailability(id, isAvailable);
+      setMenus(menus.map(m => m.id === id ? { ...m, isAvailable } : m));
+      showToast(
+        isAvailable ? 'Menu item marked as available' : 'Menu item marked as out of stock',
+        'success'
+      );
+    } catch {
+      showToast('Failed to update availability', 'error');
+    }
+  };
+
   const handleSubmit = async (formData: unknown) => {
     try {
       if (selectedMenu) {
@@ -109,19 +135,7 @@ export const AdminMenuIntegratedPage: React.FC = () => {
     }
   };
 
-  const handleToggleAvailability = async (menuId: string, isAvailable: boolean) => {
-    try {
-      const response = await menuApi.updateMenu(menuId, { isAvailable });
-      setMenus(menus.map(m => m.id === menuId ? response.data : m));
-      showToast('Availability updated', 'success');
-    } catch (err) {
-      let errorMessage = 'Failed to update availability';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      showToast(errorMessage, 'error');
-    }
-  };
+
 
   if (loading) return <LoadingSpinner fullScreen message="Loading menu items..." />;
 
@@ -165,6 +179,7 @@ export const AdminMenuIntegratedPage: React.FC = () => {
                     setMenuToDelete(menu);
                     setShowConfirm(true);
                   }}
+                  onToggleHidden={handleToggleHidden}
                   onToggleAvailability={handleToggleAvailability}
                 />
               ))}

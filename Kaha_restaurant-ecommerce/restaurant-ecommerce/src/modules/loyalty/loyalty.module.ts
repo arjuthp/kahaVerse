@@ -5,6 +5,7 @@ import { LoyaltyTransactionEntity } from '../../entities/loyalty-transaction.ent
 import { VoucherEntity } from '../../entities/voucher.entity';
 import { LoyaltyConfigEntity } from '../../entities/loyalty-config.entity';
 import { LoyaltyService } from './loyalty.service';
+import { LoyaltyExpiryService } from './loyalty-expiry.service';
 import { LoyaltyController } from './loyalty.controller';
 
 @Module({
@@ -16,7 +17,7 @@ import { LoyaltyController } from './loyalty.controller';
       LoyaltyConfigEntity,
     ]),
   ],
-  providers: [LoyaltyService],
+  providers: [LoyaltyService, LoyaltyExpiryService],
   controllers: [LoyaltyController],
   exports: [LoyaltyService], // so OrderModule can call earnPoints on delivery
 })

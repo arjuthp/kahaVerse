@@ -5,6 +5,7 @@
 // CHECKS: Module decorator successfully imported from NestJS common package
 // OUTPUT: Module decorator available for use to define AppModule class
 import { Module } from "@nestjs/common";
+import { ScheduleModule } from '@nestjs/schedule';
 
 // ==================== SECTION 2: PURPOSE - Import All Feature Modules ====================
 // PURPOSE: Import specialized feature modules that handle different business domains
@@ -57,6 +58,7 @@ import { AppService } from "./app.service";
 // OUTPUT: Complete module configuration ready for NestFactory to initialize
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     DatabaseModule,
     ConfigurationModule,
     CategoryModule,
