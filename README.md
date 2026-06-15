@@ -130,9 +130,9 @@ This script will:
 - **Admin Login:** Credentials provided during seed execution.
 
 ### Mode B (Production Kaha Main V3)
-- **Admin User:**
-  - **Email:** `admin@kahastays.com`
-  - **Password:** `password123`
+- **Admin User (Ishwor thapa):**
+  - **Contact Number:** `9813870231`
+  - **Password:** `ishwor19944`
 - **Owner User:**
   - **Email:** `owner@kahastays.com`
   - **Password:** `password123`
