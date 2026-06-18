@@ -36,6 +36,21 @@ export class OrderEntity extends BaseEntity {
   discountAmount: number;
 
   @Column("numeric", { precision: 12, scale: 2, default: 0 })
+  orderDiscountAmount: number;
+
+  @Column("numeric", { precision: 12, scale: 2, default: 0 })
+  deliveryDiscountAmount: number;
+
+  @Column("numeric", { precision: 12, scale: 2, default: 0 })
+  serviceChargeDiscountAmount: number;
+
+  @Column("numeric", { precision: 12, scale: 2, default: 0 })
+  itemDiscountAmount: number;
+
+  @Column({ type: "varchar", array: true, default: "{}" })
+  appliedVoucherIds: string[];
+
+  @Column("numeric", { precision: 12, scale: 2, default: 0 })
   tipAmount: number;
 
   @Column("enum", { enum: PaymentStatusEnum, default: PaymentStatusEnum.UNPAID })

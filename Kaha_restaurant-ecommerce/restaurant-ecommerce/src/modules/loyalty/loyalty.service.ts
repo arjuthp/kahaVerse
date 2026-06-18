@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, EntityManager, MoreThanOrEqual, Not } from 'typeorm';
 import { LoyaltyPointsEntity } from '../../entities/loyalty-points.entity';
 import { LoyaltyTransactionEntity, LoyaltyTxType } from '../../entities/loyalty-transaction.entity';
 import { VoucherEntity, VoucherStatus } from '../../entities/voucher.entity';
@@ -8,6 +8,14 @@ import { LoyaltyConfigEntity, AccrualMode } from '../../entities/loyalty-config.
 import { User } from '../../entities/user.entity';
 import { calculateDiscount } from './voucher-calculator';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
+import { VoucherCampaignStatus, VoucherDiscountClass } from '../../entities/voucher.enums';
+import { VoucherCampaignEntity } from '../../entities/voucher-campaign.entity';
+import { VoucherRedemptionLogEntity, VoucherRedemptionResult } from '../../entities/voucher-redemption-log.entity';
+import { OrderRepository } from 'src/repositories';
+import { OrderStatusEnum } from 'src/common/enums';
+import { CreateCampaignDto } from './dto/create-campaign.dto';
+import { UpdateCampaignDto } from './dto/update-campaign.dto';
+import { AdminAwardVoucherDto } from './dto/admin-award-voucher.dto';
 
 @Injectable()
 export class LoyaltyService {
@@ -20,6 +28,11 @@ export class LoyaltyService {
     private readonly voucherRepo: Repository<VoucherEntity>,
     @InjectRepository(LoyaltyConfigEntity)
     private readonly configRepo: Repository<LoyaltyConfigEntity>,
+    @InjectRepository(VoucherRedemptionLogEntity)
+    private readonly redemptionLogRepo: Repository<VoucherRedemptionLogEntity>,
+    @InjectRepository(VoucherCampaignEntity)
+    private readonly campaignRepo: Repository<VoucherCampaignEntity>,
+    private readonly orderRepository: OrderRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -202,75 +215,280 @@ export class LoyaltyService {
   // ──────────────────────────────────────────────────────────────
   //  VALIDATE VOUCHER (at checkout)
   // ──────────────────────────────────────────────────────────────
-  async validateVoucher(code: string, userId: string): Promise<VoucherEntity> {
-    const voucher = await this.voucherRepo.findOne({ where: { code } });
+  async validateVoucher(code: string, userId: string, businessId?: string): Promise<VoucherEntity> {
+    const voucher = await this.voucherRepo.findOne({
+      where: { code },
+      relations: ['campaign'],
+    });
     if (!voucher) throw new NotFoundException('Voucher not found');
     if (voucher.userId !== userId) throw new BadRequestException('Voucher does not belong to this customer');
     if (voucher.status !== VoucherStatus.ACTIVE) throw new BadRequestException(`Voucher is ${voucher.status}`);
-    if (voucher.expiresAt && new Date() > voucher.expiresAt) {
-      voucher.status = VoucherStatus.EXPIRED;
-      await this.voucherRepo.save(voucher);
-      throw new BadRequestException('Voucher has expired');
+    
+    // Precedence rule for expiration: voucher.expiresAt (if set) wins; campaign.expiresAt is fallback
+    if (voucher.expiresAt) {
+      if (new Date() > voucher.expiresAt) {
+        throw new BadRequestException('Voucher has expired');
+      }
+    } else if (voucher.campaignId && voucher.campaign?.expiresAt) {
+      if (new Date() > voucher.campaign.expiresAt) {
+        throw new BadRequestException('CAMPAIGN_EXPIRED');
+      }
     }
+
+    // Campaign-specific active and start time checks
+    if (voucher.campaignId && voucher.campaign) {
+      if (voucher.campaign.status !== VoucherCampaignStatus.ACTIVE) {
+        throw new BadRequestException('CAMPAIGN_NOT_ACTIVE');
+      }
+      if (voucher.campaign.startsAt && new Date() < voucher.campaign.startsAt) {
+        throw new BadRequestException('CAMPAIGN_NOT_ACTIVE');
+      }
+    }
+
     if (!voucher.isActive) throw new BadRequestException('Voucher is inactive');
+    if (businessId && voucher.businessId !== businessId) {
+      throw new BadRequestException('Voucher is not valid for this restaurant');
+    }
     if (voucher.maxUses !== null && voucher.maxUses !== undefined && voucher.usageCount >= voucher.maxUses) {
       throw new BadRequestException('Voucher usage limit reached');
     }
     return voucher;
   }
 
-  async validateVoucherForCart(code: string, userId: string, cartTotal: number): Promise<VoucherEntity> {
-    const voucher = await this.validateVoucher(code, userId);
-    if (voucher.minOrderAmount && cartTotal < Number(voucher.minOrderAmount)) {
+  async validateVoucherForCart(code: string, userId: string, cartTotal: number, businessId?: string): Promise<VoucherEntity> {
+    const voucher = await this.validateVoucher(code, userId, businessId);
+    
+    // Precedence rule: voucher.minOrderAmount (if set) wins; campaign.minOrderAmount is fallback
+    const minOrder = voucher.minOrderAmount !== null && voucher.minOrderAmount !== undefined
+      ? Number(voucher.minOrderAmount)
+      : (voucher.campaignId && voucher.campaign?.minOrderAmount !== null && voucher.campaign?.minOrderAmount !== undefined
+        ? Number(voucher.campaign.minOrderAmount)
+        : null);
+
+    if (minOrder !== null && cartTotal < minOrder) {
       throw new BadRequestException(
-        `Minimum order amount of NPR ${voucher.minOrderAmount} required`
+        `Minimum order amount of NPR ${minOrder} required`
       );
     }
     return voucher;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  //  APPLY VOUCHER on order completion
-  // ──────────────────────────────────────────────────────────────
-  async applyVoucher(code: string, orderId: string, cartTotal: number): Promise<number> {
-    return await this.dataSource.transaction(async (manager) => {
+  async validateVoucherForCheckout(
+    code: string,
+    userId: string,
+    businessId: string,
+    subtotal: number,
+    serviceType: string,
+    cartItems: Array<{ menuItemId: string; categoryId: string }> = [],
+  ): Promise<{ voucher: VoucherEntity; discountAmount: number }> {
+    try {
+      const voucher = await this.validateVoucherForCart(code, userId, subtotal, businessId);
 
-      const result = await manager
-        .createQueryBuilder()
-        .update(VoucherEntity)
-        .set({
-          usageCount: () => '"usageCount" + 1',
-          status: VoucherStatus.USED,
-          usedOnOrderId: orderId,
-        })
-        .where('code = :code', { code })
-        .andWhere('status = :status', { status: VoucherStatus.ACTIVE })
-        .andWhere('"isActive" = true')
-        .andWhere('("maxUses" IS NULL OR "usageCount" < "maxUses")')
-        .returning('*')
-        .execute();
-
-      if (!result.affected || result.affected === 0) {
-        const voucher = await manager.findOne(VoucherEntity, { where: { code } });
-        if (!voucher) throw new NotFoundException('Voucher not found');
-        if (voucher.status !== VoucherStatus.ACTIVE) {
-          throw new BadRequestException(`Voucher is ${voucher.status}`);
-        }
-        if (voucher.maxUses && voucher.usageCount >= voucher.maxUses) {
-          throw new BadRequestException('Voucher usage limit reached');
-        }
-        throw new BadRequestException('Voucher could not be applied');
-      }
-
-      const voucher = result.raw[0] as VoucherEntity;
-
-      return calculateDiscount(
+      const discountAmount = calculateDiscount(
         voucher.discountType,
         Number(voucher.discountValue),
-        cartTotal,
+        subtotal,
         voucher.maxDiscountAmount ? Number(voucher.maxDiscountAmount) : undefined,
       );
+
+      // step 4: applicableServiceTypes check (spec §4 step 4)
+      const applicableServices = voucher.applicableServiceTypes && voucher.applicableServiceTypes.length > 0
+        ? voucher.applicableServiceTypes
+        : (voucher.campaignId && voucher.campaign?.applicableServiceTypes && voucher.campaign.applicableServiceTypes.length > 0
+          ? voucher.campaign.applicableServiceTypes
+          : null);
+
+      if (applicableServices && (!serviceType || !applicableServices.includes(serviceType))) {
+        throw new BadRequestException('SERVICE_TYPE_NOT_ELIGIBLE');
+      }
+
+      // Step 6: Extend step 12 (redemption limits) for campaigns
+      if (voucher.campaignId && voucher.campaign) {
+        const campaign = voucher.campaign;
+
+        // step 5: First-order check (spec §4 step 5)
+        if (campaign.requiresFirstOrder === true) {
+          const priorOrders = await this.orderRepository.find({
+            where: { userId, businessId },
+            relations: { orderStatus: true },
+          });
+          const priorOrderCount = priorOrders.filter(order => {
+            const sortedStatus = order.orderStatus?.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+            const latestStatus = sortedStatus?.[0]?.status;
+            return latestStatus !== OrderStatusEnum.CANCELLED;
+          }).length;
+
+          if (priorOrderCount > 0) {
+            throw new BadRequestException('FIRST_ORDER_ONLY');
+          }
+        }
+
+        // step 6: Day-of-week / time-of-day restrictions (spec §4 step 6)
+        if (campaign.validDaysOfWeek && campaign.validDaysOfWeek.length > 0) {
+          const todayDow = new Date().getDay(); // 0=Sun, 1=Mon ... 6=Sat
+          if (!campaign.validDaysOfWeek.includes(todayDow)) {
+            throw new BadRequestException('NOT_VALID_TODAY');
+          }
+        }
+
+        if (campaign.validTimeStart && campaign.validTimeEnd) {
+          const now = new Date();
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          const [startH, startM] = campaign.validTimeStart.split(':').map(Number);
+          const [endH, endM] = campaign.validTimeEnd.split(':').map(Number);
+          const startMinutes = startH * 60 + startM;
+          const endMinutes = endH * 60 + endM;
+          if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
+            throw new BadRequestException('NOT_VALID_AT_THIS_TIME');
+          }
+        }
+
+        // step 7: Category/item scope (spec §4 step 7)
+        if (campaign.applicableCategoryIds && campaign.applicableCategoryIds.length > 0) {
+          const hasEligibleCategory = cartItems.some(item =>
+            campaign.applicableCategoryIds.includes(item.categoryId)
+          );
+          if (!hasEligibleCategory) {
+            throw new BadRequestException('CATEGORY_NOT_ELIGIBLE');
+          }
+        }
+
+        if (campaign.applicableMenuItemIds && campaign.applicableMenuItemIds.length > 0) {
+          const hasEligibleItem = cartItems.some(item =>
+            campaign.applicableMenuItemIds.includes(item.menuItemId)
+          );
+          if (!hasEligibleItem) {
+            throw new BadRequestException('ITEM_NOT_ELIGIBLE');
+          }
+        }
+
+        // a) maxRedemptionsTotal
+        if (campaign.maxRedemptionsTotal !== null && campaign.maxRedemptionsTotal !== undefined) {
+          const totalRedemptions = await this.redemptionLogRepo.count({
+            where: {
+              campaignId: campaign.id,
+              result: VoucherRedemptionResult.SUCCESS,
+            },
+          });
+          if (totalRedemptions >= campaign.maxRedemptionsTotal) {
+            throw new BadRequestException('CAMPAIGN_REDEMPTION_LIMIT_REACHED');
+          }
+        }
+
+        // b) maxRedemptionsPerUser
+        if (campaign.maxRedemptionsPerUser !== null && campaign.maxRedemptionsPerUser !== undefined) {
+          const userRedemptions = await this.redemptionLogRepo.count({
+            where: {
+              campaignId: campaign.id,
+              userId,
+              result: VoucherRedemptionResult.SUCCESS,
+            },
+          });
+          if (userRedemptions >= campaign.maxRedemptionsPerUser) {
+            throw new BadRequestException('USER_REDEMPTION_LIMIT_REACHED');
+          }
+        }
+
+        // c) maxRedemptionsPerUserPerDay
+        if (campaign.maxRedemptionsPerUserPerDay !== null && campaign.maxRedemptionsPerUserPerDay !== undefined) {
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+
+          const userDailyRedemptions = await this.redemptionLogRepo.count({
+            where: {
+              campaignId: campaign.id,
+              userId,
+              result: VoucherRedemptionResult.SUCCESS,
+              createdAt: MoreThanOrEqual(startOfToday),
+            },
+          });
+          if (userDailyRedemptions >= campaign.maxRedemptionsPerUserPerDay) {
+            throw new BadRequestException('DAILY_REDEMPTION_LIMIT_REACHED');
+          }
+        }
+
+        // Step 7: totalBudgetCap check (campaign level)
+        if (campaign.totalBudgetCap !== null && campaign.totalBudgetCap !== undefined) {
+          if (Number(campaign.totalRedeemedAmount) + discountAmount > Number(campaign.totalBudgetCap)) {
+            throw new BadRequestException('CAMPAIGN_BUDGET_EXCEEDED');
+          }
+        }
+      }
+
+      return { voucher, discountAmount };
+    } catch (err) {
+      try {
+        const voucher = await this.voucherRepo.findOne({
+          where: { code },
+          relations: ['campaign'],
+        }).catch(() => null);
+
+        await this.redemptionLogRepo.save({
+          voucherId: voucher?.id ?? null,
+          campaignId: voucher?.campaignId ?? null,
+          userId,
+          businessId,
+          orderId: null,
+          attemptedCode: code,
+          result: VoucherRedemptionResult.REJECTED,
+          discountAmountApplied: 0,
+          rejectionReason: err?.message ?? 'UNKNOWN',
+        });
+      } catch (_logErr) {
+        // swallow — logging must not mask the real error
+      }
+      throw err;
+    }
+  }
+
+  async redeemVoucher(
+    voucherId: string,
+    orderId: string,
+    voucher: VoucherEntity,
+    discountAmount: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(VoucherEntity) : this.voucherRepo;
+    const logRepo = manager ? manager.getRepository(VoucherRedemptionLogEntity) : this.redemptionLogRepo;
+    const campaignRepo = manager ? manager.getRepository(VoucherCampaignEntity) : this.dataSource.getRepository(VoucherCampaignEntity);
+
+    const qb = repo.createQueryBuilder('voucher')
+      .update(VoucherEntity)
+      .set({
+        status: () => `CASE WHEN "maxUses" IS NOT NULL AND "usageCount" + 1 >= "maxUses" THEN '${VoucherStatus.USED}'::vouchers_status_enum ELSE '${VoucherStatus.ACTIVE}'::vouchers_status_enum END`,
+        usedOnOrderId: orderId,
+        usageCount: () => '"usageCount" + 1',
+      })
+      .where('id = :voucherId', { voucherId })
+      .andWhere('status = :status', { status: VoucherStatus.ACTIVE })
+      .andWhere('("maxUses" IS NULL OR "usageCount" < "maxUses")');
+
+    const result = await qb.execute();
+    if (result.affected === 0) {
+      throw new BadRequestException('Voucher could not be redeemed or is already used');
+    }
+
+    // Write SUCCESS log row
+    await logRepo.save({
+      voucherId,
+      campaignId: voucher.campaignId ?? null,
+      userId: voucher.userId,
+      businessId: voucher.businessId,
+      orderId,
+      attemptedCode: voucher.code,
+      result: VoucherRedemptionResult.SUCCESS,
+      discountAmountApplied: discountAmount,
+      rejectionReason: null,
     });
+
+    // Update campaign budget if applicable
+    if (voucher.campaignId) {
+      await campaignRepo.increment(
+        { id: voucher.campaignId },
+        'totalRedeemedAmount',
+        discountAmount,
+      );
+    }
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -476,4 +694,213 @@ export class LoyaltyService {
     if (orders >= 2) return 'Bronze 🥉';
     return 'New 🌱';
   }
+
+  // ──────────────────────────────────────────────────────────────
+  //  CAMPAIGN CRUD
+  // ──────────────────────────────────────────────────────────────
+
+  async createCampaign(dto: CreateCampaignDto): Promise<VoucherCampaignEntity> {
+    const campaign = this.campaignRepo.create({
+      ...dto,
+      status: VoucherCampaignStatus.DRAFT,
+      totalRedeemedAmount: 0,
+      startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
+      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+    });
+    return this.campaignRepo.save(campaign);
+  }
+
+  async getCampaigns(businessId?: string): Promise<VoucherCampaignEntity[]> {
+    // Return platform-wide campaigns (businessId IS NULL) always;
+    // also return business-specific campaigns if businessId provided.
+    const qb = this.campaignRepo.createQueryBuilder('c');
+    if (businessId) {
+      qb.where('c.businessId = :businessId OR c.businessId IS NULL', { businessId });
+    } else {
+      qb.where('c.businessId IS NULL');
+    }
+    return qb.orderBy('c.createdAt', 'DESC').getMany();
+  }
+
+  async getCampaignById(id: string): Promise<VoucherCampaignEntity> {
+    const campaign = await this.campaignRepo.findOne({ where: { id } });
+    if (!campaign) throw new NotFoundException(`Campaign ${id} not found`);
+    return campaign;
+  }
+
+  async updateCampaign(id: string, dto: UpdateCampaignDto): Promise<VoucherCampaignEntity> {
+    const campaign = await this.getCampaignById(id);
+    Object.assign(campaign, {
+      ...dto,
+      startsAt: dto.startsAt !== undefined ? new Date(dto.startsAt) : campaign.startsAt,
+      expiresAt: dto.expiresAt !== undefined ? new Date(dto.expiresAt) : campaign.expiresAt,
+    });
+    return this.campaignRepo.save(campaign);
+  }
+
+  async activateCampaign(id: string): Promise<VoucherCampaignEntity> {
+    const campaign = await this.getCampaignById(id);
+    if (campaign.status !== VoucherCampaignStatus.DRAFT) {
+      throw new BadRequestException(`Campaign must be DRAFT to activate (current: ${campaign.status})`);
+    }
+    campaign.status = VoucherCampaignStatus.ACTIVE;
+    return this.campaignRepo.save(campaign);
+  }
+
+  async pauseCampaign(id: string): Promise<VoucherCampaignEntity> {
+    const campaign = await this.getCampaignById(id);
+    if (campaign.status !== VoucherCampaignStatus.ACTIVE) {
+      throw new BadRequestException(`Campaign must be ACTIVE to pause (current: ${campaign.status})`);
+    }
+    campaign.status = VoucherCampaignStatus.PAUSED;
+    return this.campaignRepo.save(campaign);
+  }
+
+  async resumeCampaign(id: string): Promise<VoucherCampaignEntity> {
+    const campaign = await this.getCampaignById(id);
+    if (campaign.status !== VoucherCampaignStatus.PAUSED) {
+      throw new BadRequestException(`Campaign must be PAUSED to resume (current: ${campaign.status})`);
+    }
+    campaign.status = VoucherCampaignStatus.ACTIVE;
+    return this.campaignRepo.save(campaign);
+  }
+
+  async archiveCampaign(id: string): Promise<VoucherCampaignEntity> {
+    const campaign = await this.getCampaignById(id);
+    if ((campaign.status as string) === 'archived') {
+      throw new BadRequestException('Campaign is already archived');
+    }
+    (campaign as any).status = 'archived';
+    return this.campaignRepo.save(campaign);
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  //  ADMIN AWARD VOUCHER
+  // ──────────────────────────────────────────────────────────────
+
+  async awardVoucherToCustomer(dto: AdminAwardVoucherDto): Promise<VoucherEntity> {
+    const campaign = await this.getCampaignById(dto.campaignId);
+    if (
+      campaign.status !== VoucherCampaignStatus.ACTIVE &&
+      (campaign.status as string) !== 'archived'
+    ) {
+      throw new BadRequestException(
+        `Campaign must be ACTIVE to award vouchers (current: ${campaign.status})`,
+      );
+    }
+
+    // Build a slug from campaign name: take first word, uppercase, strip non-alphanumeric
+    const slug = campaign.name
+      .split(/\s+/)[0]
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 8);
+
+    // Generate unique code with collision retry
+    let code: string;
+    let attempts = 0;
+    do {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let randomPart = '';
+      for (let i = 0; i < 6; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      code = `${slug}-${randomPart}`;
+      const existing = await this.voucherRepo.findOne({ where: { code } });
+      if (!existing) break;
+      attempts++;
+    } while (attempts < 10);
+
+    const voucher = this.voucherRepo.create({
+      campaignId: campaign.id,
+      userId: dto.userId,
+      businessId: dto.businessId,
+      code,
+      discountType: campaign.discountType,
+      discountValue: campaign.discountValue,
+      discountAmount: campaign.discountType === 'FIXED' ? Number(campaign.discountValue) : 0,
+      discountClass: campaign.discountClass ?? VoucherDiscountClass.ORDER_TOTAL,
+      maxDiscountAmount: campaign.maxDiscountAmount ?? null,
+      minOrderAmount: campaign.minOrderAmount ?? null,
+      applicableServiceTypes: campaign.applicableServiceTypes ?? null,
+      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : campaign.expiresAt ?? null,
+      status: VoucherStatus.ACTIVE,
+      isActive: true,
+      pointsUsed: 0,
+      maxUses: 1,
+      usageCount: 0,
+      maxUsesPerUser: 1,
+    });
+
+    return this.voucherRepo.save(voucher);
+  }
+
+  async getCampaignRedemptions(
+    campaignId: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ data: VoucherRedemptionLogEntity[]; total: number; page: number; limit: number }> {
+    const [data, total] = await this.redemptionLogRepo.findAndCount({
+      where: { campaignId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { data, total, page, limit };
+  }
+
+  async awardVoucherToMassUsers(dto: {
+    campaignId: string;
+    businessId: string;
+    criteria: 'all' | 'min_orders' | 'min_spent';
+    minOrders?: number;
+    minSpent?: number;
+    expiresAt?: string;
+  }): Promise<{ awardedCount: number }> {
+    const campaign = await this.getCampaignById(dto.campaignId);
+    if (
+      campaign.status !== VoucherCampaignStatus.ACTIVE &&
+      (campaign.status as string) !== 'archived'
+    ) {
+      throw new BadRequestException(
+        `Campaign must be ACTIVE to award vouchers (current: ${campaign.status})`,
+      );
+    }
+
+    // Build the query to find eligible user ids
+    const queryBuilder = this.loyaltyRepo.createQueryBuilder('lp')
+      .select('lp.userId', 'userId')
+      .where('lp.businessId = :businessId', { businessId: dto.businessId });
+
+    if (dto.criteria === 'min_orders' && dto.minOrders !== undefined) {
+      queryBuilder.andWhere('lp.totalOrders >= :minOrders', { minOrders: dto.minOrders });
+    } else if (dto.criteria === 'min_spent' && dto.minSpent !== undefined) {
+      queryBuilder.andWhere('lp.totalSpent >= :minSpent', { minSpent: dto.minSpent });
+    }
+
+    const records = await queryBuilder.getRawMany();
+    const userIds = records.map(r => r.userId);
+
+    if (userIds.length === 0) {
+      return { awardedCount: 0 };
+    }
+
+    let awardedCount = 0;
+    for (const userId of userIds) {
+      try {
+        await this.awardVoucherToCustomer({
+          campaignId: dto.campaignId,
+          userId,
+          businessId: dto.businessId,
+          expiresAt: dto.expiresAt,
+        });
+        awardedCount++;
+      } catch (err) {
+        console.error(`Failed to award voucher to user ${userId} in mass award:`, err);
+      }
+    }
+
+    return { awardedCount };
+  }
 }
+

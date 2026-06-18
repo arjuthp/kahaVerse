@@ -8,6 +8,9 @@ import { LoyaltyService } from './loyalty.service';
 import { LoyaltyExpiryService } from './loyalty-expiry.service';
 import { LoyaltyController } from './loyalty.controller';
 
+import { VoucherCampaignEntity } from '../../entities/voucher-campaign.entity';
+import { VoucherRedemptionLogEntity } from '../../entities/voucher-redemption-log.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -15,6 +18,8 @@ import { LoyaltyController } from './loyalty.controller';
       LoyaltyTransactionEntity,
       VoucherEntity,
       LoyaltyConfigEntity,
+      VoucherCampaignEntity,
+      VoucherRedemptionLogEntity,
     ]),
   ],
   providers: [LoyaltyService, LoyaltyExpiryService],

@@ -114,7 +114,14 @@ export class RolesGuard implements CanActivate {
         return false;
       }
       
-      const hasRole = requiredRoles.some((role) => userRole === role);
+      let hasRole = requiredRoles.some((role) => userRole?.toLowerCase() === role?.toLowerCase());
+      
+      // Global admin override
+      if (!hasRole && (userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'super_admin')) {
+        this.logger.debug(`[Mock Auth] Granting access via global admin override`);
+        hasRole = true;
+      }
+      
       this.logger.debug(`[Mock Auth] Has required role: ${hasRole}`);
       
       return hasRole;
@@ -150,10 +157,10 @@ export class RolesGuard implements CanActivate {
       const userRole = businessUserRole?.role?.name || businessUserRole?.role || req.user?.role;
       this.logger.debug(`Comparing: ${userRole} with ${JSON.stringify(requiredRoles)}`);
       
-      let hasRole = requiredRoles.some((role) => userRole === role);
+      let hasRole = requiredRoles.some((role) => userRole?.toLowerCase() === role?.toLowerCase());
       
       // Global admin override
-      if (!hasRole && (req.user?.role === 'admin' || req.user?.role === 'super_admin' || userRole === 'admin' || userRole === 'super_admin')) {
+      if (!hasRole && (req.user?.role?.toLowerCase() === 'admin' || req.user?.role?.toLowerCase() === 'super_admin' || userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'super_admin')) {
         this.logger.debug(`Granting access via global admin override`);
         hasRole = true;
       }
@@ -173,10 +180,10 @@ export class RolesGuard implements CanActivate {
     
     this.logger.debug(`User role: ${JSON.stringify(user)}`);
     
-    let hasRole = requiredRoles.some((role) => user.role === role);
+    let hasRole = requiredRoles.some((role) => user?.role?.toLowerCase() === role?.toLowerCase());
     
     // Global admin override
-    if (!hasRole && (user.role === 'admin' || user.role === 'super_admin' || req.user?.role === 'admin' || req.user?.role === 'super_admin')) {
+    if (!hasRole && (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'super_admin' || req.user?.role?.toLowerCase() === 'admin' || req.user?.role?.toLowerCase() === 'super_admin')) {
       this.logger.debug(`Granting access via global admin override`);
       hasRole = true;
     }

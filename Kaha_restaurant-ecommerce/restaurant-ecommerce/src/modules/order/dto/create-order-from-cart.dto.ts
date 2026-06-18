@@ -100,4 +100,14 @@ export class CreateOrderFromCartDto {
   @IsString()
   @IsOptional()
   voucherCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Voucher codes applied to the order',
+    example: ['KAHA-VOUCHER12'],
+    type: [String]
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  voucherCodes?: string[];
 }

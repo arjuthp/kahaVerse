@@ -1,19 +1,24 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from './base.entity';
-
-export enum VoucherStatus {
-  ACTIVE = 'active',
-  USED = 'used',
-  EXPIRED = 'expired',
-}
-
-export enum VoucherDiscountType {
-  FIXED = 'FIXED',
-  PERCENTAGE = 'PERCENTAGE',
-}
+import { VoucherCampaignEntity } from './voucher-campaign.entity';
+import { VoucherStatus, VoucherDiscountType, VoucherDiscountClass } from './voucher.enums';
+export { VoucherStatus, VoucherDiscountType };
 
 @Entity('vouchers')
 export class VoucherEntity extends BaseEntity {
+  @Column({ type: 'varchar', nullable: true })
+  campaignId: string | null;
+
+  @ManyToOne(() => VoucherCampaignEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'campaignId' })
+  campaign: VoucherCampaignEntity | null;
+
+  @Column({ type: 'enum', enum: VoucherDiscountClass, default: VoucherDiscountClass.ORDER_TOTAL })
+  discountClass: VoucherDiscountClass;
+
+  @Column({ type: 'varchar', array: true, nullable: true })
+  applicableServiceTypes: string[] | null;
+
   @Column({ type: 'varchar' })
   userId: string;
 

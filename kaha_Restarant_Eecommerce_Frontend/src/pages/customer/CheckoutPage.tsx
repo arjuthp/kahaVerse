@@ -8,6 +8,29 @@ import { ServiceTypeEnum, PaymentMethodEnum, RestaurantTable } from '../../types
 import toast from 'react-hot-toast';
 import './CheckoutPage.css';
 
+/* ── Voucher rejection reason map ─────────────────────────────── */
+const MAX_VOUCHERS_PER_ORDER = 3;
+
+const VOUCHER_REJECTION_MESSAGES: Record<string, string> = {
+  SERVICE_TYPE_NOT_ELIGIBLE:         'Not valid for your selected service type',
+  FIRST_ORDER_ONLY:                  'Only valid on your first order',
+  NOT_VALID_TODAY:                   'Not valid today',
+  NOT_VALID_AT_THIS_TIME:            'Only valid during specific hours',
+  MIN_ORDER_NOT_MET:                 'Minimum order amount not met',
+  USER_REDEMPTION_LIMIT_REACHED:     "You've already used this voucher the maximum number of times",
+  CAMPAIGN_REDEMPTION_LIMIT_REACHED: 'This campaign has reached its redemption limit',
+  DAILY_REDEMPTION_LIMIT_REACHED:    "You've reached today's redemption limit for this voucher",
+  CAMPAIGN_BUDGET_EXCEEDED:          'This campaign has run out of budget',
+  CAMPAIGN_NOT_ACTIVE:               'This voucher campaign is no longer active',
+  CAMPAIGN_EXPIRED:                  'This voucher campaign has expired',
+  VOUCHER_NOT_FOUND:                 'Voucher code not found',
+  VOUCHER_ALREADY_USED_OR_INACTIVE:  'This voucher has already been used',
+  VOUCHER_NOT_OWNED:                 'This voucher does not belong to your account',
+  VOUCHER_BUSINESS_MISMATCH:         'This voucher is not valid at this restaurant',
+  CATEGORY_NOT_ELIGIBLE:             'Your cart items are not eligible for this voucher',
+  ITEM_NOT_ELIGIBLE:                 'No eligible items in your cart for this voucher',
+};
+
 const CheckoutPage: React.FC = () => {
   const { cart, fetchCart } = useCart();
   const { user } = useAuth();
@@ -23,12 +46,13 @@ const CheckoutPage: React.FC = () => {
   const [placed, setPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
 
-  // Voucher state
-  const [voucherCode, setVoucherCode]         = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState(0);
-  const [voucherApplied, setVoucherApplied]   = useState(false);
-  const [voucherLoading, setVoucherLoading]   = useState(false);
-  const [activeVouchers, setActiveVouchers]   = useState<any[]>([]);
+  // Voucher state — multi-voucher (up to MAX_VOUCHERS_PER_ORDER)
+  const [voucherCode, setVoucherCode]       = useState('');
+  const [voucherCode2, setVoucherCode2]     = useState('');
+  const [showSecondInput, setShowSecondInput] = useState(false);
+  const [appliedVouchers, setAppliedVouchers] = useState<Array<{ code: string; discount: number }>>([]);
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [activeVouchers, setActiveVouchers] = useState<any[]>([]);
 
   // Load the user's active vouchers so they can quick-pick one
   useEffect(() => {
@@ -78,37 +102,50 @@ const CheckoutPage: React.FC = () => {
   const taxAmount = subtotal * 0.13;
   const deliveryFee = serviceType === ServiceTypeEnum.DELIVERY ? 50 : 0;
   const serviceCharge = 10;
-  const discountAmount = appliedDiscount;
-  const grandTotal = subtotal + taxAmount + deliveryFee + serviceCharge - discountAmount + tipAmount;
+  const totalDiscount = appliedVouchers.reduce((sum, v) => sum + v.discount, 0);
+  const grandTotal = subtotal + taxAmount + deliveryFee + serviceCharge - totalDiscount + tipAmount;
 
-  const handleValidateVoucher = async () => {
-    if (!voucherCode.trim()) { toast.error('Enter a voucher code'); return; }
+  const applyVoucherCode = async (code: string, slotSetter: (v: string) => void) => {
+    const upper = code.trim().toUpperCase();
+    if (!upper) { toast.error('Enter a voucher code'); return; }
     if (!user?.id) { toast.error('Please log in first'); return; }
+    if (appliedVouchers.some(v => v.code === upper)) {
+      toast.error('This voucher is already applied'); return;
+    }
+    if (appliedVouchers.length >= MAX_VOUCHERS_PER_ORDER) {
+      toast.error(`Maximum ${MAX_VOUCHERS_PER_ORDER} vouchers per order`); return;
+    }
     setVoucherLoading(true);
     try {
-      const response = await loyaltyApi.validateVoucher(voucherCode.trim().toUpperCase(), user.id, subtotal);
-      setAppliedDiscount(Number(response.calculatedDiscount));
-      setVoucherApplied(true);
-      toast.success(`✅ Voucher applied! NPR ${response.calculatedDiscount} off.`);
+      const response = await loyaltyApi.validateVoucher(
+        upper, user.id, subtotal, BUSINESS_ID, serviceType,
+      );
+      const discount = Number(response.calculatedDiscount);
+      setAppliedVouchers(prev => [...prev, { code: upper, discount }]);
+      slotSetter('');
+      setShowSecondInput(false);
+      toast.success(`✅ ${upper} applied! NPR ${discount} off.`);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Invalid voucher code');
-      setAppliedDiscount(0);
-      setVoucherApplied(false);
+      const rawMsg: string = err?.response?.data?.message || '';
+      const friendly = VOUCHER_REJECTION_MESSAGES[rawMsg] ?? rawMsg ?? 'Invalid voucher code';
+      toast.error(friendly);
     } finally {
       setVoucherLoading(false);
     }
   };
 
-  const handleRemoveVoucher = () => {
-    setVoucherCode('');
-    setAppliedDiscount(0);
-    setVoucherApplied(false);
+  const handleValidateVoucher  = () => applyVoucherCode(voucherCode,  setVoucherCode);
+  const handleValidateVoucher2 = () => applyVoucherCode(voucherCode2, setVoucherCode2);
+
+  const handleRemoveVoucher = (code: string) => {
+    setAppliedVouchers(prev => prev.filter(v => v.code !== code));
   };
 
   const handlePlaceOrder = async () => {
     if (!cart?.id || !activeItems.length) { toast.error('Your checkout selection is empty'); return; }
     setLoading(true);
     try {
+      const voucherCodes = appliedVouchers.map(v => v.code);
       const res = await orderApi.createOrderFromCart({
         cartItemIds: activeItems.map(item => item.id),
         businessId: BUSINESS_ID,
@@ -119,23 +156,25 @@ const CheckoutPage: React.FC = () => {
         deliveryFee,
         serviceCharge,
         tipAmount,
-        ...(voucherApplied 
-          ? { voucherCode: voucherCode.trim().toUpperCase() } 
-          : { discountAmount }),
+        ...(voucherCodes.length > 0
+          ? { voucherCodes }
+          : {}),
       });
+      const resetVouchers = () => {
+        setVoucherCode('');
+        setVoucherCode2('');
+        setAppliedVouchers([]);
+        setShowSecondInput(false);
+      };
       if (res.order?.id) {
         setOrderId(res.order.id);
         setPlaced(true);
-        setVoucherCode('');
-        setAppliedDiscount(0);
-        setVoucherApplied(false);
+        resetVouchers();
         await fetchCart();
       } else {
         toast.error('Order placed, but could not retrieve ID.');
         setPlaced(true);
-        setVoucherCode('');
-        setAppliedDiscount(0);
-        setVoucherApplied(false);
+        resetVouchers();
         await fetchCart();
       }
     } catch (err: any) {
@@ -155,9 +194,9 @@ const CheckoutPage: React.FC = () => {
             </div>
             <h2>Order Placed Successfully!</h2>
             <p>Your order is confirmed and is being prepared.</p>
-            {appliedDiscount > 0 && (
+            {appliedVouchers.length > 0 && (
               <p style={{ color: 'var(--status-delivered)', fontWeight: 700, fontSize: '15px' }}>
-                🎟️ NPR {appliedDiscount} discount was applied!
+                🎟️ NPR {totalDiscount.toFixed(2)} discount was applied!
               </p>
             )}
             <div style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -212,7 +251,16 @@ const CheckoutPage: React.FC = () => {
                       type="radio" 
                       name="serviceType" 
                       checked={serviceType === opt.value} 
-                      onChange={() => setServiceType(opt.value)} 
+                      onChange={() => {
+                        setServiceType(opt.value);
+                        if (appliedVouchers.length > 0) {
+                          setAppliedVouchers([]);
+                          setShowSecondInput(false);
+                          // keep voucherCode inputs so user can re-apply
+                          toast('Service type changed — please re-apply your vouchers',
+                            { icon: '🎟️' });
+                        }
+                      }}
                     />
                     <div className="service-type-card__inner">
                       <div className="service-type-card__label">{opt.label}</div>
@@ -286,37 +334,66 @@ const CheckoutPage: React.FC = () => {
               </div>
 
               {/* Quick-pick active vouchers */}
-              {activeVouchers.length > 0 && !voucherApplied && (
+              {activeVouchers.length > 0 && appliedVouchers.length < MAX_VOUCHERS_PER_ORDER && (
                 <div style={{ marginBottom: '12px' }}>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Your active vouchers — click to apply:</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {activeVouchers.map(v => (
-                      <button
-                        key={v.code}
-                        onClick={() => { setVoucherCode(v.code); }}
-                        style={{
-                          border: '1.5px solid rgba(39,174,96,0.4)',
-                          background: voucherCode === v.code ? 'rgba(39,174,96,0.12)' : 'transparent',
-                          color: '#27ae60',
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '13px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                        }}
-                      >
-                        🎟️ {v.code} <span style={{ opacity: 0.7 }}>
-                          — {v.discountType === 'PERCENTAGE' ? `${v.discountValue}%` : `NPR ${v.discountValue}`} off
-                        </span>
-                      </button>
-                    ))}
+                    {activeVouchers
+                      .filter(v => !appliedVouchers.some(a => a.code === v.code))
+                      .map(v => {
+                        const belowMin = v.minOrderAmount && subtotal < Number(v.minOrderAmount);
+                        return (
+                          <button
+                            key={v.code}
+                            onClick={() => { setVoucherCode(v.code); }}
+                            style={{
+                              border: '1.5px solid rgba(39,174,96,0.4)',
+                              background: voucherCode === v.code ? 'rgba(39,174,96,0.12)' : 'transparent',
+                              color: '#27ae60',
+                              padding: '4px 12px',
+                              borderRadius: '20px',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            🎟️ {v.code}{' '}
+                            <span style={{ opacity: 0.7 }}>
+                              — {v.discountType === 'PERCENTAGE' ? `${v.discountValue}%` : `NPR ${v.discountValue ?? v.discountAmount}`} off
+                            </span>
+                            {belowMin && (
+                              <span style={{ color: '#e14535', marginLeft: '4px', fontSize: '11px' }}>
+                                (Min NPR {v.minOrderAmount} ⚠️)
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    }
                   </div>
                 </div>
               )}
 
-              {!voucherApplied ? (
-                <div style={{ display: 'flex', gap: '10px' }}>
+              {/* Applied vouchers list */}
+              {appliedVouchers.map(av => (
+                <div key={av.code} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(39,174,96,0.08)', border: '1px solid rgba(39,174,96,0.3)', borderRadius: 'var(--radius)', padding: '10px 14px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>🎟️</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--on-surface)', fontSize: '14px' }}>{av.code}</div>
+                    <div style={{ fontSize: '12px', color: '#27ae60', fontWeight: 600 }}>NPR {av.discount.toFixed(2)} off ✓</div>
+                  </div>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => handleRemoveVoucher(av.code)}
+                    style={{ fontSize: '12px', padding: '4px 10px' }}
+                  >Remove</button>
+                </div>
+              ))}
+
+              {/* Slot 1 — first voucher input */}
+              {appliedVouchers.length < MAX_VOUCHERS_PER_ORDER && (
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
                   <input
                     id="checkout-voucher-input"
                     className="input"
@@ -335,20 +412,46 @@ const CheckoutPage: React.FC = () => {
                     {voucherLoading ? <div className="spinner" /> : 'Apply'}
                   </button>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(39,174,96,0.08)', border: '1px solid rgba(39,174,96,0.3)', borderRadius: 'var(--radius)', padding: '12px 16px' }}>
-                  <span style={{ fontSize: '20px' }}>🎟️</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, color: 'var(--on-surface)', fontSize: '15px' }}>{voucherCode}</div>
-                    <div style={{ fontSize: '13px', color: '#27ae60', fontWeight: 600 }}>NPR {appliedDiscount} discount applied! ✓</div>
-                  </div>
-                  <button
-                    className="btn btn-ghost"
-                    onClick={handleRemoveVoucher}
-                    style={{ fontSize: '13px', padding: '6px 12px' }}
-                  >Remove</button>
-                </div>
               )}
+
+              {/* Slot 2 — second voucher input, shown after first is applied */}
+              {appliedVouchers.length >= 1 && appliedVouchers.length < MAX_VOUCHERS_PER_ORDER && (
+                showSecondInput ? (
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                    <input
+                      id="checkout-voucher-input-2"
+                      className="input"
+                      placeholder="Add another voucher code"
+                      value={voucherCode2}
+                      onChange={e => setVoucherCode2(e.target.value.toUpperCase())}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      id="checkout-voucher-apply-btn-2"
+                      className="btn btn-primary"
+                      onClick={handleValidateVoucher2}
+                      disabled={voucherLoading}
+                      style={{ flexShrink: 0 }}
+                    >
+                      {voucherLoading ? <div className="spinner" /> : 'Apply'}
+                    </button>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={() => { setShowSecondInput(false); setVoucherCode2(''); }}
+                      style={{ flexShrink: 0, fontSize: '13px' }}
+                    >✕</button>
+                  </div>
+                ) : (
+                  <button
+                    id="checkout-add-voucher-btn"
+                    style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', padding: '0', marginBottom: '8px' }}
+                    onClick={() => setShowSecondInput(true)}
+                  >
+                    + Add another voucher
+                  </button>
+                )
+              )}
+
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
                 {activeVouchers.length === 0
                   ? <>No active vouchers? <span style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 700 }} onClick={() => navigate('/loyalty')}>Earn points & redeem →</span></>
@@ -431,12 +534,12 @@ const CheckoutPage: React.FC = () => {
                   <span>Tip</span><span>NPR {tipAmount.toFixed(2)}</span>
                 </div>
               )}
-              {appliedDiscount > 0 && (
-                <div className="checkout-breakdown-row" style={{ color: '#27ae60' }}>
-                  <span>🎟️ Voucher ({voucherCode})</span>
-                  <span style={{ fontWeight: 800 }}>- NPR {appliedDiscount.toFixed(2)}</span>
+              {appliedVouchers.map(av => (
+                <div key={av.code} className="checkout-breakdown-row" style={{ color: '#27ae60' }}>
+                  <span>🎟️ {av.code}</span>
+                  <span style={{ fontWeight: 800 }}>- NPR {av.discount.toFixed(2)}</span>
                 </div>
-              )}
+              ))}
             </div>
 
             <div className="checkout-total">

@@ -1,12 +1,14 @@
 import { ISuccessReponse } from "common/responses";
 import { endOfDay, startOfDay } from "date-fns";
-import { Between } from "typeorm";
+import { Between, DataSource, EntityManager } from "typeorm";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
 import {
   OrderItemEntity,
   OrderItemAddonEntity,
   OrderEntity,
+  OrderStatusEntity,
+  CartItemEntity,
 } from "entities/index.entity";
 
 import {
@@ -37,6 +39,8 @@ import { Injectable } from "@nestjs/common";
 import { ServiceCommunicationService } from "src/modules/service-communication/service-communication.service";
 import { LoyaltyService } from '../loyalty/loyalty.service';
 
+const MAX_VOUCHERS_PER_ORDER = 3;
+
 @Injectable()
 export class OrderService {
   constructor(
@@ -52,6 +56,7 @@ export class OrderService {
     private readonly serviceCommunicationService: ServiceCommunicationService,
     private readonly loyaltyService: LoyaltyService,
     private readonly userRepository: UserRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createOrder(
@@ -59,11 +64,12 @@ export class OrderService {
     userId: string
   ): Promise<any> {
     const { orderItems, ...rest } = body;
-    const orderNumber = `ORD-${Date.now()}`;
+    const orderNumber = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     
-    const order = await this.orderRepository.save({ ...rest, userId, orderNumber });
-
-    const orderItemTotals = await Promise.all(
+    // 1. Calculate order items in memory
+    let subtotal = 0;
+    const cartItemsForValidation: Array<{ menuItemId: string; categoryId: string }> = [];
+    const resolvedItems = await Promise.all(
       orderItems?.map(async (item) => {
         const { quantity, menuId, menuVariantId, itemAddons } = item;
 
@@ -74,6 +80,11 @@ export class OrderService {
         if (!menu) {
           throw new NotFoundException(`Menu item ${menuId} not found`);
         }
+
+        cartItemsForValidation.push({
+          menuItemId: menu.id,
+          categoryId: menu.category?.id || '',
+        });
 
         const variant = await this.menuVariantRepository.findOne({
           where: { id: menuVariantId },
@@ -115,63 +126,148 @@ export class OrderService {
         const itemSubtotal = unitPriceSnapshot * quantity;
         const lineTotal = itemSubtotal + addonsTotal;
 
-        const savedOrderItem = await this.orderItemRepository.save({
-          quantity,
-          menuNameSnapshot: menu.name,
-          variantNameSnapshot: variant ? variant.name : null,
-          unitPriceSnapshot,
-          addonsTotal,
-          lineTotal,
-          menu: { id: menuId },
-          menuVariant: variant ? { id: variant.id } : null,
-          order,
+        subtotal += lineTotal;
+
+        return {
+          item: {
+            quantity,
+            menuNameSnapshot: menu.name,
+            variantNameSnapshot: variant ? variant.name : null,
+            unitPriceSnapshot,
+            addonsTotal,
+            lineTotal,
+            menu: { id: menuId },
+            menuVariant: variant ? { id: variant.id } : null,
+          },
+          addons,
+        };
+      }) || []
+    );
+
+    // 2. Validate voucher(s) BEFORE saving anything
+    const voucherCodes = body.voucherCodes || (body.voucherCode ? [body.voucherCode] : []);
+    if (voucherCodes.length > MAX_VOUCHERS_PER_ORDER) {
+      throw new BadRequestException('TOO_MANY_VOUCHERS');
+    }
+
+    const validatedVouchers: Array<{ voucher: any; discountAmount: number }> = [];
+    for (const code of voucherCodes) {
+      const result = await this.loyaltyService.validateVoucherForCheckout(
+        code,
+        userId,
+        body.businessId,
+        subtotal,
+        body.serviceType || '',
+        cartItemsForValidation,
+      );
+      validatedVouchers.push(result);
+    }
+
+    // Stacking validation: At most ONE voucher per discount class
+    const seenDiscountClasses = new Set<string>();
+    for (const item of validatedVouchers) {
+      const discountClass = item.voucher.discountClass || 'ORDER_TOTAL';
+      if (seenDiscountClasses.has(discountClass)) {
+        throw new BadRequestException(`DUPLICATE_DISCOUNT_CLASS:${discountClass}`);
+      }
+      seenDiscountClasses.add(discountClass);
+    }
+
+    // 3. Compute final totals and split discounts
+    const taxAmount = subtotal * 0.13; // 13% tax
+    const deliveryFee = Number(body.deliveryFee !== undefined && body.deliveryFee !== null ? body.deliveryFee : (body.serviceType === ServiceTypeEnum.DELIVERY ? 5 : 0));
+    const serviceCharge = body.serviceCharge || 0;
+    const tipAmount = body.tipAmount || 0;
+
+    let orderDiscountAmount = 0;
+    let deliveryDiscountAmount = 0;
+    let serviceChargeDiscountAmount = 0;
+    let itemDiscountAmount = 0;
+
+    for (const { voucher, discountAmount: vDiscount } of validatedVouchers) {
+      const discountClass = voucher.discountClass || 'ORDER_TOTAL';
+      switch (discountClass) {
+        case 'ORDER_TOTAL':
+          orderDiscountAmount += vDiscount;
+          break;
+        case 'DELIVERY_FEE':
+          deliveryDiscountAmount = Math.min(
+            deliveryDiscountAmount + vDiscount,
+            deliveryFee
+          );
+          break;
+        case 'SERVICE_CHARGE':
+          serviceChargeDiscountAmount = Math.min(
+            serviceChargeDiscountAmount + vDiscount,
+            Number(serviceCharge)
+          );
+          break;
+        case 'ITEM_SPECIFIC':
+          itemDiscountAmount += vDiscount;
+          break;
+      }
+    }
+
+    const discountAmount = orderDiscountAmount + deliveryDiscountAmount
+      + serviceChargeDiscountAmount + itemDiscountAmount;
+
+    const rawTotalAmount = subtotal + taxAmount + deliveryFee + Number(serviceCharge) - Number(discountAmount) + Number(tipAmount);
+    const totalAmount = Math.max(0, rawTotalAmount);
+
+    // 4. Save order ONCE within transaction
+    const order = await this.dataSource.transaction(async (manager) => {
+      const savedOrder = await manager.save(OrderEntity, {
+        ...rest,
+        userId,
+        orderNumber,
+        subtotal,
+        taxAmount,
+        deliveryFee,
+        serviceCharge,
+        discountAmount,
+        orderDiscountAmount,
+        deliveryDiscountAmount,
+        serviceChargeDiscountAmount,
+        itemDiscountAmount,
+        appliedVoucherIds: validatedVouchers.map(v => v.voucher.id),
+        tipAmount,
+        totalAmount,
+      });
+
+      // 5. Save order items and addons
+      for (const resolved of resolvedItems) {
+        const savedOrderItem = await manager.save(OrderItemEntity, {
+          ...resolved.item,
+          order: savedOrder,
         });
 
-        for (const addon of addons) {
-          await this.orderItemAddonRepository.save({
+        for (const addon of resolved.addons) {
+          await manager.save(OrderItemAddonEntity, {
             ...addon,
             orderItem: savedOrderItem,
           });
         }
-
-        return lineTotal;
-      })
-    );
-
-    // Calculate order totals
-    const subtotal = orderItemTotals?.reduce((sum, value) => sum + value, 0);
-    const taxAmount = subtotal * 0.13; // 13% tax
-    const deliveryFee = body.serviceType === ServiceTypeEnum.DELIVERY ? 5 : 0;
-    
-    order.subtotal = subtotal;
-    order.taxAmount = taxAmount;
-    order.deliveryFee = deliveryFee;
-    order.serviceCharge = body.serviceCharge || 0;
-    order.discountAmount = body.discountAmount || 0;
-    order.tipAmount = body.tipAmount || 0;
-    order.totalAmount = subtotal + taxAmount + deliveryFee + Number(order.serviceCharge) - Number(order.discountAmount) + Number(order.tipAmount);
-
-    await this.orderRepository.save(order);
-
-    // Apply/consume voucher if provided
-    if (body.voucherCode) {
-      try {
-        const discount = await this.loyaltyService.applyVoucher(body.voucherCode, order.id, subtotal);
-        if (discount) {
-          order.discountAmount = Number(discount);
-          // Recalculate totalAmount after applying discount
-          order.totalAmount = order.subtotal + order.taxAmount + order.deliveryFee + Number(order.serviceCharge) - Number(order.discountAmount) + Number(order.tipAmount);
-          await this.orderRepository.save(order);
-        }
-      } catch (err) {
-        console.error('[OrderService] applyVoucher failed:', err?.message);
       }
-    }
 
-    await this.orderStatusRepository.save({
-      order: order,
-      status: OrderStatusEnum.PENDING,
-      updatedBy: userId,
+      // 6. Redeem/consume voucher after successful order creation
+      for (const { voucher, discountAmount: vDiscount } of validatedVouchers) {
+        await this.loyaltyService.redeemVoucher(
+          voucher.id,
+          savedOrder.id,
+          voucher,
+          vDiscount,
+          manager
+        );
+      }
+
+      // 7. Save initial order status
+      await manager.save(OrderStatusEntity, {
+        order: savedOrder,
+        status: OrderStatusEnum.PENDING,
+        updatedBy: userId,
+      });
+
+      return savedOrder;
     });
 
     return { message: "Order created successfully", orderId: order.id, order };
@@ -195,7 +291,7 @@ export class OrderService {
     body: CreateOrderFromCartDto,
     userId: string
   ): Promise<any> {
-    const { businessId, cartItemIds, serviceType, tableNumber, remarks, paymentMethod, deliveryFee, serviceCharge, tipAmount, discountAmount, voucherCode } = body;
+    const { businessId, cartItemIds, serviceType, tableNumber, remarks, paymentMethod, deliveryFee, serviceCharge, tipAmount, discountAmount, voucherCode, voucherCodes: bodyVoucherCodes } = body;
 
     // Find user's cart
     const cart = await this.cartRepository.findOne({
@@ -236,27 +332,10 @@ export class OrderService {
       }
     }
 
-    // Create order
-    const orderNumber = `ORD-${Date.now()}`;
-    const order = await this.orderRepository.save({
-      userId,
-      businessId: resolvedBusinessId,
-      orderNumber,
-      serviceType,
-      tableNumber,
-      remarks,
-      paymentMethod,
-      subtotal: 0,
-      taxAmount: 0,
-      deliveryFee: deliveryFee || (serviceType === ServiceTypeEnum.DELIVERY ? 5 : 0),
-      serviceCharge: serviceCharge || 0,
-      discountAmount: discountAmount || 0,
-      tipAmount: tipAmount || 0,
-      totalAmount: 0,
-    });
-
-    // Convert cart items to order items with accurate price calculation
-    const orderItemTotals = await Promise.all(
+    // 1. Calculate items in memory
+    let subtotal = 0;
+    const cartItemsForValidation: Array<{ menuItemId: string; categoryId: string }> = [];
+    const resolvedItems = await Promise.all(
       itemsToOrder.map(async (cartItem) => {
         const { quantity, menu, menuVariant, addOns, unitPriceSnapshot } = cartItem;
 
@@ -268,6 +347,11 @@ export class OrderService {
         if (!currentMenu || !currentMenu.isAvailable) {
           throw new BadRequestException(`Menu item "${menu.name}" is no longer available`);
         }
+
+        cartItemsForValidation.push({
+          menuItemId: currentMenu.id,
+          categoryId: currentMenu.category?.id || '',
+        });
 
         // Validate variant if exists
         if (menuVariant) {
@@ -312,74 +396,161 @@ export class OrderService {
         }
 
         // Calculate item total
-        // Use snapshot price from cart (price when item was added to cart)
         const itemUnitPrice = Number(unitPriceSnapshot);
         const itemSubtotal = itemUnitPrice * quantity;
         const lineTotal = itemSubtotal + addonsTotal;
 
-        // Create order item
-        const savedOrderItem = await this.orderItemRepository.save({
-          quantity,
-          menuNameSnapshot: menu.name,
-          variantNameSnapshot: menuVariant?.name || null,
-          unitPriceSnapshot: itemUnitPrice,
-          addonsTotal,
-          lineTotal,
-          menu: { id: menu.id },
-          menuVariant: menuVariant ? { id: menuVariant.id } : null,
-          order,
+        subtotal += lineTotal;
+
+        return {
+          item: {
+            quantity,
+            menuNameSnapshot: menu.name,
+            variantNameSnapshot: menuVariant?.name || null,
+            unitPriceSnapshot: itemUnitPrice,
+            addonsTotal,
+            lineTotal,
+            menu: { id: menu.id },
+            menuVariant: menuVariant ? { id: menuVariant.id } : null,
+          },
+          addons: addonDetails,
+        };
+      })
+    );
+
+    // 2. Validate voucher(s) BEFORE saving anything
+    const voucherCodes = bodyVoucherCodes || (voucherCode ? [voucherCode] : []);
+    if (voucherCodes.length > MAX_VOUCHERS_PER_ORDER) {
+      throw new BadRequestException('TOO_MANY_VOUCHERS');
+    }
+
+    const validatedVouchers: Array<{ voucher: any; discountAmount: number }> = [];
+    for (const code of voucherCodes) {
+      const result = await this.loyaltyService.validateVoucherForCheckout(
+        code,
+        userId,
+        resolvedBusinessId,
+        subtotal,
+        serviceType,
+        cartItemsForValidation,
+      );
+      validatedVouchers.push(result);
+    }
+
+    // Stacking validation: At most ONE voucher per discount class
+    const seenDiscountClasses = new Set<string>();
+    for (const item of validatedVouchers) {
+      const discountClass = item.voucher.discountClass || 'ORDER_TOTAL';
+      if (seenDiscountClasses.has(discountClass)) {
+        throw new BadRequestException(`DUPLICATE_DISCOUNT_CLASS:${discountClass}`);
+      }
+      seenDiscountClasses.add(discountClass);
+    }
+
+    // 3. Compute final totals and split discounts
+    const taxAmount = subtotal * 0.13; // 13% tax
+    const finalDeliveryFee = Number(deliveryFee || (serviceType === ServiceTypeEnum.DELIVERY ? 5 : 0));
+    const finalServiceCharge = Number(serviceCharge || 0);
+    const finalTipAmount = Number(tipAmount || 0);
+
+    let orderDiscountAmount = 0;
+    let deliveryDiscountAmount = 0;
+    let serviceChargeDiscountAmount = 0;
+    let itemDiscountAmount = 0;
+
+    for (const { voucher, discountAmount: vDiscount } of validatedVouchers) {
+      const discountClass = voucher.discountClass || 'ORDER_TOTAL';
+      switch (discountClass) {
+        case 'ORDER_TOTAL':
+          orderDiscountAmount += vDiscount;
+          break;
+        case 'DELIVERY_FEE':
+          deliveryDiscountAmount = Math.min(
+            deliveryDiscountAmount + vDiscount,
+            finalDeliveryFee
+          );
+          break;
+        case 'SERVICE_CHARGE':
+          serviceChargeDiscountAmount = Math.min(
+            serviceChargeDiscountAmount + vDiscount,
+            finalServiceCharge
+          );
+          break;
+        case 'ITEM_SPECIFIC':
+          itemDiscountAmount += vDiscount;
+          break;
+      }
+    }
+
+    const finalDiscountAmount = orderDiscountAmount + deliveryDiscountAmount
+      + serviceChargeDiscountAmount + itemDiscountAmount;
+
+    const rawTotalAmount = subtotal + taxAmount + finalDeliveryFee + finalServiceCharge - finalDiscountAmount + finalTipAmount;
+    const totalAmount = Math.max(0, rawTotalAmount);
+
+    // 4. Save order ONCE within transaction
+    const orderNumber = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const order = await this.dataSource.transaction(async (manager) => {
+      const savedOrder = await manager.save(OrderEntity, {
+        userId,
+        businessId: resolvedBusinessId,
+        orderNumber,
+        serviceType,
+        tableNumber,
+        remarks,
+        paymentMethod,
+        subtotal,
+        taxAmount,
+        deliveryFee: finalDeliveryFee,
+        serviceCharge: finalServiceCharge,
+        discountAmount: finalDiscountAmount,
+        orderDiscountAmount,
+        deliveryDiscountAmount,
+        serviceChargeDiscountAmount,
+        itemDiscountAmount,
+        appliedVoucherIds: validatedVouchers.map(v => v.voucher.id),
+        tipAmount: finalTipAmount,
+        totalAmount,
+      });
+
+      // 5. Save order items and addons
+      for (const resolved of resolvedItems) {
+        const savedOrderItem = await manager.save(OrderItemEntity, {
+          ...resolved.item,
+          order: savedOrder,
         });
 
-        // Create order item addons
-        for (const addon of addonDetails) {
-          await this.orderItemAddonRepository.save({
+        for (const addon of resolved.addons) {
+          await manager.save(OrderItemAddonEntity, {
             ...addon,
             orderItem: savedOrderItem,
           });
         }
-
-        return lineTotal;
-      })
-    );
-
-    // Calculate order totals
-    const subtotal = orderItemTotals.reduce((sum, value) => sum + value, 0);
-    const taxAmount = subtotal * 0.13; // 13% tax
-    const finalDeliveryFee = Number(order.deliveryFee || 0);
-    const finalServiceCharge = Number(order.serviceCharge || 0);
-    const finalDiscountAmount = Number(order.discountAmount || 0);
-    const finalTipAmount = Number(order.tipAmount || 0);
-    
-    order.subtotal = subtotal;
-    order.taxAmount = taxAmount;
-    order.totalAmount = subtotal + taxAmount + finalDeliveryFee + finalServiceCharge - finalDiscountAmount + finalTipAmount;
-
-    await this.orderRepository.save(order);
-
-    // Apply/consume voucher if provided
-    if (voucherCode) {
-        try {
-          const discount = await this.loyaltyService.applyVoucher(voucherCode, order.id, subtotal);
-          if (discount) {
-            order.discountAmount = Number(discount);
-            // Recalculate totalAmount after discount
-            order.totalAmount = order.subtotal + order.taxAmount + finalDeliveryFee + finalServiceCharge - Number(order.discountAmount) + finalTipAmount;
-            await this.orderRepository.save(order);
-          }
-        } catch (err) {
-          console.error('[OrderService] applyVoucher failed:', err?.message);
-        }
       }
 
-    // Create initial order status
-    await this.orderStatusRepository.save({
-      order: order,
-      status: OrderStatusEnum.PENDING,
-      updatedBy: userId,
-    });
+      // 6. Redeem/consume voucher after successful order creation
+      for (const { voucher, discountAmount: vDiscount } of validatedVouchers) {
+        await this.loyaltyService.redeemVoucher(
+          voucher.id,
+          savedOrder.id,
+          voucher,
+          vDiscount,
+          manager
+        );
+      }
 
-    // Remove ordered items from cart
-    await this.cartItemRepository.remove(itemsToOrder);
+      // 7. Create initial order status
+      await manager.save(OrderStatusEntity, {
+        order: savedOrder,
+        status: OrderStatusEnum.PENDING,
+        updatedBy: userId,
+      });
+
+      // Remove ordered items from cart
+      await manager.remove(CartItemEntity, itemsToOrder);
+
+      return savedOrder;
+    });
 
     return { 
       message: `Order created successfully. ${itemsToOrder.length} item(s) ordered. Order #${order.orderNumber}, Total: ${order.totalAmount}`,

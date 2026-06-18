@@ -10,7 +10,7 @@ import { OrderStatusEnum, AddonSelectionTypeEnum, TableSection, TableStatus } fr
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
 
-type AdminTab = 'overview' | 'orders' | 'menu' | 'categories' | 'users' | 'addons' | 'customers' | 'loyalty_settings' | 'tables' | 'award-voucher';
+type AdminTab = 'overview' | 'orders' | 'menu' | 'categories' | 'users' | 'addons' | 'customers' | 'loyalty_settings' | 'tables' | 'vouchers';
 
 const STATUS_FLOW: OrderStatusEnum[] = [
   OrderStatusEnum.PROCESSING,
@@ -26,6 +26,15 @@ const AdminDashboard: React.FC = () => {
 
   // State
   const [tab, setTab] = useState<AdminTab>('overview');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('admin_sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    const nextState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(nextState);
+    localStorage.setItem('admin_sidebar_collapsed', String(nextState));
+  };
   const [orders, setOrders] = useState<Order[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,7 +49,7 @@ const AdminDashboard: React.FC = () => {
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [insightSearch, setInsightSearch] = useState('');
   const [insightFilter, setInsightFilter] = useState<'all' | 'returning' | 'vip' | 'new'>('all');
-  
+
   // Loyalty Configuration Settings state
   const [loyaltyConfig, setLoyaltyConfig] = useState({
     pointsPerNpr: 0.1,
@@ -68,7 +77,8 @@ const AdminDashboard: React.FC = () => {
     isActive: true,
   });
 
-  // Award Voucher state
+  // Voucher Hub state
+  const [vouchersSubTab, setVouchersSubTab] = useState<'hub' | 'campaigns' | 'award-campaign' | 'award-manual' | 'logs'>('hub');
   const [awardedVouchers, setAwardedVouchers] = useState<any[]>([]);
   const [awardLoading, setAwardLoading] = useState(false);
   const [awardSuccess, setAwardSuccess] = useState<string | null>(null);
@@ -85,6 +95,49 @@ const AdminDashboard: React.FC = () => {
     expiresAt: '',
   });
 
+  // Campaign state
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const [campaignSuccess, setCampaignSuccess] = useState<string | null>(null);
+  const [campaignError, setCampaignError] = useState<string | null>(null);
+  const [campaignActionLoading, setCampaignActionLoading] = useState<string | null>(null);
+  const [campaignAwardUserId, setCampaignAwardUserId] = useState('');
+  const [campaignAwardCampaignId, setCampaignAwardCampaignId] = useState('');
+  const [campaignAwardExpiresAt, setCampaignAwardExpiresAt] = useState('');
+  const [campaignAwardResult, setCampaignAwardResult] = useState<string | null>(null);
+  const [awardType, setAwardType] = useState<'single' | 'mass'>('single');
+  const [massCriteria, setMassCriteria] = useState<'all' | 'min_orders' | 'min_spent'>('all');
+  const [massMinOrders, setMassMinOrders] = useState<number>(5);
+  const [massMinSpent, setMassMinSpent] = useState<number>(1000);
+
+  // Redemption Logs modal state
+  const [logsModalCampaign, setLogsModalCampaign] = useState<any | null>(null);
+  const [logsData, setLogsData] = useState<any[]>([]);
+  const [logsTotal, setLogsTotal] = useState(0);
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const LOGS_LIMIT = 15;
+  const [campaignForm, setCampaignForm] = useState({
+    name: '',
+    discountType: 'PERCENTAGE' as 'FIXED' | 'PERCENTAGE',
+    discountValue: 10,
+    maxDiscountAmount: '',
+    minOrderAmount: '',
+    discountClass: 'ORDER_TOTAL',
+    applicableServiceTypes: [] as string[],
+    requiresFirstOrder: false,
+    validDaysOfWeek: [] as number[],
+    validTimeStart: '',
+    validTimeEnd: '',
+    startsAt: '',
+    expiresAt: '',
+    maxRedemptionsTotal: '',
+    maxRedemptionsPerUser: '',
+    maxRedemptionsPerUserPerDay: '',
+    totalBudgetCap: '',
+  });
+
   // Orders Tab filters & pagination state
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
@@ -97,7 +150,7 @@ const AdminDashboard: React.FC = () => {
   // Modals state
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', description: '', icon: '', isActive: true });
-  
+
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
   const [menuForm, setMenuForm] = useState({
@@ -150,7 +203,132 @@ const AdminDashboard: React.FC = () => {
     fetchLoyaltyConfig();
     fetchTables();
     fetchAwardedVouchers();
+    fetchCampaigns();
   }, [BUSINESS_ID]);
+
+  const fetchCampaigns = async () => {
+    setCampaignsLoading(true);
+    try {
+      const data = await loyaltyApi.getCampaigns(BUSINESS_ID);
+      setCampaigns(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Fetch campaigns error:', err);
+    } finally {
+      setCampaignsLoading(false);
+    }
+  };
+
+  const handleCreateCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCampaignError(null);
+    setCampaignSuccess(null);
+    try {
+      const payload: any = {
+        name: campaignForm.name,
+        discountType: campaignForm.discountType,
+        discountValue: Number(campaignForm.discountValue),
+        discountClass: campaignForm.discountClass,
+        requiresFirstOrder: campaignForm.requiresFirstOrder,
+        applicableServiceTypes: campaignForm.applicableServiceTypes.length > 0 ? campaignForm.applicableServiceTypes : undefined,
+        validDaysOfWeek: campaignForm.validDaysOfWeek.length > 0 ? campaignForm.validDaysOfWeek : undefined,
+        validTimeStart: campaignForm.validTimeStart || undefined,
+        validTimeEnd: campaignForm.validTimeEnd || undefined,
+        startsAt: campaignForm.startsAt || undefined,
+        expiresAt: campaignForm.expiresAt || undefined,
+        businessId: BUSINESS_ID,
+      };
+      if (campaignForm.maxDiscountAmount) payload.maxDiscountAmount = Number(campaignForm.maxDiscountAmount);
+      if (campaignForm.minOrderAmount) payload.minOrderAmount = Number(campaignForm.minOrderAmount);
+      if (campaignForm.maxRedemptionsTotal) payload.maxRedemptionsTotal = Number(campaignForm.maxRedemptionsTotal);
+      if (campaignForm.maxRedemptionsPerUser) payload.maxRedemptionsPerUser = Number(campaignForm.maxRedemptionsPerUser);
+      if (campaignForm.maxRedemptionsPerUserPerDay) payload.maxRedemptionsPerUserPerDay = Number(campaignForm.maxRedemptionsPerUserPerDay);
+      if (campaignForm.totalBudgetCap) payload.totalBudgetCap = Number(campaignForm.totalBudgetCap);
+      await loyaltyApi.createCampaign(payload);
+      toast.success('Campaign created as DRAFT!');
+      setCampaignSuccess('Campaign created in DRAFT status. Click Activate to make it live.');
+      setIsCampaignModalOpen(false);
+      fetchCampaigns();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Failed to create campaign';
+      setCampaignError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const handleCampaignAction = async (id: string, action: 'activate' | 'pause' | 'resume' | 'archive') => {
+    if (action === 'archive' && !window.confirm('Archive is irreversible. Continue?')) return;
+    setCampaignActionLoading(id + action);
+    try {
+      const fn = {
+        activate: () => loyaltyApi.activateCampaign(id),
+        pause: () => loyaltyApi.pauseCampaign(id),
+        resume: () => loyaltyApi.resumeCampaign(id),
+        archive: () => loyaltyApi.archiveCampaign(id),
+      }[action];
+      await fn();
+      toast.success(`Campaign ${action}d successfully`);
+      fetchCampaigns();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || `Failed to ${action} campaign`);
+    } finally {
+      setCampaignActionLoading(null);
+    }
+  };
+
+  const handleViewLogs = async (campaign: any, page: number = 1) => {
+    setLogsModalCampaign(campaign);
+    setLogsPage(page);
+    setLogsLoading(true);
+    setLogsData([]);
+    try {
+      const res = await loyaltyApi.getCampaignRedemptions(campaign.id, { page, limit: LOGS_LIMIT });
+      setLogsData(res.data ?? []);
+      setLogsTotal(res.total ?? 0);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to load redemption logs');
+      setLogsModalCampaign(null);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  const handleCampaignAwardVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCampaignAwardResult(null);
+    setCampaignError(null);
+    try {
+      if (awardType === 'single') {
+        const res = await loyaltyApi.awardVoucherToCustomer({
+          userId: campaignAwardUserId,
+          businessId: BUSINESS_ID,
+          campaignId: campaignAwardCampaignId,
+          expiresAt: campaignAwardExpiresAt || undefined,
+        });
+        const code = res?.code || res?.data?.code || '(check DB)';
+        setCampaignAwardResult(`Voucher code: ${code}`);
+        toast.success(`Voucher awarded! Code: ${code}`);
+        setCampaignAwardUserId('');
+        setCampaignAwardExpiresAt('');
+      } else {
+        const res = await loyaltyApi.awardVoucherToMassUsers({
+          campaignId: campaignAwardCampaignId,
+          businessId: BUSINESS_ID,
+          criteria: massCriteria,
+          minOrders: massCriteria === 'min_orders' ? Number(massMinOrders) : undefined,
+          minSpent: massCriteria === 'min_spent' ? Number(massMinSpent) : undefined,
+          expiresAt: campaignAwardExpiresAt || undefined,
+        });
+        const count = res?.awardedCount ?? 0;
+        setCampaignAwardResult(`Mass vouchers successfully awarded to ${count} customers!`);
+        toast.success(`Mass vouchers awarded to ${count} customers!`);
+        setCampaignAwardExpiresAt('');
+      }
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || 'Failed to award voucher';
+      setCampaignError(errMsg);
+      toast.error(errMsg);
+    }
+  };
 
   const fetchTables = async () => {
     setTablesLoading(true);
@@ -741,7 +919,7 @@ const AdminDashboard: React.FC = () => {
     // 1. Search filter
     if (orderSearch.trim()) {
       const q = orderSearch.toLowerCase();
-      list = list.filter(o => 
+      list = list.filter(o =>
         (o.orderNumber && o.orderNumber.toLowerCase().includes(q)) ||
         o.id.toLowerCase().includes(q) ||
         (o.userInfo?.name && o.userInfo.name.toLowerCase().includes(q)) ||
@@ -764,11 +942,11 @@ const AdminDashboard: React.FC = () => {
     if (orderDateFilter !== 'all') {
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
+
       list = list.filter(o => {
         if (!o.createdAt) return false;
         const oDate = new Date(o.createdAt);
-        
+
         if (orderDateFilter === 'today') {
           return oDate >= startOfDay;
         } else if (orderDateFilter === 'yesterday') {
@@ -827,75 +1005,110 @@ const AdminDashboard: React.FC = () => {
   })();
 
   return (
-    <div className="admin-page">
-      
+    <div className={`admin-page ${isSidebarCollapsed ? 'admin-page--collapsed' : ''}`}>
+
       {/* ====== SIDEBAR ====== */}
       <aside className="admin-sidebar" style={{ display: 'flex' }}>
-        <div className="admin-sidebar__heading">
-          <div className="admin-sidebar__title">KAHA Resto</div>
-          <p className="admin-sidebar__sub">Business Portal v3.0</p>
+        <div className="admin-sidebar__heading" style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', gap: '8px' }}>
+          <div>
+            <div className="admin-sidebar__title" style={{ fontSize: isSidebarCollapsed ? '20px' : '26px' }}>
+              {isSidebarCollapsed ? 'KR' : 'KAHA Resto'}
+            </div>
+            {!isSidebarCollapsed && <p className="admin-sidebar__sub">Business Portal v3.0</p>}
+          </div>
+          <button
+            onClick={toggleSidebar}
+            className="admin-sidebar__toggle-btn"
+            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              {isSidebarCollapsed ? (
+                <path d="M9 18l6-6-6-6" />
+              ) : (
+                <path d="M15 19l-7-7 7-7" />
+              )}
+            </svg>
+          </button>
         </div>
-        
+
         <nav className="admin-sidebar__nav">
-          <button className={`admin-sidebar__link ${tab === 'overview' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('overview')}>
-            <svg className="admin-sidebar__icon admin-sidebar__icon--overview" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Overview & Analytics
+          <button className={`admin-sidebar__link ${tab === 'overview' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('overview')} title={isSidebarCollapsed ? "Overview & Analytics" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+            {!isSidebarCollapsed && <span>Overview & Analytics</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'orders' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('orders')}>
-            <svg className="admin-sidebar__icon admin-sidebar__icon--orders" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Orders {pendingOrders > 0 && <span className="badge badge-warning" style={{ marginLeft: 'auto', background: '#FF5A5F', color: 'white', borderRadius: '8px' }}>{pendingOrders}</span>}
+          <button className={`admin-sidebar__link ${tab === 'orders' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('orders')} title={isSidebarCollapsed ? "Orders" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+            {!isSidebarCollapsed ? (
+              <>
+                <span>Orders</span>
+                {pendingOrders > 0 && <span className="badge badge-warning" style={{ marginLeft: 'auto', background: '#FF5A5F', color: 'white', borderRadius: '8px' }}>{pendingOrders}</span>}
+              </>
+            ) : (
+              pendingOrders > 0 && <span className="admin-sidebar__collapsed-badge">{pendingOrders}</span>
+            )}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'menu' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('menu')}>
-            <svg className="admin-sidebar__icon admin-sidebar__icon--menu" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v14M12 22v-3M12 19h7v-3c0-3.3-2.7-6-6-6h-2c-3.3 0-6 2.7-6 6v3h7z"/></svg>
-            Menu Management
+          <button className={`admin-sidebar__link ${tab === 'menu' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('menu')} title={isSidebarCollapsed ? "Menu Management" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v14M12 22v-3M12 19h7v-3c0-3.3-2.7-6-6-6h-2c-3.3 0-6 2.7-6 6v3h7z" /></svg>
+            {!isSidebarCollapsed && <span>Menu Management</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'categories' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('categories')}>
-            <svg className="admin-sidebar__icon admin-sidebar__icon--categories" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            Categories Control
+          <button className={`admin-sidebar__link ${tab === 'categories' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('categories')} title={isSidebarCollapsed ? "Categories Control" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+            {!isSidebarCollapsed && <span>Categories Control</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'users' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('users')}>
-            <svg className="admin-sidebar__icon admin-sidebar__icon--users" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Users Overview
+          <button className={`admin-sidebar__link ${tab === 'users' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('users')} title={isSidebarCollapsed ? "Users Overview" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            {!isSidebarCollapsed && <span>Users Overview</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'addons' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('addons')}>
-            <svg className="admin-sidebar__icon admin-sidebar__icon--addons" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-            Addon Customization
+          <button className={`admin-sidebar__link ${tab === 'addons' ? 'admin-sidebar__link--active' : ''}`} onClick={() => setTab('addons')} title={isSidebarCollapsed ? "Addon Customization" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></svg>
+            {!isSidebarCollapsed && <span>Addon Customization</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'customers' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('customers'); fetchCustomerInsights(); }}>
-            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            Customer Insights
+          <button className={`admin-sidebar__link ${tab === 'customers' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('customers'); fetchCustomerInsights(); }} title={isSidebarCollapsed ? "Customer Insights" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+            {!isSidebarCollapsed && <span>Customer Insights</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'loyalty_settings' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('loyalty_settings'); fetchLoyaltyConfig(); }}>
-            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Loyalty Settings
+          <button className={`admin-sidebar__link ${tab === 'loyalty_settings' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('loyalty_settings'); fetchLoyaltyConfig(); }} title={isSidebarCollapsed ? "Loyalty Settings" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+            {!isSidebarCollapsed && <span>Loyalty Settings</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'tables' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('tables'); fetchTables(); }}>
-            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            Table Management
+          <button className={`admin-sidebar__link ${tab === 'tables' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('tables'); fetchTables(); }} title={isSidebarCollapsed ? "Table Management" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg>
+            {!isSidebarCollapsed && <span>Table Management</span>}
           </button>
-          <button className={`admin-sidebar__link ${tab === 'award-voucher' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('award-voucher'); fetchAwardedVouchers(); }}>
-            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            Award Voucher
+          <button className={`admin-sidebar__link ${tab === 'vouchers' ? 'admin-sidebar__link--active' : ''}`} onClick={() => { setTab('vouchers'); setVouchersSubTab('hub'); fetchCampaigns(); fetchAwardedVouchers(); }} title={isSidebarCollapsed ? "Vouchers & Promos" : ""}>
+            <svg className="admin-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+            {!isSidebarCollapsed && <span>Vouchers & Promos</span>}
           </button>
         </nav>
-        
+
         <div className="admin-sidebar__bottom">
-          <div className="admin-sidebar__user-card">
-            <div className="admin-sidebar__user-avatar">
+          {isSidebarCollapsed ? (
+            <div
+              className="admin-sidebar__user-avatar"
+              style={{ margin: '0 auto', cursor: 'pointer' }}
+              title={`${user?.name || 'Administrator'} (Super Admin) - Click to Logout`}
+              onClick={() => { if (window.confirm('Logout?')) { logout(); navigate('/'); } }}
+            >
               {user?.name?.charAt(0) || 'A'}
             </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div className="admin-sidebar__user-name">{user?.name || 'Administrator'}</div>
-              <div className="admin-sidebar__user-role">Super Admin</div>
+          ) : (
+            <div className="admin-sidebar__user-card">
+              <div className="admin-sidebar__user-avatar">
+                {user?.name?.charAt(0) || 'A'}
+              </div>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="admin-sidebar__user-name">{user?.name || 'Administrator'}</div>
+                <div className="admin-sidebar__user-role">Super Admin</div>
+              </div>
+              <button
+                onClick={() => { logout(); navigate('/'); }}
+                className="admin-sidebar__logout-btn"
+                title="Logout"
+              >
+                Logout
+              </button>
             </div>
-            <button 
-              onClick={() => { logout(); navigate('/'); }} 
-              className="admin-sidebar__logout-btn"
-              title="Logout"
-            >
-              Logout
-            </button>
-          </div>
+          )}
         </div>
       </aside>
 
@@ -915,12 +1128,24 @@ const AdminDashboard: React.FC = () => {
               {tab === 'customers' && '🏆 Customer Insights & Loyalty'}
               {tab === 'loyalty_settings' && '⚙️ Loyalty Rules & Custom Criteria'}
               {tab === 'tables' && '🪑 Dine-in Table Setup'}
-              {tab === 'award-voucher' && '🎟️ Award Voucher Manual Issuance'}
+              {tab === 'vouchers' && (
+                vouchersSubTab === 'hub' ? '🎟️ Voucher & Campaigns Hub' :
+                vouchersSubTab === 'campaigns' ? '📊 Voucher Campaigns' :
+                vouchersSubTab === 'award-campaign' ? '🎟️ Award Campaign Voucher' :
+                vouchersSubTab === 'award-manual' ? '🎟️ Award Voucher Manual Issuance' :
+                '📋 Awarded Vouchers Log'
+              )}
             </h1>
             <p style={{ color: '#929397' }}>
               {tab === 'tables' ? 'Define table capacities, sections, and track availability.' :
-               tab === 'award-voucher' ? 'Directly award loyalty vouchers to customers.' :
-               "Manage and monitor your restaurant's business statistics."}
+                tab === 'vouchers' ? (
+                  vouchersSubTab === 'hub' ? 'Manage customer incentives, discount campaigns, and manual issuances from one central control panel.' :
+                  vouchersSubTab === 'campaigns' ? 'Manage marketing campaigns and issue promotional vouchers.' :
+                  vouchersSubTab === 'award-campaign' ? 'Select an active campaign and issue a single-use voucher to a specific customer.' :
+                  vouchersSubTab === 'award-manual' ? 'Directly award loyalty vouchers to customers.' :
+                  'View and monitor the history of manually issued vouchers.'
+                ) :
+                "Manage and monitor your restaurant's business statistics."}
             </p>
           </div>
           <div>
@@ -949,6 +1174,46 @@ const AdminDashboard: React.FC = () => {
                 <button className="btn btn-primary" onClick={handleOpenAddAddonGroup}>+ Add Addon Group</button>
               </div>
             )}
+            {tab === 'vouchers' && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {vouchersSubTab !== 'hub' && (
+                  <button
+                    className="btn"
+                    style={{ padding: '10px 20px', borderRadius: '10px', border: '1.5px solid #EFEFF0', background: '#fff', color: '#5A5B63', fontSize: '14px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onClick={() => setVouchersSubTab('hub')}
+                  >
+                    ← Back to Hub
+                  </button>
+                )}
+                {vouchersSubTab === 'campaigns' && (
+                  <button
+                    className="btn btn-primary"
+                    style={{ background: '#5FC756', border: 'none', fontWeight: 'bold', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', color: '#fff' }}
+                    onClick={() => { setCampaignSuccess(null); setCampaignError(null); setIsCampaignModalOpen(true); }}
+                  >
+                    + Create Campaign
+                  </button>
+                )}
+                {vouchersSubTab === 'award-manual' && (
+                  <button
+                    className="btn"
+                    style={{ border: '1.5px solid #5FC756', background: '#EDFAEB', color: '#1B4332', fontWeight: 'bold', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer' }}
+                    onClick={() => { setVouchersSubTab('logs'); fetchAwardedVouchers(); }}
+                  >
+                    📋 View Award Logs
+                  </button>
+                )}
+                {vouchersSubTab === 'logs' && (
+                  <button
+                    className="btn btn-primary"
+                    style={{ background: '#5FC756', border: 'none', fontWeight: 'bold', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', color: '#fff' }}
+                    onClick={() => setVouchersSubTab('award-manual')}
+                  >
+                    🎟️ Award New Voucher
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -959,7 +1224,7 @@ const AdminDashboard: React.FC = () => {
             <div className="admin-stats">
               <div className="admin-stat-card">
                 <div className="admin-stat-icon">💰</div>
-                <div>
+                <div className="admin-stat-info-wrap">
                   <div className="admin-stat-label">Gross Revenue</div>
                   <div className="admin-stat-value">NPR {totalRevenue.toFixed(2)}</div>
                   <div style={{ fontSize: '12px', color: '#FDA014', marginTop: '4px', fontWeight: '700' }}>100% Organic Volume</div>
@@ -967,7 +1232,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="admin-stat-card">
                 <div className="admin-stat-icon">📦</div>
-                <div>
+                <div className="admin-stat-info-wrap">
                   <div className="admin-stat-label">Total Orders</div>
                   <div className="admin-stat-value">{orders.length}</div>
                   <div style={{ fontSize: '12px', color: '#E14535', marginTop: '4px', fontWeight: '700' }}>{pendingOrders} awaiting validation</div>
@@ -975,7 +1240,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="admin-stat-card">
                 <div className="admin-stat-icon">🥗</div>
-                <div>
+                <div className="admin-stat-info-wrap">
                   <div className="admin-stat-label">Average Order Value</div>
                   <div className="admin-stat-value">NPR {averageOrderValue.toFixed(2)}</div>
                   <div style={{ fontSize: '12px', color: '#5FC756', marginTop: '4px', fontWeight: '700' }}>Per cart checkout</div>
@@ -983,7 +1248,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="admin-stat-card">
                 <div className="admin-stat-icon">🍔</div>
-                <div>
+                <div className="admin-stat-info-wrap">
                   <div className="admin-stat-label">Active Products</div>
                   <div className="admin-stat-value">{menus.length}</div>
                   <div style={{ fontSize: '12px', color: '#FDA014', marginTop: '4px', fontWeight: '700' }}>{menus.filter(m => m.isSignature).length} signature dishes</div>
@@ -992,43 +1257,63 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Graphical Analytics Panel */}
-            <div className="admin-panel-card" style={{ padding: '24px', marginBottom: '28px' }}>
+            <div className="admin-panel-card" style={{ padding: '28px', marginBottom: '28px' }}>
               <h3 style={{ marginBottom: '24px', color: '#272831', fontWeight: '800', fontSize: '18px' }}>Order Pipeline Analytics</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px', textAlign: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '16px', textAlign: 'center' }}>
                 <div>
-                  <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '8px' }}>
-                    <div style={{ width: '32px', height: `${orders.length ? (pendingOrders/orders.length)*100 : 0}%`, background: '#FED415', borderRadius: '4px 4px 0 0', minHeight: '6px' }}></div>
+                  <div className="chart-bar-container">
+                    <div
+                      className="chart-bar chart-bar--pending"
+                      style={{ height: `${orders.length ? (pendingOrders / orders.length) * 100 : 0}%`, minHeight: '6px' }}
+                      title={`Pending: ${pendingOrders} (${orders.length ? Math.round((pendingOrders / orders.length) * 100) : 0}%)`}
+                    ></div>
                   </div>
-                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831' }}>{pendingOrders}</strong>
-                  <span style={{ fontSize: '12px', color: '#929397' }}>Pending</span>
+                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831', fontWeight: '800' }}>{pendingOrders}</strong>
+                  <span style={{ fontSize: '13px', color: '#929397', fontWeight: '600' }}>Pending</span>
                 </div>
                 <div>
-                  <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '8px' }}>
-                    <div style={{ width: '32px', height: `${orders.length ? (preparingOrders/orders.length)*100 : 0}%`, background: '#FDA014', borderRadius: '4px 4px 0 0', minHeight: '6px' }}></div>
+                  <div className="chart-bar-container">
+                    <div
+                      className="chart-bar chart-bar--preparing"
+                      style={{ height: `${orders.length ? (preparingOrders / orders.length) * 100 : 0}%`, minHeight: '6px' }}
+                      title={`Preparing: ${preparingOrders} (${orders.length ? Math.round((preparingOrders / orders.length) * 100) : 0}%)`}
+                    ></div>
                   </div>
-                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831' }}>{preparingOrders}</strong>
-                  <span style={{ fontSize: '12px', color: '#929397' }}>Preparing</span>
+                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831', fontWeight: '800' }}>{preparingOrders}</strong>
+                  <span style={{ fontSize: '13px', color: '#929397', fontWeight: '600' }}>Preparing</span>
                 </div>
                 <div>
-                  <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '8px' }}>
-                    <div style={{ width: '32px', height: `${orders.length ? (readyOrders/orders.length)*100 : 0}%`, background: '#5FC756', opacity: 0.6, borderRadius: '4px 4px 0 0', minHeight: '6px' }}></div>
+                  <div className="chart-bar-container">
+                    <div
+                      className="chart-bar chart-bar--ready"
+                      style={{ height: `${orders.length ? (readyOrders / orders.length) * 100 : 0}%`, minHeight: '6px' }}
+                      title={`Ready: ${readyOrders} (${orders.length ? Math.round((readyOrders / orders.length) * 100) : 0}%)`}
+                    ></div>
                   </div>
-                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831' }}>{readyOrders}</strong>
-                  <span style={{ fontSize: '12px', color: '#929397' }}>Ready</span>
+                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831', fontWeight: '800' }}>{readyOrders}</strong>
+                  <span style={{ fontSize: '13px', color: '#929397', fontWeight: '600' }}>Ready</span>
                 </div>
                 <div>
-                  <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '8px' }}>
-                    <div style={{ width: '32px', height: `${orders.length ? (deliveredOrders/orders.length)*100 : 0}%`, background: '#5FC756', borderRadius: '4px 4px 0 0', minHeight: '6px' }}></div>
+                  <div className="chart-bar-container">
+                    <div
+                      className="chart-bar chart-bar--delivered"
+                      style={{ height: `${orders.length ? (deliveredOrders / orders.length) * 100 : 0}%`, minHeight: '6px' }}
+                      title={`Delivered: ${deliveredOrders} (${orders.length ? Math.round((deliveredOrders / orders.length) * 100) : 0}%)`}
+                    ></div>
                   </div>
-                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831' }}>{deliveredOrders}</strong>
-                  <span style={{ fontSize: '12px', color: '#929397' }}>Delivered</span>
+                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831', fontWeight: '800' }}>{deliveredOrders}</strong>
+                  <span style={{ fontSize: '13px', color: '#929397', fontWeight: '600' }}>Delivered</span>
                 </div>
                 <div>
-                  <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '8px' }}>
-                    <div style={{ width: '32px', height: `${orders.length ? (cancelledOrders/orders.length)*100 : 0}%`, background: '#e74c3c', borderRadius: '4px 4px 0 0', minHeight: '6px' }}></div>
+                  <div className="chart-bar-container">
+                    <div
+                      className="chart-bar chart-bar--cancelled"
+                      style={{ height: `${orders.length ? (cancelledOrders / orders.length) * 100 : 0}%`, minHeight: '6px' }}
+                      title={`Cancelled: ${cancelledOrders} (${orders.length ? Math.round((cancelledOrders / orders.length) * 100) : 0}%)`}
+                    ></div>
                   </div>
-                  <strong style={{ display: 'block', fontSize: '18px' }}>{cancelledOrders}</strong>
-                  <span style={{ fontSize: '12px', color: 'var(--slate-gray)' }}>Cancelled</span>
+                  <strong style={{ display: 'block', fontSize: '18px', color: '#272831', fontWeight: '800' }}>{cancelledOrders}</strong>
+                  <span style={{ fontSize: '13px', color: '#929397', fontWeight: '600' }}>Cancelled</span>
                 </div>
               </div>
             </div>
@@ -1215,7 +1500,7 @@ const AdminDashboard: React.FC = () => {
                             Inspect
                           </button>
                           {status !== OrderStatusEnum.DELIVERED && status !== OrderStatusEnum.CANCELLED && (
-                            <select 
+                            <select
                               className="admin-status-dropdown"
                               value=""
                               onChange={(e) => updateOrderStatus(o.id, e.target.value as OrderStatusEnum)}
@@ -1256,7 +1541,7 @@ const AdminDashboard: React.FC = () => {
                   <strong>{Math.min(filteredOrders.length, orderPage * orderLimit)}</strong> of{' '}
                   <strong>{filteredOrders.length}</strong> orders
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {/* Page limit selector */}
                   <select
@@ -1282,7 +1567,7 @@ const AdminDashboard: React.FC = () => {
                   >
                     ◀ Prev
                   </button>
-                  
+
                   <span style={{ fontSize: '13px', fontWeight: '700', color: '#272831', padding: '0 8px' }}>
                     Page {orderPage} of {totalOrderPages}
                   </span>
@@ -1353,40 +1638,40 @@ const AdminDashboard: React.FC = () => {
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '12px' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#55617A', fontWeight: '600' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={m.isAvailable} 
-                            onChange={() => handleToggleMenuAvailability(m.id, m.isAvailable)} 
+                          <input
+                            type="checkbox"
+                            checked={m.isAvailable}
+                            onChange={() => handleToggleMenuAvailability(m.id, m.isAvailable)}
                           />
                           Available
                         </label>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#55617A', fontWeight: '600' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={m.isHidden} 
-                            onChange={() => handleToggleMenuHidden(m.id, m.isHidden)} 
+                          <input
+                            type="checkbox"
+                            checked={m.isHidden}
+                            onChange={() => handleToggleMenuHidden(m.id, m.isHidden)}
                           />
                           Hidden
                         </label>
                       </div>
 
                       <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #EFEFF0', paddingTop: '16px' }}>
-                        <button 
-                          className="btn btn-ghost" 
+                        <button
+                          className="btn btn-ghost"
                           style={{ padding: '6px 12px', fontSize: '13px', flex: 1 }}
                           onClick={() => toggleSignature(m.id, !m.isSignature)}
                         >
                           {m.isSignature ? 'Starred' : 'Highlight'}
                         </button>
-                        <button 
-                          className="btn btn-secondary" 
+                        <button
+                          className="btn btn-secondary"
                           style={{ padding: '6px 12px', fontSize: '13px' }}
                           onClick={() => handleOpenEditMenu(m)}
                         >
                           Edit
                         </button>
-                        <button 
-                          className="btn btn-danger" 
+                        <button
+                          className="btn btn-danger"
                           style={{ padding: '6px 12px', fontSize: '13px', background: '#e74c3c', color: 'white', border: 'none', borderRadius: '8px' }}
                           onClick={() => handleDeleteMenu(m.id)}
                         >
@@ -1430,8 +1715,8 @@ const AdminDashboard: React.FC = () => {
                         </button>
                       </td>
                       <td>
-                        <button 
-                          className="btn btn-danger btn-sm" 
+                        <button
+                          className="btn btn-danger btn-sm"
                           onClick={() => handleDeleteCategory(c.id)}
                         >
                           Delete
@@ -1730,14 +2015,14 @@ const AdminDashboard: React.FC = () => {
                   <tbody>
                     {customerInsights
                       .filter(c => {
-                        const matchSearch = !insightSearch || 
-                          c.userId?.toLowerCase().includes(insightSearch.toLowerCase()) || 
+                        const matchSearch = !insightSearch ||
+                          c.userId?.toLowerCase().includes(insightSearch.toLowerCase()) ||
                           c.customerName?.toLowerCase().includes(insightSearch.toLowerCase());
                         const matchFilter =
                           insightFilter === 'all' ? true :
-                          insightFilter === 'returning' ? c.isReturning :
-                          insightFilter === 'vip' ? (c.tier || '').includes('VIP') || (c.tier || '').includes('Gold') :
-                          !c.isReturning;
+                            insightFilter === 'returning' ? c.isReturning :
+                              insightFilter === 'vip' ? (c.tier || '').includes('VIP') || (c.tier || '').includes('Gold') :
+                                !c.isReturning;
                         return matchSearch && matchFilter;
                       })
                       .map((c, idx) => (
@@ -1902,7 +2187,7 @@ const AdminDashboard: React.FC = () => {
                 gap: '24px',
                 alignItems: 'start'
               }}>
-                
+
                 {/* LEFT COLUMN: Input Configuration Fields */}
                 <div className="admin-stat-card" style={{
                   padding: '24px',
@@ -1926,13 +2211,13 @@ const AdminDashboard: React.FC = () => {
                         <span>Points Earning Ratio (per NPR)</span>
                       </label>
                       <div style={{ position: 'relative' }}>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           step="0.01"
                           min="0"
                           max="10"
-                          className="input" 
-                          required 
+                          className="input"
+                          required
                           style={{ height: '40px', fontSize: '13px', paddingRight: '90px' }}
                           value={loyaltyConfig.pointsPerNpr}
                           onChange={e => setLoyaltyConfig(c => ({ ...c, pointsPerNpr: Number(e.target.value) }))}
@@ -1953,13 +2238,13 @@ const AdminDashboard: React.FC = () => {
                         <span>Point Redemption Value (in NPR)</span>
                       </label>
                       <div style={{ position: 'relative' }}>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           step="0.01"
                           min="0"
                           max="100"
-                          className="input" 
-                          required 
+                          className="input"
+                          required
                           style={{ height: '40px', fontSize: '13px', paddingRight: '90px' }}
                           value={loyaltyConfig.pointsToNprRate}
                           onChange={e => setLoyaltyConfig(c => ({ ...c, pointsToNprRate: Number(e.target.value) }))}
@@ -1979,12 +2264,12 @@ const AdminDashboard: React.FC = () => {
                       <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
                         Minimum Redemption Threshold
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="1"
                         min="1"
-                        className="input" 
-                        required 
+                        className="input"
+                        required
                         style={{ height: '40px', fontSize: '13px' }}
                         value={loyaltyConfig.minRedeemPoints}
                         onChange={e => setLoyaltyConfig(c => ({ ...c, minRedeemPoints: Number(e.target.value) }))}
@@ -2000,12 +2285,12 @@ const AdminDashboard: React.FC = () => {
                       <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
                         Voucher Expiry Duration (Days)
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="1"
                         min="1"
-                        className="input" 
-                        required 
+                        className="input"
+                        required
                         style={{ height: '40px', fontSize: '13px' }}
                         value={loyaltyConfig.voucherExpiryDays}
                         onChange={e => setLoyaltyConfig(c => ({ ...c, voucherExpiryDays: Number(e.target.value) }))}
@@ -2021,7 +2306,7 @@ const AdminDashboard: React.FC = () => {
                       <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
                         Accrual Mode
                       </label>
-                      <select 
+                      <select
                         className="input"
                         style={{ height: '40px', fontSize: '13px', padding: '0 12px' }}
                         value={loyaltyConfig.accrualMode || 'SPEND'}
@@ -2041,12 +2326,12 @@ const AdminDashboard: React.FC = () => {
                       <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
                         Points Per Visit / Order
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="1"
                         min="0"
-                        className="input" 
-                        required 
+                        className="input"
+                        required
                         disabled={loyaltyConfig.accrualMode === 'SPEND'}
                         style={{ height: '40px', fontSize: '13px' }}
                         value={loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5}
@@ -2063,12 +2348,12 @@ const AdminDashboard: React.FC = () => {
                       <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
                         Min Order Amount for Visit (NPR)
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="1"
                         min="0"
-                        className="input" 
-                        required 
+                        className="input"
+                        required
                         disabled={loyaltyConfig.accrualMode === 'SPEND'}
                         style={{ height: '40px', fontSize: '13px' }}
                         value={loyaltyConfig.minSpendForVisit !== undefined ? loyaltyConfig.minSpendForVisit : 0}
@@ -2085,13 +2370,13 @@ const AdminDashboard: React.FC = () => {
                       <label className="input-label" style={{ fontWeight: '700', color: '#272831', fontSize: '13px', marginBottom: '6px' }}>
                         Campaign Bonus Multiplier
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="0.1"
                         min="1"
                         max="10"
-                        className="input" 
-                        required 
+                        className="input"
+                        required
                         style={{ height: '40px', fontSize: '13px' }}
                         value={loyaltyConfig.bonusMultiplier !== undefined ? loyaltyConfig.bonusMultiplier : 1.0}
                         onChange={e => setLoyaltyConfig(c => ({ ...c, bonusMultiplier: Number(e.target.value) }))}
@@ -2108,11 +2393,11 @@ const AdminDashboard: React.FC = () => {
                         Points Expiry Duration (Days)
                       </label>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           step="1"
                           min="1"
-                          className="input" 
+                          className="input"
                           disabled={loyaltyConfig.pointsExpiryDays === null}
                           style={{ height: '40px', fontSize: '13px', flex: 1 }}
                           value={loyaltyConfig.pointsExpiryDays || ''}
@@ -2120,8 +2405,8 @@ const AdminDashboard: React.FC = () => {
                           placeholder="Never expires"
                         />
                         <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={loyaltyConfig.pointsExpiryDays === null}
                             onChange={e => setLoyaltyConfig(c => ({ ...c, pointsExpiryDays: e.target.checked ? null : 365 }))}
                           />
@@ -2148,7 +2433,7 @@ const AdminDashboard: React.FC = () => {
                     <div style={{ fontWeight: '800', fontSize: '13px', color: '#3A86C8', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                       <span>💡</span> Live System Simulator
                     </div>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', borderBottom: '1px solid #E1EAF7', paddingBottom: '6px' }}>
                         <span style={{ color: '#55617A', fontWeight: '500' }}>Sample Spend</span>
@@ -2159,7 +2444,7 @@ const AdminDashboard: React.FC = () => {
                         <strong style={{ color: '#5FC756' }}>
                           +{Math.floor(
                             ((loyaltyConfig.accrualMode === 'SPEND' || loyaltyConfig.accrualMode === 'BOTH' ? 1000 * loyaltyConfig.pointsPerNpr : 0) +
-                             (loyaltyConfig.accrualMode === 'VISIT' || loyaltyConfig.accrualMode === 'BOTH' ? (loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5) : 0)) *
+                              (loyaltyConfig.accrualMode === 'VISIT' || loyaltyConfig.accrualMode === 'BOTH' ? (loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5) : 0)) *
                             (loyaltyConfig.bonusMultiplier || 1.0)
                           )} pts
                         </strong>
@@ -2180,7 +2465,7 @@ const AdminDashboard: React.FC = () => {
                         <span style={{ color: '#3A86C8', fontWeight: '800' }}>Cashback Yield</span>
                         <strong style={{ color: '#3A86C8', fontWeight: '800' }}>
                           {(((loyaltyConfig.accrualMode === 'SPEND' || loyaltyConfig.accrualMode === 'BOTH' ? 1000 * loyaltyConfig.pointsPerNpr : 0) +
-                             (loyaltyConfig.accrualMode === 'VISIT' || loyaltyConfig.accrualMode === 'BOTH' ? (loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5) : 0)) *
+                            (loyaltyConfig.accrualMode === 'VISIT' || loyaltyConfig.accrualMode === 'BOTH' ? (loyaltyConfig.pointsPerVisit !== undefined ? loyaltyConfig.pointsPerVisit : 5) : 0)) *
                             (loyaltyConfig.bonusMultiplier || 1.0) * loyaltyConfig.pointsToNprRate / 10).toFixed(2)}%
                         </strong>
                       </div>
@@ -2197,18 +2482,18 @@ const AdminDashboard: React.FC = () => {
                     flexDirection: 'column',
                     gap: '10px'
                   }}>
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="btn btn-primary"
                       disabled={isConfigSaving}
                       style={{ background: '#5FC756', border: 'none', width: '100%', height: '40px', fontSize: '13px', fontWeight: 'bold' }}
                     >
                       {isConfigSaving ? 'Saving Config...' : 'Apply & Save Config'}
                     </button>
-                    
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary" 
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
                       disabled={isConfigSaving}
                       onClick={fetchLoyaltyConfig}
                       style={{ width: '100%', height: '36px', fontSize: '12px' }}
@@ -2317,181 +2602,694 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* ==================== AWARD VOUCHER TAB ==================== */}
-        {tab === 'award-voucher' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '24px', alignItems: 'start' }}>
-            {/* Award Form */}
-            <div className="admin-stat-card" style={{ padding: '24px', borderRadius: '16px', background: '#ffffff', border: '1px solid #EFEFF0' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '800', color: '#272831' }}>Award New Voucher</h3>
-              
-              {awardSuccess && (
-                <div style={{ padding: '12px', background: '#EDFAEB', color: '#1B4332', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: '700' }}>
-                  {awardSuccess}
-                </div>
-              )}
-              {awardError && (
-                <div style={{ padding: '12px', background: '#FDEBEB', color: '#E14535', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: '700' }}>
-                  {awardError}
-                </div>
-              )}
-
-              <form onSubmit={handleAwardVoucher} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="input-group">
-                  <label className="input-label">Select Customer *</label>
-                  <select
-                    className="input"
-                    value={awardForm.userId}
-                    onChange={e => setAwardForm(prev => ({ ...prev, userId: e.target.value }))}
-                    required
-                  >
-                    <option value="">-- Choose Customer --</option>
-                    {customerInsights.map(c => (
-                      <option key={c.userId} value={c.userId}>
-                        {c.customerName || 'Kaha User'} ({c.customerPhone || 'No contact'}) · {c.totalPoints || 0} pts
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label">Voucher Code (Optional)</label>
-                  <input
-                    type="text"
-                    className="input"
-                    placeholder="e.g. SPECIAL50 (leave blank to auto-generate)"
-                    value={awardForm.code}
-                    onChange={e => setAwardForm(prev => ({ ...prev, code: e.target.value }))}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="input-group">
-                    <label className="input-label">Discount Type *</label>
-                    <select
-                      className="input"
-                      value={awardForm.discountType}
-                      onChange={e => setAwardForm(prev => ({ ...prev, discountType: e.target.value as any }))}
-                    >
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="FIXED">Fixed Amount (NPR)</option>
-                    </select>
+        {/* ==================== VOUCHERS AND CAMPAIGNS HUB ==================== */}
+        {tab === 'vouchers' && (
+          <div style={{ width: '100%' }}>
+            
+            {/* 1. HUB LANDING PAGE */}
+            {vouchersSubTab === 'hub' && (
+              <div style={{ width: '100%' }}>
+                {/* Stats Row */}
+                <div className="adm-hub-stats-row">
+                  <div className="adm-hub-stat-card">
+                    <div className="adm-hub-icon-wrapper" style={{ background: '#EEF2FF', color: '#4F46E5', marginBottom: 0 }}>
+                      📊
+                    </div>
+                    <div>
+                      <div className="adm-hub-stat-val">{campaigns.filter((c: any) => c.status === 'active').length}</div>
+                      <div className="adm-hub-stat-lbl">Active Campaigns</div>
+                    </div>
                   </div>
-                  <div className="input-group">
-                    <label className="input-label">Discount Value *</label>
-                    <input
-                      type="number"
-                      className="input"
-                      required
-                      min="1"
-                      value={awardForm.discountValue}
-                      onChange={e => setAwardForm(prev => ({ ...prev, discountValue: Number(e.target.value) }))}
-                    />
+
+                  <div className="adm-hub-stat-card">
+                    <div className="adm-hub-icon-wrapper" style={{ background: '#EDFAEB', color: '#1B4332', marginBottom: 0 }}>
+                      🎟️
+                    </div>
+                    <div>
+                      <div className="adm-hub-stat-val">{awardedVouchers.length}</div>
+                      <div className="adm-hub-stat-lbl">Manually Issued</div>
+                    </div>
+                  </div>
+
+                  <div className="adm-hub-stat-card">
+                    <div className="adm-hub-icon-wrapper" style={{ background: '#FFF9E6', color: '#B45309', marginBottom: 0 }}>
+                      📢
+                    </div>
+                    <div>
+                      <div className="adm-hub-stat-val">{campaigns.length}</div>
+                      <div className="adm-hub-stat-lbl">Total Campaigns</div>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="input-group">
-                    <label className="input-label">Min Order (NPR)</label>
-                    <input
-                      type="number"
-                      className="input"
-                      min="0"
-                      value={awardForm.minOrderAmount}
-                      onChange={e => setAwardForm(prev => ({ ...prev, minOrderAmount: Number(e.target.value) }))}
-                    />
+                {/* Navigation Grid */}
+                <div className="adm-voucher-hub-grid">
+                  <div className="adm-hub-card card-campaigns">
+                    <div>
+                      <div className="adm-hub-icon-wrapper">📊</div>
+                      <h3 className="adm-hub-card-title">Promotional Campaigns</h3>
+                      <p className="adm-hub-card-desc">
+                        Create and configure discount rule templates, budget caps, service restrictions, and time-based active windows.
+                      </p>
+                    </div>
+                    <button className="adm-hub-card-btn" onClick={() => { setVouchersSubTab('campaigns'); fetchCampaigns(); }}>
+                      Manage Campaigns ➔
+                    </button>
                   </div>
-                  <div className="input-group">
-                    <label className="input-label">Max Discount (NPR)</label>
-                    <input
-                      type="number"
-                      className="input"
-                      min="0"
-                      value={awardForm.maxDiscountAmount}
-                      placeholder="e.g. 200 (optional)"
-                      disabled={awardForm.discountType === 'FIXED'}
-                      onChange={e => setAwardForm(prev => ({ ...prev, maxDiscountAmount: Number(e.target.value) }))}
-                    />
+
+                  <div className="adm-hub-card card-manual">
+                    <div>
+                      <div className="adm-hub-icon-wrapper">🎟️</div>
+                      <h3 className="adm-hub-card-title">Manual Issuance</h3>
+                      <p className="adm-hub-card-desc">
+                        Directly award custom ad-hoc fixed or percentage discount vouchers to a specific customer's account.
+                      </p>
+                    </div>
+                    <button className="adm-hub-card-btn" onClick={() => setVouchersSubTab('award-manual')}>
+                      Issue Manual Voucher ➔
+                    </button>
+                  </div>
+
+                  <div className="adm-hub-card card-award-campaign">
+                    <div>
+                      <div className="adm-hub-icon-wrapper">✉️</div>
+                      <h3 className="adm-hub-card-title">Issue Campaign Voucher</h3>
+                      <p className="adm-hub-card-desc">
+                        Select an active promotional campaign template to automatically generate a voucher instance for a customer's UUID.
+                      </p>
+                    </div>
+                    <button className="adm-hub-card-btn" onClick={() => { setCampaignAwardCampaignId(''); setCampaignAwardResult(null); setVouchersSubTab('award-campaign'); }}>
+                      Award Campaign Voucher ➔
+                    </button>
+                  </div>
+
+                  <div className="adm-hub-card card-logs">
+                    <div>
+                      <div className="adm-hub-icon-wrapper">📋</div>
+                      <h3 className="adm-hub-card-title">Voucher Audit Logs</h3>
+                      <p className="adm-hub-card-desc">
+                        Search and view history logs of all manually issued and awarded customer vouchers.
+                      </p>
+                    </div>
+                    <button className="adm-hub-card-btn" onClick={() => { setVouchersSubTab('logs'); fetchAwardedVouchers(); }}>
+                      View Audit Logs ➔
+                    </button>
                   </div>
                 </div>
-
-                <div className="input-group">
-                  <label className="input-label">Expiry Date</label>
-                  <input
-                    type="date"
-                    className="input"
-                    value={awardForm.expiresAt}
-                    onChange={e => setAwardForm(prev => ({ ...prev, expiresAt: e.target.value }))}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={awardLoading}
-                  style={{ marginTop: '8px', background: '#5FC756', border: 'none', height: '42px', fontWeight: 'bold' }}
-                >
-                  {awardLoading ? 'Awarding...' : 'Award Voucher 🎟️'}
-                </button>
-              </form>
-            </div>
-
-            {/* Awarded History */}
-            <div className="admin-stat-card" style={{ padding: '24px', borderRadius: '16px', background: '#ffffff', border: '1px solid #EFEFF0', overflowX: 'auto' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '800', color: '#272831' }}>Awarded Vouchers Log</h3>
-              
-              <div className="admin-table-container" style={{ maxHeight: '550px', overflowY: 'auto' }}>
-                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Code</th>
-                      <th>Customer ID</th>
-                      <th>Value</th>
-                      <th>Uses</th>
-                      <th>Expiry</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {awardedVouchers.map((v, idx) => (
-                      <tr key={v.id || idx} style={{ borderBottom: '1px solid #EFEFF0' }}>
-                        <td style={{ padding: '12px', fontWeight: '800', color: '#272831' }}>{v.code}</td>
-                        <td style={{ fontSize: '12px', color: '#929397' }}>
-                          {v.userId ? `...${v.userId.slice(-8)}` : '—'}
-                        </td>
-                        <td style={{ fontWeight: '700', color: '#5FC756' }}>
-                          {v.discountType === 'PERCENTAGE' ? `${v.discountValue}%` : `NPR ${v.discountValue}`}
-                        </td>
-                        <td>{v.usesCount || 0} / {v.maxUses || 1}</td>
-                        <td style={{ fontSize: '12px' }}>
-                          {v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'Never'}
-                        </td>
-                        <td>
-                          <span style={{
-                            padding: '3px 8px',
-                            borderRadius: '12px',
-                            fontSize: '11px',
-                            fontWeight: '700',
-                            background: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '#EDFAEB' : '#FDEBEB',
-                            color: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '#1B4332' : '#E14535',
-                          }}>
-                            {v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? 'Active' : 'Expired/Inactive'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {awardedVouchers.length === 0 && (
-                      <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#929397' }}>
-                          No vouchers issued yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
               </div>
-            </div>
+            )}
+
+            {/* 2. CAMPAIGNS SUB-TAB */}
+            {vouchersSubTab === 'campaigns' && (
+              <div className="adm-section" style={{ marginTop: '24px' }}>
+                {campaignSuccess && (
+                  <div style={{ padding: '12px 16px', background: '#EDFAEB', color: '#1B4332', borderRadius: '10px', fontWeight: '700', fontSize: '13px', marginBottom: '16px' }}>
+                    ✅ {campaignSuccess}
+                  </div>
+                )}
+                {campaignError && (
+                  <div style={{ padding: '12px 16px', background: '#FDEBEB', color: '#E14535', borderRadius: '10px', fontWeight: '700', fontSize: '13px', marginBottom: '16px' }}>
+                    ❌ {campaignError}
+                  </div>
+                )}
+
+                {campaignsLoading ? (
+                  <div className="adm-table-wrap" style={{ padding: '12px' }}>
+                    {[1, 2, 3].map(i => <div key={i} className="adm-row-skeleton" />)}
+                  </div>
+                ) : campaigns.length === 0 ? (
+                  <div className="adm-empty">
+                    <span className="adm-empty-icon">📣</span>
+                    <p className="adm-empty-title">No campaigns yet</p>
+                    <p className="adm-empty-sub">Create your first campaign to start issuing vouchers.</p>
+                    <button className="adm-btn-primary" onClick={() => setIsCampaignModalOpen(true)}>
+                      + Create Campaign
+                    </button>
+                  </div>
+                ) : (
+                  <div className="adm-table-wrap">
+                    <table className="adm-table">
+                      <thead>
+                        <tr>
+                          <th>Campaign</th>
+                          <th>Status</th>
+                          <th>Type</th>
+                          <th>Value</th>
+                          <th>Redeemed</th>
+                          <th>Expires</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {campaigns.map((c: any) => (
+                          <tr key={c.id}>
+                            <td style={{ fontWeight: '700', color: '#272831' }}>{c.name}</td>
+                            <td>
+                              <span style={{
+                                padding: '4px 8px',
+                                borderRadius: '12px',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                display: 'inline-block',
+                                background: c.status === 'active' ? '#EDFAEB' : c.status === 'draft' ? '#FFF9E6' : '#FFF5F5',
+                                color: c.status === 'active' ? '#1B4332' : c.status === 'draft' ? '#B45309' : '#C53030',
+                                border: c.status === 'active' ? '1px solid #C9ECC1' : c.status === 'draft' ? '1px solid #FDE68A' : '1px solid #FEE2E2',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}>
+                                {c.status}
+                              </span>
+                            </td>
+                            <td style={{ fontWeight: '600' }}>{c.discountType}</td>
+                            <td style={{ fontWeight: '700', color: c.discountType === 'PERCENTAGE' ? '#4F46E5' : '#1B4332' }}>
+                              {c.discountType === 'PERCENTAGE' ? `${Number(c.discountValue).toFixed(2)}%` : `NPR ${Number(c.discountValue).toFixed(2)}`}
+                            </td>
+                            <td style={{ fontWeight: '700' }}>
+                              {c.totalRedeemedAmount ? `NPR ${Number(c.totalRedeemedAmount).toFixed(2)}` : 'NPR 0.00'}
+                              {c.totalBudgetCap && <span style={{ color: '#929397', fontSize: '11px', fontWeight: '500' }}> / NPR {Number(c.totalBudgetCap).toFixed(2)}</span>}
+                            </td>
+                            <td>{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never'}</td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                {c.status === 'draft' && (
+                                  <button
+                                    onClick={() => handleCampaignAction(c.id, 'activate')}
+                                    style={{
+                                      background: '#EDFAEB',
+                                      color: '#1B4332',
+                                      border: '1px solid #C9ECC1',
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      fontWeight: '700',
+                                      fontSize: '11px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Activate
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setCampaignAwardCampaignId(c.id);
+                                    setCampaignAwardResult(null);
+                                    setVouchersSubTab('award-campaign');
+                                  }}
+                                  disabled={c.status !== 'active'}
+                                  style={{
+                                    background: c.status === 'active' ? '#EEF2FF' : '#F5F5F6',
+                                    color: c.status === 'active' ? '#4F46E5' : '#929397',
+                                    border: c.status === 'active' ? '1px solid #C7D2FE' : '1px solid #EFEFF0',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    fontWeight: '700',
+                                    fontSize: '11px',
+                                    cursor: c.status === 'active' ? 'pointer' : 'not-allowed'
+                                  }}
+                                >
+                                  Award
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. AWARD CAMPAIGN VOUCHER FORM */}
+            {vouchersSubTab === 'award-campaign' && (
+              <div className="adm-award-layout" style={{ marginTop: '24px' }}>
+                <div className="adm-award-card">
+                  {campaignAwardResult && (
+                    <div className="adm-award-success">
+                      <span>✅</span>
+                      <div>
+                        <p className="adm-success-title">Voucher Awarded</p>
+                        <p className="adm-success-code">{campaignAwardResult}</p>
+                      </div>
+                    </div>
+                  )}
+                  {campaignError && (
+                    <div className="adm-award-error">{campaignError}</div>
+                  )}
+
+                  <form onSubmit={handleCampaignAwardVoucher} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="adm-field-group">
+                      <label className="adm-label">Award Method</label>
+                      <div style={{ display: 'flex', gap: '24px', marginTop: '8px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', color: '#3f3f46' }}>
+                          <input
+                            type="radio"
+                            name="awardType"
+                            value="single"
+                            checked={awardType === 'single'}
+                            onChange={() => { setAwardType('single'); setCampaignAwardResult(null); }}
+                            style={{ width: '16px', height: '16px', accentColor: '#1b4332' }}
+                          />
+                          Single Customer
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', color: '#3f3f46' }}>
+                          <input
+                            type="radio"
+                            name="awardType"
+                            value="mass"
+                            checked={awardType === 'mass'}
+                            onChange={() => { setAwardType('mass'); setCampaignAwardResult(null); }}
+                            style={{ width: '16px', height: '16px', accentColor: '#1b4332' }}
+                          />
+                          Mass Customers (Criteria-based)
+                        </label>
+                      </div>
+                    </div>
+
+                    {awardType === 'single' ? (
+                      <div className="adm-field-group">
+                        <label className="adm-label">Customer User ID <span className="adm-required">*</span></label>
+                        <input
+                          className="adm-input"
+                          type="text"
+                          placeholder="Paste customer UUID"
+                          value={campaignAwardUserId}
+                          onChange={(e) => setCampaignAwardUserId(e.target.value)}
+                          required
+                        />
+                        <p className="adm-field-hint">Find the UUID on the Users Overview page.</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="adm-field-group">
+                          <label className="adm-label">Target Customer Criteria <span className="adm-required">*</span></label>
+                          <select
+                            className="adm-input adm-select"
+                            value={massCriteria}
+                            onChange={(e: any) => setMassCriteria(e.target.value)}
+                            required
+                          >
+                            <option value="all">All Registered Customers</option>
+                            <option value="min_orders">Customers with Minimum Orders</option>
+                            <option value="min_spent">Customers with Minimum Spent (NPR)</option>
+                          </select>
+                        </div>
+
+                        {massCriteria === 'min_orders' && (
+                          <div className="adm-field-group">
+                            <label className="adm-label">Minimum Orders Count <span className="adm-required">*</span></label>
+                            <input
+                              className="adm-input"
+                              type="number"
+                              min="1"
+                              value={massMinOrders}
+                              onChange={(e) => setMassMinOrders(Number(e.target.value))}
+                              required
+                            />
+                            <p className="adm-field-hint">Only customers who placed this many orders or more will receive the voucher.</p>
+                          </div>
+                        )}
+
+                        {massCriteria === 'min_spent' && (
+                          <div className="adm-field-group">
+                            <label className="adm-label">Minimum Lifetime Spent (NPR) <span className="adm-required">*</span></label>
+                            <input
+                              className="adm-input"
+                              type="number"
+                              min="1"
+                              value={massMinSpent}
+                              onChange={(e) => setMassMinSpent(Number(e.target.value))}
+                              required
+                            />
+                            <p className="adm-field-hint">Only customers who spent this amount or more in total will receive the voucher.</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    <div className="adm-field-group">
+                      <label className="adm-label">Campaign <span className="adm-required">*</span></label>
+                      <select
+                        className="adm-input adm-select"
+                        value={campaignAwardCampaignId}
+                        onChange={(e) => setCampaignAwardCampaignId(e.target.value)}
+                        required
+                      >
+                        <option value="">— Select an active campaign —</option>
+                        {campaigns
+                          .filter((c: any) => c.status === 'active')
+                          .map((c: any) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} ({c.discountType === 'PERCENTAGE'
+                                ? `${Number(c.discountValue).toFixed(2)}% off`
+                                : `NPR ${Number(c.discountValue).toFixed(2)} off`})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div className="adm-field-group">
+                      <label className="adm-label">Expiry Override <span className="adm-label-opt">(optional)</span></label>
+                      <input
+                        className="adm-input"
+                        type="date"
+                        value={campaignAwardExpiresAt}
+                        onChange={(e) => setCampaignAwardExpiresAt(e.target.value)}
+                      />
+                      <p className="adm-field-hint">Leave blank to use the campaign's default expiry.</p>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="adm-btn-award"
+                      disabled={awardType === 'single' ? (!campaignAwardUserId || !campaignAwardCampaignId) : !campaignAwardCampaignId}
+                    >
+                      {awardType === 'single' ? '🎫 Award Voucher' : '📢 Award Mass Vouchers'}
+                    </button>
+                  </form>
+                </div>
+
+                <div className="adm-award-info">
+                  <h3 className="adm-info-title">How this works</h3>
+                  <ol className="adm-info-list">
+                    <li>Choose your Award Method (Single Customer vs Mass Customers).</li>
+                    <li>If Single, paste the customer's UUID. If Mass, select target eligibility criteria.</li>
+                    <li>Select any active campaign — only active campaigns can issue vouchers.</li>
+                    <li>Optionally override the expiry date if customers need more time.</li>
+                    <li>Click the action button — unique voucher codes will be generated and added instantly.</li>
+                  </ol>
+                  <div className="adm-info-note">
+                    <strong>Note:</strong> Awarded vouchers will appear under the customers' Loyalty &amp; Vouchers page immediately.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. MANUAL VOUCHER FORM */}
+            {vouchersSubTab === 'award-manual' && (
+              <div className="adm-award-layout" style={{ marginTop: '24px' }}>
+                {/* Award Form */}
+                <div className="adm-award-card">
+                  {awardSuccess && (
+                    <div className="adm-award-success">
+                      <span>✅</span>
+                      <div>
+                        <p className="adm-success-title">Voucher Issued Successfully</p>
+                        <p className="adm-success-code">{awardSuccess}</p>
+                      </div>
+                    </div>
+                  )}
+                  {awardError && (
+                    <div className="adm-award-error">
+                      {awardError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleAwardVoucher} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="adm-field-group">
+                      <label className="adm-label">Select Customer <span className="adm-required">*</span></label>
+                      <select
+                        className="adm-input adm-select"
+                        value={awardForm.userId}
+                        onChange={e => setAwardForm(prev => ({ ...prev, userId: e.target.value }))}
+                        required
+                      >
+                        <option value="">-- Choose Customer --</option>
+                        {customerInsights.map(c => (
+                          <option key={c.userId} value={c.userId}>
+                            {c.customerName || 'Kaha User'} ({c.customerPhone || 'No contact'}) · {c.totalPoints || 0} pts
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="adm-field-group">
+                      <label className="adm-label">Voucher Code <span className="adm-label-opt">(optional)</span></label>
+                      <input
+                        className="adm-input"
+                        type="text"
+                        placeholder="e.g. SPECIAL50 (leave blank to auto-generate)"
+                        value={awardForm.code}
+                        onChange={e => setAwardForm(prev => ({ ...prev, code: e.target.value }))}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div className="adm-field-group">
+                        <label className="adm-label">Discount Type <span className="adm-required">*</span></label>
+                        <select
+                          className="adm-input adm-select"
+                          value={awardForm.discountType}
+                          onChange={e => setAwardForm(prev => ({ ...prev, discountType: e.target.value as any }))}
+                          required
+                        >
+                          <option value="PERCENTAGE">Percentage (%)</option>
+                          <option value="FIXED">Fixed Amount (NPR)</option>
+                        </select>
+                      </div>
+
+                      <div className="adm-field-group">
+                        <label className="adm-label">Discount Value <span className="adm-required">*</span></label>
+                        <input
+                          className="adm-input"
+                          type="number"
+                          min="1"
+                          value={awardForm.discountValue}
+                          onChange={e => setAwardForm(prev => ({ ...prev, discountValue: Number(e.target.value) }))}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div className="adm-field-group">
+                        <label className="adm-label">Min Order (NPR)</label>
+                        <input
+                          className="adm-input"
+                          type="number"
+                          min="0"
+                          value={awardForm.minOrderAmount}
+                          onChange={e => setAwardForm(prev => ({ ...prev, minOrderAmount: Number(e.target.value) }))}
+                        />
+                      </div>
+
+                      <div className="adm-field-group">
+                        <label className="adm-label">Max Discount (NPR)</label>
+                        <input
+                          className="adm-input"
+                          type="number"
+                          min="0"
+                          value={awardForm.maxDiscountAmount}
+                          onChange={e => setAwardForm(prev => ({ ...prev, maxDiscountAmount: Number(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="adm-field-group">
+                      <label className="adm-label">Expiry Date</label>
+                      <input
+                        className="adm-input"
+                        type="date"
+                        value={awardForm.expiresAt}
+                        onChange={e => setAwardForm(prev => ({ ...prev, expiresAt: e.target.value }))}
+                      />
+                    </div>
+
+                    <button type="submit" className="adm-btn-award" disabled={awardLoading}>
+                      {awardLoading ? 'Awarding...' : 'Award Voucher 🎟️'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Info Card */}
+                <div className="adm-award-info">
+                  <h3 className="adm-info-title">💡 How this works</h3>
+                  <ol className="adm-info-list" style={{ listStyle: 'none' }}>
+                    <li><span className="adm-step-badge">1</span> Select the customer you want to award a voucher to.</li>
+                    <li><span className="adm-step-badge">2</span> Specify a custom voucher code, or leave blank to auto-generate a secure random code.</li>
+                    <li><span className="adm-step-badge">3</span> Configure the discount type (fixed amount or percentage discount).</li>
+                    <li><span className="adm-step-badge">4</span> Set validation thresholds like minimum order amounts and maximum discount caps.</li>
+                    <li><span className="adm-step-badge">5</span> Click Award Voucher — the voucher is created instantly and added to the customer's portal.</li>
+                  </ol>
+                  <div className="adm-info-note">
+                    <strong>Note:</strong> The voucher will appear under the customer's Loyalty &amp; Vouchers page immediately after awarding.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. VOUCHER AUDIT LOGS */}
+            {vouchersSubTab === 'logs' && (
+              <div className="adm-section" style={{ marginTop: '24px' }}>
+                <div className="adm-table-wrap">
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>Code</th>
+                        <th>Customer ID</th>
+                        <th>Discount Value</th>
+                        <th>Usage</th>
+                        <th>Expires At</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {awardedVouchers.map((v, idx) => (
+                        <tr key={v.id || idx}>
+                          <td style={{ fontWeight: '800', color: '#272831' }}>{v.code}</td>
+                          <td style={{ fontSize: '12px', color: '#5A5B63', fontFamily: 'monospace' }}>
+                            {v.userId ? `...${v.userId.slice(-12)}` : '—'}
+                          </td>
+                          <td style={{ fontWeight: '700', color: '#5FC756' }}>
+                            {v.discountType === 'PERCENTAGE' ? `${v.discountValue}%` : `NPR ${v.discountValue}`}
+                          </td>
+                          <td>{v.usesCount || 0} / {v.maxUses || 1}</td>
+                          <td>
+                            {v.expiresAt
+                              ? new Date(v.expiresAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                              : 'Never'}
+                          </td>
+                          <td>
+                            <span style={{
+                              padding: '4px 8px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              display: 'inline-block',
+                              background: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '#EDFAEB' : '#FFF5F5',
+                              color: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '#1B4332' : '#C53030',
+                              border: v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? '1px solid #C9ECC1' : '1px solid #FEE2E2',
+                            }}>
+                              {v.isActive && (!v.expiresAt || new Date(v.expiresAt) > new Date()) ? 'Active' : 'Expired/Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {awardedVouchers.length === 0 && (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#929397', fontWeight: '700' }}>
+                            No vouchers issued yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Create Campaign Modal */}
+            {isCampaignModalOpen && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto', padding: '32px', boxShadow: '0 25px 60px rgba(0,0,0,0.25)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#272831' }}>Create Campaign</h2>
+                    <button onClick={() => setIsCampaignModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#929397' }}>✕</button>
+                  </div>
+                  <form onSubmit={handleCreateCampaign} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="input-group">
+                      <label className="input-label">Campaign Name *</label>
+                      <input type="text" className="input" required value={campaignForm.name} onChange={e => setCampaignForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Summer 10% Off" />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="input-group">
+                        <label className="input-label">Discount Type *</label>
+                        <select className="input" value={campaignForm.discountType} onChange={e => setCampaignForm(p => ({ ...p, discountType: e.target.value as any }))}>
+                          <option value="PERCENTAGE">Percentage (%)</option>
+                          <option value="FIXED">Fixed Amount (NPR)</option>
+                        </select>
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Discount Value *</label>
+                        <input type="number" className="input" required min={1} value={campaignForm.discountValue} onChange={e => setCampaignForm(p => ({ ...p, discountValue: Number(e.target.value) }))} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="input-group">
+                        <label className="input-label">Max Discount (NPR cap)</label>
+                        <input type="number" className="input" min={0} value={campaignForm.maxDiscountAmount} onChange={e => setCampaignForm(p => ({ ...p, maxDiscountAmount: e.target.value }))} placeholder="Optional" disabled={campaignForm.discountType === 'FIXED'} />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Min Order Amount (NPR)</label>
+                        <input type="number" className="input" min={0} value={campaignForm.minOrderAmount} onChange={e => setCampaignForm(p => ({ ...p, minOrderAmount: e.target.value }))} placeholder="Optional" />
+                      </div>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Discount Class *</label>
+                      <select className="input" value={campaignForm.discountClass} onChange={e => setCampaignForm(p => ({ ...p, discountClass: e.target.value }))}>
+                        <option value="ORDER_TOTAL">Order Total</option>
+                        <option value="DELIVERY_FEE">Delivery Fee</option>
+                        <option value="SERVICE_CHARGE">Service Charge</option>
+                        <option value="ITEM_SPECIFIC">Item Specific</option>
+                      </select>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Applicable Service Types</label>
+                      <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+                        {['DELIVERY', 'DINE_IN', 'TAKEAWAY'].map(st => (
+                          <label key={st} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={campaignForm.applicableServiceTypes.includes(st)}
+                              onChange={e => setCampaignForm(p => ({
+                                ...p,
+                                applicableServiceTypes: e.target.checked ? [...p.applicableServiceTypes, st] : p.applicableServiceTypes.filter(x => x !== st)
+                              }))}
+                            />
+                            {st}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="input-group">
+                        <label className="input-label">Starts At</label>
+                        <input type="date" className="input" value={campaignForm.startsAt} onChange={e => setCampaignForm(p => ({ ...p, startsAt: e.target.value }))} />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Expires At</label>
+                        <input type="date" className="input" value={campaignForm.expiresAt} onChange={e => setCampaignForm(p => ({ ...p, expiresAt: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      <div className="input-group">
+                        <label className="input-label">Max Redemptions Total</label>
+                        <input type="number" className="input" min={1} value={campaignForm.maxRedemptionsTotal} onChange={e => setCampaignForm(p => ({ ...p, maxRedemptionsTotal: e.target.value }))} placeholder="Unlimited" />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Max Per User</label>
+                        <input type="number" className="input" min={1} value={campaignForm.maxRedemptionsPerUser} onChange={e => setCampaignForm(p => ({ ...p, maxRedemptionsPerUser: e.target.value }))} placeholder="Unlimited" />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Max Per User/Day</label>
+                        <input type="number" className="input" min={1} value={campaignForm.maxRedemptionsPerUserPerDay} onChange={e => setCampaignForm(p => ({ ...p, maxRedemptionsPerUserPerDay: e.target.value }))} placeholder="Unlimited" />
+                      </div>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Total Budget Cap (NPR)</label>
+                      <input type="number" className="input" min={0} value={campaignForm.totalBudgetCap} onChange={e => setCampaignForm(p => ({ ...p, totalBudgetCap: e.target.value }))} placeholder="Optional — no cap if blank" />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                      <input type="checkbox" checked={campaignForm.requiresFirstOrder} onChange={e => setCampaignForm(p => ({ ...p, requiresFirstOrder: e.target.checked }))} />
+                      Only valid for customer's first order
+                    </label>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                      <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#5FC756', border: 'none', fontWeight: 'bold', padding: '12px', borderRadius: '10px', cursor: 'pointer', color: '#fff' }}>
+                        Create Campaign (DRAFT)
+                      </button>
+                      <button type="button" onClick={() => setIsCampaignModalOpen(false)} style={{ flex: 1, background: '#F5F5F6', border: 'none', fontWeight: 'bold', padding: '12px', borderRadius: '10px', cursor: 'pointer', color: '#5A5B63' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
+
+
+
 
       </main>
 
@@ -2507,10 +3305,10 @@ const AdminDashboard: React.FC = () => {
               <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
                 <div className="input-group">
                   <label className="input-label">Category Name</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    required 
+                  <input
+                    type="text"
+                    className="input"
+                    required
                     placeholder="e.g. Nepali Thali, Appetizers"
                     value={newCategory.name}
                     onChange={e => setNewCategory(nc => ({ ...nc, name: e.target.value }))}
@@ -2518,9 +3316,9 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Description</label>
-                  <input 
-                    type="text" 
-                    className="input" 
+                  <input
+                    type="text"
+                    className="input"
                     placeholder="e.g. Authentic local meals"
                     value={newCategory.description}
                     onChange={e => setNewCategory(nc => ({ ...nc, description: e.target.value }))}
@@ -2548,10 +3346,10 @@ const AdminDashboard: React.FC = () => {
               <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
                 <div className="input-group">
                   <label className="input-label">Item Name</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    required 
+                  <input
+                    type="text"
+                    className="input"
+                    required
                     placeholder="e.g. Thakali Chicken Set"
                     value={menuForm.name}
                     onChange={e => setMenuForm(mf => ({ ...mf, name: e.target.value }))}
@@ -2559,8 +3357,8 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Description</label>
-                  <textarea 
-                    className="input" 
+                  <textarea
+                    className="input"
                     style={{ height: '80px', padding: '12px' }}
                     placeholder="Describe the ingredients, taste profiles..."
                     value={menuForm.description}
@@ -2570,10 +3368,10 @@ const AdminDashboard: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="input-group">
                     <label className="input-label">Price (NPR)</label>
-                    <input 
-                      type="number" 
-                      className="input" 
-                      required 
+                    <input
+                      type="number"
+                      className="input"
+                      required
                       min="0"
                       value={menuForm.price}
                       onChange={e => setMenuForm(mf => ({ ...mf, price: Number(e.target.value) }))}
@@ -2581,9 +3379,9 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="input-group">
                     <label className="input-label">Discount Price (NPR)</label>
-                    <input 
-                      type="number" 
-                      className="input" 
+                    <input
+                      type="number"
+                      className="input"
                       min="0"
                       value={menuForm.discountedPrice}
                       onChange={e => setMenuForm(mf => ({ ...mf, discountedPrice: Number(e.target.value) }))}
@@ -2593,7 +3391,7 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="input-group">
                   <label className="input-label">Category</label>
-                  <select 
+                  <select
                     className="input"
                     style={{ padding: '0 12px' }}
                     value={menuForm.categoryId}
@@ -2640,13 +3438,13 @@ const AdminDashboard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                     {[
                       { label: 'Rice Bowl', url: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&q=80' },
-                      { label: 'Burger',    url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80' },
-                      { label: 'Pizza',     url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&q=80' },
-                      { label: 'Salad',     url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80' },
-                      { label: 'Noodles',   url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80' },
-                      { label: 'Curry',     url: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&q=80' },
-                      { label: 'Sandwich',  url: 'https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400&q=80' },
-                      { label: 'Dessert',   url: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&q=80' },
+                      { label: 'Burger', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80' },
+                      { label: 'Pizza', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&q=80' },
+                      { label: 'Salad', url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80' },
+                      { label: 'Noodles', url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80' },
+                      { label: 'Curry', url: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&q=80' },
+                      { label: 'Sandwich', url: 'https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400&q=80' },
+                      { label: 'Dessert', url: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&q=80' },
                     ].map(s => (
                       <button
                         key={s.label}
@@ -2671,24 +3469,24 @@ const AdminDashboard: React.FC = () => {
 
                 <div style={{ display: 'flex', gap: '24px', marginTop: '8px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={menuForm.isAvailable}
                       onChange={e => setMenuForm(mf => ({ ...mf, isAvailable: e.target.checked }))}
                     />
                     Available for Order
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={menuForm.isHidden}
                       onChange={e => setMenuForm(mf => ({ ...mf, isHidden: e.target.checked }))}
                     />
                     Hide from Customers
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={menuForm.isSignature}
                       onChange={e => setMenuForm(mf => ({ ...mf, isSignature: e.target.checked }))}
                     />
@@ -2704,11 +3502,11 @@ const AdminDashboard: React.FC = () => {
                       const isChecked = menuForm.addonGroups?.includes(group.id);
                       return (
                         <label key={group.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: 'var(--surface-container-low)', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${isChecked ? 'var(--primary)' : 'var(--outline-variant)'}` }}>
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={isChecked}
                             onChange={e => {
-                              const updated = e.target.checked 
+                              const updated = e.target.checked
                                 ? [...(menuForm.addonGroups || []), group.id]
                                 : (menuForm.addonGroups || []).filter(id => id !== group.id);
                               setMenuForm(mf => ({ ...mf, addonGroups: updated }));
@@ -2801,7 +3599,7 @@ const AdminDashboard: React.FC = () => {
                   <span style={{ fontWeight: 'bold', color: 'var(--primary)', textTransform: 'uppercase' }}>
                     Current: {getOrderStatus(selectedOrder)}
                   </span>
-                  <select 
+                  <select
                     style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--outline)', flex: 1 }}
                     value=""
                     onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value as OrderStatusEnum)}
@@ -2832,10 +3630,10 @@ const AdminDashboard: React.FC = () => {
               <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
                 <div className="input-group">
                   <label className="input-label">Group Name</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    required 
+                  <input
+                    type="text"
+                    className="input"
+                    required
                     placeholder="e.g. Toppings, Size Selection"
                     value={addonGroupForm.name}
                     onChange={e => setAddonGroupForm(ag => ({ ...ag, name: e.target.value }))}
@@ -2845,7 +3643,7 @@ const AdminDashboard: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="input-group">
                     <label className="input-label">Selection Type</label>
-                    <select 
+                    <select
                       className="input"
                       style={{ padding: '0 12px' }}
                       value={addonGroupForm.selectionType}
@@ -2857,8 +3655,8 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="input-group" style={{ display: 'flex', alignItems: 'center', marginTop: '30px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={addonGroupForm.isRequired}
                         onChange={e => setAddonGroupForm(ag => ({ ...ag, isRequired: e.target.checked }))}
                       />
@@ -2870,9 +3668,9 @@ const AdminDashboard: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="input-group">
                     <label className="input-label">Min Selection Limit</label>
-                    <input 
-                      type="number" 
-                      className="input" 
+                    <input
+                      type="number"
+                      className="input"
                       min="0"
                       value={addonGroupForm.minSelect}
                       onChange={e => setAddonGroupForm(ag => ({ ...ag, minSelect: Number(e.target.value) }))}
@@ -2880,9 +3678,9 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="input-group">
                     <label className="input-label">Max Selection Limit</label>
-                    <input 
-                      type="number" 
-                      className="input" 
+                    <input
+                      type="number"
+                      className="input"
                       min="0"
                       value={addonGroupForm.maxSelect}
                       onChange={e => setAddonGroupForm(ag => ({ ...ag, maxSelect: Number(e.target.value) }))}
@@ -2911,10 +3709,10 @@ const AdminDashboard: React.FC = () => {
               <div className="modal-body" style={{ gridTemplateColumns: '1fr', padding: '24px' }}>
                 <div className="input-group">
                   <label className="input-label">Addon Option Name</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    required 
+                  <input
+                    type="text"
+                    className="input"
+                    required
                     placeholder="e.g. Extra Cheese, Mushrooms"
                     value={addonForm.name}
                     onChange={e => setAddonForm(af => ({ ...af, name: e.target.value }))}
@@ -2923,10 +3721,10 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="input-group">
                   <label className="input-label">Addon Price (NPR)</label>
-                  <input 
-                    type="number" 
-                    className="input" 
-                    required 
+                  <input
+                    type="number"
+                    className="input"
+                    required
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -2937,8 +3735,8 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="input-group">
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '12px' }}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={addonForm.isActive}
                       onChange={e => setAddonForm(af => ({ ...af, isActive: e.target.checked }))}
                     />
@@ -3033,6 +3831,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      
     </div>
   );
 };

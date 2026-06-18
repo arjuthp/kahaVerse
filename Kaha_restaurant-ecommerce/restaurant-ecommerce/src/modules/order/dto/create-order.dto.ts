@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
   ArrayMinSize,
   IsEnum,
+  IsArray,
 } from "class-validator";
 
 class OrderItemAddon {
@@ -118,6 +119,15 @@ export class CreateOrderDto {
   serviceCharge?: number;
 
   @ApiProperty({ 
+    example: 5.00, 
+    description: 'Delivery fee amount',
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  deliveryFee?: number;
+
+  @ApiProperty({ 
     example: 2.50, 
     description: 'Discount amount',
     required: false
@@ -153,4 +163,14 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   voucherCode?: string;
+
+  @ApiProperty({
+    type: [String],
+    description: 'Voucher codes applied to the order',
+    required: false
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  voucherCodes?: string[];
 }

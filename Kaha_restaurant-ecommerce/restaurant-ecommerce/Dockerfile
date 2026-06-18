@@ -8,4 +8,4 @@ COPY . .
 
 RUN yarn install
 
-CMD [ "yarn", "dev" ]
+CMD ["sh", "-c", "npm run migration:run && node dist/main.js"]

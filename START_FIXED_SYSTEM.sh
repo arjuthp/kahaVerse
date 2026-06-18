@@ -101,7 +101,7 @@ fi
 
 # Start backend in background
 echo "   Starting backend..."
-npm run dev > /tmp/kaha-backend.log 2>&1 &
+sh -c "npm run migration:run && npm run dev" > /tmp/kaha-backend.log 2>&1 &
 BACKEND_PID=$!
 
 # Wait for backend to start

@@ -147,7 +147,7 @@ else
     echo -e "${YELLOW}  Logs: $BACKEND_DIR/backend.log${NC}"
     
     # Start backend in background
-    nohup npm run dev > backend.log 2>&1 &
+    nohup sh -c "npm run migration:run && npm run dev" > backend.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > backend.pid
     

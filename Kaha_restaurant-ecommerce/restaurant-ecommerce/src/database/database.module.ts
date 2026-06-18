@@ -66,8 +66,8 @@ import { env } from "src/configuration/env";
           // Entity Configuration: Auto-discover all entity files in dist folder
           entities: ["dist/**/*.entity.{ts,js}"],     // ← Finds compiled entities
           
-          // Schema Synchronization: Enabled for development/testing auto-creation
-          synchronize: true,
+          // Schema Synchronization: Disabled to ensure database state is managed solely via migrations
+          synchronize: false,
           
           // Migrations Configuration
           migrationsTableName: "migrations",          // ← Table to track executed migrations

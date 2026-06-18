@@ -12,4 +12,8 @@ export * from "./orderitem.entity";
 export * from "./orderitem-addons.entity";
 export * from "./order.status.entity";
 export { RestaurantTableEntity } from "./restaurant-table.entity";
+export * from "./voucher.entity";
+export * from "./voucher-campaign.entity";
+export * from "./voucher-redemption-log.entity";
+export * from "./voucher.enums";
 

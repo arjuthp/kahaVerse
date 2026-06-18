@@ -167,6 +167,7 @@ From directory `kaha_Restarant_Eecommerce_Frontend/`:
 ---
 
 ## 🌐 API & Documentation References
+- **Project Handover Documentation:** [project_handover_documentation.md](./project_handover_documentation.md) - Comprehensive details on clean code architecture design, backend modules, database schemas, sequence workflows, and external Kaha Main integration.
 - **Swagger UI:** Accessible at `http://localhost:3001/api` (or `http://localhost:3001/api/v1/docs` in production mode) when backend is running.
 - **Frontend Integration Guide:** [FRONTEND_API_GUIDE.md](./kaha_Restarant_Eecommerce_Frontend/FRONTEND_API_GUIDE.md) - Details all endpoints, parameters, request payloads, and UI connection code snippets.
 - **Project Status Summary:** [PROJECT_STATUS_SUMMARY.md](./PROJECT_STATUS_SUMMARY.md) - Status of components, deliverables, and integration checkpoints.
